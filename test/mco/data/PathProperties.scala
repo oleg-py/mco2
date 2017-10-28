@@ -1,9 +1,8 @@
-package mco.core
+package mco.data
 
 import mco.Tests
 import org.scalacheck.Arbitrary
-import Arbitrary.{arbitrary => arb}
-import mco.data.Path
+import org.scalacheck.Arbitrary.{arbitrary => arb}
 
 class PathProperties extends Tests.Prop {
   property("self inverse") {
