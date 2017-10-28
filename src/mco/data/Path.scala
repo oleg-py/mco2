@@ -1,0 +1,61 @@
+package mco.data
+
+import scala.annotation.tailrec
+
+
+final class Path private (val segments: Vector[String]) {
+  def name: String = segments.lastOption.getOrElse("")
+  def extension: String = name.dropWhile(_ == '.').dropWhile(_ != '.')
+
+  def / (s: String): Path = this / Seq(s)
+  def / (ss: Seq[String]): Path = Path.of(segments ++ ss)
+
+  def relTo(other: Path): Vector[String] = {
+    @tailrec def loop(from: Vector[String], to: Vector[String]): Vector[String] =
+      (from, to) match {
+        case (a +: as, b +: bs) if a == b =>
+          loop(as, bs)
+        case (as, bs) =>
+          Vector.fill(bs.size)("..") ++ as
+      }
+
+    loop(segments, other.segments)
+  }
+
+  def relStringTo(other: Path) = relTo(other).mkString("/")
+
+  private def isWinLike = segments.headOption.exists(_ endsWith ":")
+
+  def asString = {
+    if (isWinLike) segments.mkString("\\")
+    else segments.mkString("/", "/", "")
+  }
+
+  override def equals(other: Any) = other match {
+    case p: Path => segments == p.segments
+    case _       => false
+  }
+
+  override def hashCode() = segments.##
+  override def toString = s"Path($asString)"
+}
+
+object Path {
+  type Temp[F[_], A] = F[Path] => F[A]
+
+  private val sepRx = """[\\/]+""".r
+
+  val root = Path("/")
+  def apply(str: String) = of(Seq(str))
+
+  def of(segments: Seq[String]) = new Path(normalize(segments))
+
+  def normalize(segments: Seq[String]): Vector[String] = {
+    (Vector.empty[String] /: segments.flatMap(sepRx.split)) {
+      case (ss, "" | ".")        => ss
+      case (ss @ Vector(), "..") => ss
+      case (rest :+ _, "..")     => rest
+      case (ss, next)            => ss :+ next
+    }
+  }
+}
