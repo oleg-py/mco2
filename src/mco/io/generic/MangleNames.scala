@@ -1,10 +1,9 @@
 package mco.io.generic
 
 import scalaz._
-import scalaz.std.anyVal._
-import scalaz.std.option._
-import scalaz.std.tuple._
-import scalaz.syntax.monoid._
+import std.anyVal._
+import std.option._
+import std.tuple._
 
 import mco.core._
 import mco.core.state.ModState

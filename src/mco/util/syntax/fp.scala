@@ -1,6 +1,7 @@
 package mco.util.syntax
 
-import scalaz.syntax.{ToMonadErrorOps, ToTraverseOps}
+import scalaz.syntax._
+import std.{ToOptionIdOps, ToOptionOps}
 
 
 /**
@@ -8,4 +9,9 @@ import scalaz.syntax.{ToMonadErrorOps, ToTraverseOps}
  * which prevents it from working. This is probably most useful
  * combination of imports that is not `syntax.all` yet.
  */
-object fp extends ToMonadErrorOps with ToTraverseOps
+object fp extends ToMonadErrorOps
+  with ToTraverseOps
+  with ToMonoidOps
+  with ToOptionOps
+  with ToOptionIdOps
+  with ToComonadOps

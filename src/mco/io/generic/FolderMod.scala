@@ -2,8 +2,6 @@ package mco.io.generic
 
 import scalaz._
 import std.stream._
-import syntax.monoid._
-import syntax.either._
 import syntax.id._
 import syntax.std.boolean._
 
