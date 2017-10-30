@@ -9,7 +9,7 @@ import mco.core._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
-import mco.data.{Key, Labelled, Path}
+import mco.data.{Key, Keyed, Path}
 
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
   extends Mod[F]
@@ -23,7 +23,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
   private def scanDeepRec(fa: F[Stream[Path]]) =
     toWriter(fa).flatMap(_ traverse scanDeep)
 
-  private def scanDeep(path: Path): WriterT[F, DataM, Labelled[Content]] = {
+  private def scanDeep(path: Path): WriterT[F, DataM, Keyed[Content]] = {
     import Content.{Component, Container}
     import mco.util.instances.monoidForApplicative
 
@@ -32,14 +32,14 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
       inner   <- scanDeepRec(isDir ?? childrenOf(path))
       key     =  Key(path relStringTo self)
       kind    =  isDir.fold(Container(inner.toVector), Component)
-      content =  Labelled(key, path.name, kind)
+      content =  Keyed(key, kind)
       info    =  Map(key -> ((path, content)))
       _       <- WriterT.put(unit.point[F])(info)
     } yield content
   }
 
   /*_*/
-  private val structureF: F[Map[Key, (Path, Labelled[Content])]] =
+  private val structureF: F[Map[Key, (Path, Keyed[Content])]] =
     scanDeepRec(childrenOf(self)).written
   /*_*/
 
@@ -47,16 +47,16 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide(contents: Vector[Labelled[Content.Plain]]) = _ => {
+  override def provide(contents: Vector[Key]) = _ => {
     for {
       data <- structureF
     } yield contents
-      .flatMap(c => data.get(c.key))
+      .collect(data)
       .map { case (path, content) => content.key -> path }
       .toMap
   }
 }
 
 object FolderMod {
-  type DataM = Map[Key, (Path, Labelled[Content])]
+  type DataM = Map[Key, (Path, Keyed[Content])]
 }

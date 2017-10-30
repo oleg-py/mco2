@@ -4,22 +4,19 @@ import scalaz._
 import std.vector._
 import std.anyVal._
 import std.map._
+import syntax.std.boolean._
 
-import mco.data.Path
+import mco.data.{Keyed, Path}
 import mco.util.syntax.fp._
 
 
 case class RepoState (
-  orderedMods: Vector[ModState]
+  orderedMods: Vector[Keyed[ModState]]
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
-    orderedMods.indexed.foldMap { case (i, mod) =>
-      if (mod.stamp.enabled) {
-        mod.contents.foldMap { contentState =>
-          contentState.target.strengthR(ISet.singleton(i)).toMap
-        }
-      } else {
-        Map.empty[Path, ISet[Int]]
+    orderedMods.indexed.foldMap { case (i, Keyed(_, mod)) =>
+      mod.stamp.enabled ?? mod.contents.foldMap { cState =>
+        cState.stamp.enabled ?? cState.target.strengthR(ISet.singleton(i)).toMap
       }
     }
   }
@@ -32,4 +29,10 @@ case class RepoState (
 
     hasOverrides | false
   }
+
+  def recoveryIndex(path: Path, idx: Int): Option[Int] =
+    for {
+      matches <- conflicts.get(path)
+      value <- matches.lookupLT(idx)
+    } yield value
 }

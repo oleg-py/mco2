@@ -12,7 +12,7 @@ import mco.util.syntax.any._
 import mco.util.syntax.fp._
 
 package object state {
-  def initContent[F[_]: Hashing: Filesystem: Monad](c: Content.Plain, p: Path): F[ContentState] = {
+  def initContent[F[_]: Hashing: Filesystem: Monad](c: Content.Plain)(p: Path): F[ContentState] = {
     hashAt(p) map { hash =>
       val enabled = c match {
         case Content.Component | Content.Document => true
@@ -28,6 +28,6 @@ package object state {
       inner <- data
         .map(la => (la.key, la.get))
         .pipe(IMap.fromFoldable(_))
-        .traverse((initContent[F] _).tupled)
+        .traverse(initContent[F](Content.Component))
     } yield ModState(inner.foldMap(_.stamp), inner)
 }

@@ -4,7 +4,7 @@ import scalaz._
 import syntax.applicative._
 
 import mco.core._
-import mco.data.{Key, Labelled, Path}
+import mco.data.{Key, Keyed, Path}
 
 
 final class FileMod[F[_]: Filesystem: Applicative](path: Path)
@@ -12,14 +12,14 @@ final class FileMod[F[_]: Filesystem: Applicative](path: Path)
 {
   private val key = Key(path.name)
 
-  def list: F[Vector[Labelled[Content]]] =
-    Vector(Content.Component(key, path.name)).point[F].widen
+  def list: F[Vector[Keyed[Content]]] =
+    Vector(Content.Component(key)).point[F].widen
 
   def provide(
-    contents: Vector[Labelled[Content.Plain]]
+    contents: Vector[Key]
   ): Path.Temp[F, Map[Key, Path]] = _ => {
     val result: Map[Key, Path] =
-      if (contents.exists(_.key == key)) Map(key -> path)
+      if (contents contains key) Map(key -> path)
       else Map()
 
     result.point[F]
