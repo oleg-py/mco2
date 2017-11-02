@@ -10,12 +10,12 @@ import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
 import mco.data.{Key, Keyed, Path}
+import mco.util.instances.mapRightMonoid
 
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
   extends Mod[F]
 {
   import FolderMod._
-  implicit def mapRightMonoid[K, V]: Monoid[Map[K, V]] = Monoid.instance(_ ++ _, Map())
 
   private def toWriter[A](fa: F[A]): WriterT[F, DataM, A] =
     WriterT.put(fa)(mzero[DataM])

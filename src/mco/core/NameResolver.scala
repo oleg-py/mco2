@@ -14,14 +14,14 @@ trait NameResolver[F[_]] {
   final def resolveAll(
     content: Content.Plain,
     modInfo: Keyed[(ModState, Mod[F])]
-  )(implicit F: Monad[F]): Path.Temp[F, Vector[(Path, Option[Path])]] = { tmp =>
+  )(implicit F: Monad[F]): Path.Temp[F, Vector[(Path, Keyed[Option[Path]])]] = { tmp =>
     val mod = modInfo.get._2
     val state = modInfo.map(_._1)
     val resolve = apply(state, _: Key)
 
     for {
       children <- mod.provideChildren(content).apply(tmp)
-      resolved <- children.map(_.key).traverse(resolve)
+      resolved <- children.map(_.key).traverse(k => resolve(k).map(Keyed(k, _)))
     } yield children.map(_.get) zip resolved
   }
 }

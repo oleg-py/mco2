@@ -2,15 +2,16 @@ package mco.core.state
 
 import scalaz._
 import std.vector._
+import std.option._
 import std.anyVal._
 import std.map._
 import syntax.std.boolean._
-
 import mco.data.{Keyed, Path}
 import mco.util.syntax.fp._
+import monocle.macros.Lenses
 
 
-case class RepoState (
+@Lenses case class RepoState (
   orderedMods: Vector[Keyed[ModState]]
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
@@ -21,7 +22,7 @@ case class RepoState (
     }
   }
 
-  def hasConflicts(path: Path, idx: Int) = {
+  def hasConflicts(path: Path, idx: Int): Boolean = {
     val hasOverrides = for {
       matches <- conflicts.get(path)
       max <- matches.maximum

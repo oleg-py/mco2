@@ -2,12 +2,14 @@ package mco.io.generic
 
 import scalaz._
 import std.vector._
-
-import mco.core.state.RepoState
+import mco.core.state._
 import mco.core._
-import mco.data.{Key, Path}
+import mco.data._
 import mco.util.syntax.fp._
-import TempFolder._, Filesystem._, Content._
+import TempFolder._
+import Filesystem._
+import monocle.function.Index.index
+import monocle.macros.syntax.lens._
 
 
 class LocalMods[F[_]: Monad: Filesystem: TempFolder](
@@ -18,18 +20,35 @@ class LocalMods[F[_]: Monad: Filesystem: TempFolder](
 
   override def update(key: Key, diff: Deltas.OfMod) = ???
 
-  private def install(key: Key) = runTmp[F, Unit] { tmpDir =>
-    for {
-      rState <- state
-      modIdx    =  rState.orderedMods.indexWhere(_.key == key)
-      modState  =  rState.orderedMods(modIdx).strengthR(mods(key))
-      resolved  <- resolverOf(Component).resolveAll(Component, modState).apply(tmpDir)
-      hasConflicts = rState.hasConflicts(_: Path, modIdx)
-      _ <- resolved.traverse_ {
-        case (from, Some(to)) if !hasConflicts(to) => copy(from, to)
-        case _ => ().point[F]
+  private def modLens(i: Int) =
+    RepoState.orderedMods composeOptional
+    index(i) composeLens
+    Keyed.lens
+
+  private def setPaths(updates: Vector[(Key, Path)]) =
+    ModState.contents modify { modMap =>
+      updates.foldLeft(modMap) { case (map, (key, path)) =>
+        map.adjust(key, _
+          .lens(_.target).set(Some(path))
+          .lens(_.stamp.installed).set(true))
       }
-    } yield ()
+    }
+
+  private def resolve(c: Content.Plain) = resolverOf(c).resolveAll(c, _: Keyed[(ModState, Mod[F])])
+
+  private def install(rState: RepoState, key: Key) = runTmp[F, RepoState] { tmpDir =>
+    val Some((i, mState)) = rState.orderedMods.indexed.find(_._2.key == key)
+
+    for {
+      resolved  <- resolve(Content.Component)(mState strengthR mods(key))(tmpDir)
+      conflicts =  rState.hasConflicts(_: Path, i)
+      changes   <- resolved.foldMapM {
+        case (from, Keyed(k, Some(to))) if !conflicts(to) => copy(from, to) as Vector(k -> to)
+        case _                                            => Vector.empty[(Key, Path)].point[F]
+      }
+      sync = modLens(i).modify(setPaths(changes) andThen
+        (_.lens(_.stamp.installed).set(true)))
+    } yield sync(rState)
   }
 
   //noinspection ConvertibleToMethodValue

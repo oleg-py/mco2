@@ -1,5 +1,8 @@
 package mco.data
 
+import monocle.Lens
+import monocle.macros.GenLens
+
 import scalaz.{Applicative, Comonad, Traverse}
 
 
@@ -8,6 +11,7 @@ case class Keyed[+A](key: Key, get: A) {
 }
 
 object Keyed {
+  def lens[A]: Lens[Keyed[A], A] = GenLens[Keyed[A]](_.get)
   implicit val labelledInstance: Traverse[Keyed] = new Traverse[Keyed] with Comonad[Keyed] {
     override def traverseImpl[G[_], A, B](fa: Keyed[A])
       (f: (A) => G[B])(implicit G: Applicative[G]) = {
