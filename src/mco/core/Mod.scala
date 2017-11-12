@@ -10,14 +10,16 @@ trait Mod[F[_]] {
   def list: F[Vector[Keyed[Content]]]
   def provide(contents: Vector[Key]): Path.Temp[F, Map[Key, Path]]
 
-  final def plainChildren(c: Content.Plain)(implicit F: Functor[F]): F[Vector[Key]] =
-    list map(vec => vec collect { case Keyed(k, `c`) => k })
-
-  final def provideChildren(c: Content.Plain)(
+  final def filterProvide(f: Keyed[Content] => Boolean)(
     implicit F: Monad[F]
   ): Path.Temp[F, Vector[Keyed[Path]]] = tempF =>
     for {
-      files <- plainChildren(c)
+      children <- list
+      files = children collect { case k if f(k) => k.key }
       paths <- provide(files)(tempF)
     } yield for (lc <- files) yield Keyed(lc, paths(lc))
+
+  final def provideChildren(c: Content.Plain)(
+    implicit F: Monad[F]
+  ): Path.Temp[F, Vector[Keyed[Path]]] = filterProvide(_.get == c)
 }

@@ -9,19 +9,17 @@ import mco.data.{Key, Keyed, Path}
 
 
 trait NameResolver[F[_]] {
-  def apply(mod: Keyed[ModState], content: Key): F[Option[Path]]
+  def apply(mod: Keyed[ModState])(content: Key): F[Option[Path]]
 
-  final def resolveAll(
-    content: Content.Plain,
-    modInfo: Keyed[(ModState, Mod[F])]
-  )(implicit F: Monad[F]): Path.Temp[F, Vector[(Path, Keyed[Option[Path]])]] = { tmp =>
-    val mod = modInfo.get._2
-    val state = modInfo.map(_._1)
-    val resolve = apply(state, _: Key)
+  final def bulk(
+    modInfo: Keyed[ModState]
+  )(targets: Vector[Keyed[Path]]
+  )(implicit F: Applicative[F]): F[Vector[(Path, Keyed[Option[Path]])]] = {
+    val resolve = apply(modInfo) _
+    val resolved = targets
+      .map(_.key)
+      .traverse(k => resolve(k).map(Keyed(k, _)))
 
-    for {
-      children <- mod.provideChildren(content).apply(tmp)
-      resolved <- children.map(_.key).traverse(k => resolve(k).map(Keyed(k, _)))
-    } yield children.map(_.get) zip resolved
+    resolved.map { targets.map(_.get) zip _ }
   }
 }

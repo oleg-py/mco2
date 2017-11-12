@@ -6,7 +6,8 @@ import std.option._
 import std.anyVal._
 import std.map._
 import syntax.std.boolean._
-import mco.data.{Keyed, Path}
+
+import mco.data.{Key, Keyed, Path}
 import mco.util.syntax.fp._
 import monocle.macros.Lenses
 
@@ -22,18 +23,16 @@ import monocle.macros.Lenses
     }
   }
 
-  def hasConflicts(path: Path, idx: Int): Boolean = {
-    val hasOverrides = for {
-      matches <- conflicts.get(path)
-      max <- matches.maximum
-    } yield idx < max
-
-    hasOverrides | false
-  }
+  def overrideIndex(path: Path, idx: Int): Option[Int] =
+    conflicts.get(path) >>= (_.lookupGT(idx))
 
   def recoveryIndex(path: Path, idx: Int): Option[Int] =
-    for {
-      matches <- conflicts.get(path)
-      value <- matches.lookupLT(idx)
-    } yield value
+    conflicts.get(path) >>= (_.lookupLT(idx))
+
+  def hasConflicts(path: Path, idx: Int): Boolean =
+    overrideIndex(path, idx).cata(idx < _, false)
+
+  def at(key: Key): (Int, Keyed[ModState]) =
+    orderedMods.indexed.find(_._2.key == key)
+      .err(s"Invariant violation at $key")
 }

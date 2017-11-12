@@ -24,7 +24,7 @@ package object state {
 
   def initMod[F[_]: Filesystem: Hashing: Monad](mod: Mod[F]): Path.Temp[F, ModState] = tmp =>
     for {
-      data <- mod.provideChildren(Content.Component).apply(tmp)
+      data <- mod.filterProvide(_.get == Content.Component).apply(tmp)
       inner <- data
         .map(la => (la.key, la.get))
         .pipe(IMap.fromFoldable(_))

@@ -11,6 +11,6 @@ import mco.data.{Key, Keyed, Path}
 class InstallToSubdirs[F[_]: Applicative](target: Path)
   extends NameResolver[F]
 {
-  override def apply(mod: Keyed[ModState], content: Key): F[Option[Path]] =
+  override def apply(mod: Keyed[ModState])(content: Key): F[Option[Path]] =
     (target / mod.key.unwrap / content.unwrap).some.point[F]
 }

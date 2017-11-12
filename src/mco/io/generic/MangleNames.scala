@@ -18,7 +18,7 @@ class MangleNames[F[_]: Filesystem: Monad](target: Path)
 {
   private val uuidName = new UUID(_: Long, _: Long).toString
   private val step = (1L, 3L)
-  override def apply(mod: Keyed[ModState], content: Key): F[Option[Path]] = {
+  override def apply(mod: Keyed[ModState])(content: Key): F[Option[Path]] = {
     // TODO - extract ext. without dummy path
     val ext = (Path.root / content.unwrap).extension
     val toName = uuidName.tupled.andThen(_ ++ ext)
