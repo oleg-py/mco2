@@ -16,7 +16,7 @@ import monocle.function.Index.index
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: MonadState[?, RepoState]: Filesystem: TempFolder](
+class LocalMods[F[_]: MonadState[?[_], RepoState]: Filesystem: TempFolder](
   mods: Map[Key, Mod[F]],
   resolver: NameResolver[F]
 ) extends Mods[F] {
