@@ -16,16 +16,22 @@ import monocle.function.Index.index
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: Monad: Filesystem: TempFolder](
+class LocalMods[F[_]: MonadState[?, RepoState]: Filesystem: TempFolder](
   mods: Map[Key, Mod[F]],
   resolver: NameResolver[F]
 ) extends Mods[F] {
-  override def state: F[RepoState] = ???
+  private val stateM = MonadState[F, RepoState]
+  override def state: F[RepoState] = stateM.get
 
-  override def update(key: Key, diff: Deltas.OfMod) = {
+  override def update(key: Key, diff: Deltas.OfMod): F[Unit] = {
+    val unitF = ().point[F]
     for {
-      st <- state
-      target = st.at(key)
+      rState <- stateM.get
+      (i, Keyed(_, modState)) = rState.at(key)
+      _ <- if (modState.stamp.installed) uninstall(key) else unitF
+      updated = diff.patch(modState)
+      _ <- stateM.modify(RepoState.orderedMods composeOptional index(i) set Keyed(key, updated))
+      _ <- if (updated.stamp.installed) unitF else install(key)
     } yield ()
   }
 
@@ -34,7 +40,7 @@ class LocalMods[F[_]: Monad: Filesystem: TempFolder](
     index(i) composeLens
     Keyed.lens
 
-  private def componentsIn(
+  private def prepareFiles(
     filter: Key => Boolean)(
     mState: Keyed[ModState])(
     tmpDir: F[Path]) = {
@@ -47,45 +53,47 @@ class LocalMods[F[_]: Monad: Filesystem: TempFolder](
       .flatMap(resolver.bulk(mState))
   }
 
-  private def runAtFiltered(
-    op: (Path, Path) => F[Unit],
-    filter: (Path) => Boolean = Function.const(true))(
-    targets: Vector[(Path, Keyed[Option[Path]])]
-  ) = targets foldMapM {
-    case (from, Keyed(k, Some(to))) if filter(to) =>
-      op(from, to) as Vector(k -> to)
-    case _ =>
-      Vector.empty[(Key, Path)].point[F]
+  private def collapse[A, B](xs: Vector[(A, Keyed[Option[B]])]): Vector[Keyed[(A, B)]] =
+    xs.collect { case (from, Keyed(k, Some(to))) => Keyed(k, from -> to) }
+
+  private def filter2[A](f: A => Boolean)(xs: Vector[Keyed[(A, A)]]) =
+    xs.filter { case Keyed(_, (_, to)) => f(to) }
+
+  private def runOp[A](op: (A, A) => F[Unit])(xs: Vector[Keyed[(A, A)]]) =
+    xs.foldMapM { case Keyed(k, (from, to)) => op(from, to) as Vector(k -> to) }
+
+  private val copyFiles = runOp[Path](copy(_, _)) _
+  private val rmFiles = runOp[Path]((_, to) => rmTree(to)) _
+
+  private def install(key: Key) = runTmp[F, Unit] { tmpDir =>
+    for {
+      rState <- stateM.get
+      (i, mState) = rState.at(key)
+      conflicts = !rState.hasConflicts(_: Path, i)
+      changes <- prepareFiles(mState.get.contentEnabled)(mState)(tmpDir)
+        .>>= { copyFiles compose filter2(conflicts) compose collapse }
+      _ <- stateM.modify(modAt(i).modify(_.onResolve(changes, installed = true)))
+    } yield ()
   }
 
-  private def install(rState: RepoState, key: Key) = runTmp[F, RepoState] { tmpDir =>
-    val (i, mState) = rState.at(key)
-    val conflicts = !rState.hasConflicts(_: Path, i)
+  private def uninstall(key: Key) = runTmp[F, Unit] { tmpDir =>
     for {
-      changes <- componentsIn(mState.get.contentEnabled)(mState)(tmpDir) >>=
-        runAtFiltered(copy(_, _), conflicts)
-      updateState = modAt(i).modify(_.onResolve(changes, installed = true))
-    } yield updateState(rState)
-  }
-
-  private def uninstall(rState: RepoState, key: Key) = runTmp[F, RepoState] { tmpDir =>
-    val (i, mState) = rState.at(key)
-    val targets = rState.recoveryIndex(_: Path, i)
-    for {
-      changes <- componentsIn(mState.get.contentEnabled)(mState)(tmpDir) >>=
-        runAtFiltered((_, to) => rmTree(to))
-      updateState = modAt(i).modify(_.onResolve(changes, installed = false))
-      newState = updateState(rState)
+      rState <- stateM.get
+      (i, mState) = rState.at(key)
+      targets = rState.recoveryIndex(_: Path, i)
+      changes <- prepareFiles(mState.get.contentEnabled)(mState)(tmpDir) >>= { rmFiles compose collapse }
+      newState = modAt(i).modify(_.onResolve(changes, installed = false))(rState)
+      _ <- stateM.put(newState)
       _ <- changes
-        .foldMap {
-          case (k, to) => targets(to).foldMap(j => Map(j -> Set(k)))
+        .foldMap { case (k, to) =>
+          targets(to).foldMap(j => Map(j -> Set(k)))
         }
         .toVector
         .traverse_ { case (j, keys) =>
-          componentsIn(keys)(newState.orderedMods(j))(tmpDir)
-            .flatMap { runAtFiltered(copy(_, _)) }
+          prepareFiles(keys)(newState.orderedMods(j))(tmpDir)
+            .flatMap { copyFiles compose collapse }
             .void
         }
-    } yield newState
+    } yield ()
   }
 }
