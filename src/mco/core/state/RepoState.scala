@@ -35,4 +35,7 @@ import monocle.macros.Lenses
   def at(key: Key): (Int, Keyed[ModState]) =
     orderedMods.indexed.find(_._2.key == key)
       .err(s"Invariant violation at $key")
+
+  def remove(key: Key): RepoState =
+    copy(orderedMods = orderedMods.filter(_.key != key))
 }

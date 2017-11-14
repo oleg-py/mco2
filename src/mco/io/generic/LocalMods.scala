@@ -5,37 +5,47 @@ import std.vector._
 import std.option._
 import std.map._
 import std.set._
-import mco.core.state._
+
 import mco.core._
+import mco.core.state._
 import mco.data._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
-import TempFolder._
+import TempOps._
 import Filesystem._
+import mco.io.state.initMod
 import monocle.function.Index.index
+import monocle.macros.Lenses
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: MonadState[?[_], RepoState]: Filesystem: TempFolder](
-  mods: Map[Key, Mod[F]],
+class LocalMods[F[_]: MonadState[?[_], LocalMods.State[F]]: TempOps](
+  contentRoot: Path,
+  tryAsMod: Path => F[Option[Mod[F]]],
+  mods: Map[Key, (Path, Mod[F])],
   resolver: NameResolver[F]
 ) extends Mods[F] {
-  private val stateM = MonadState[F, RepoState]
-  override def state: F[RepoState] = stateM.get
+  private val stateM = MonadState[F, LocalMods.State[F]]
+  override def state: F[RepoState] = stateM.get.map(_.repo)
 
   override def update(key: Key, diff: Deltas.OfMod): F[Unit] = {
-    val unitF = ().point[F]
+    val noop = ().point[F]
     for {
-      rState <- stateM.get
+      rState <- state
       (i, Keyed(_, modState)) = rState.at(key)
-      _ <- if (modState.stamp.installed) uninstall(key) else unitF
+      _ <- if (modState.stamp.installed) uninstall(key) else noop
       updated = diff.patch(modState)
-      _ <- stateM.modify(RepoState.orderedMods composeOptional index(i) set Keyed(key, updated))
-      _ <- if (updated.stamp.installed) unitF else install(key)
+      _ <- stateM.modify(
+        LocalMods.State.repo[F] composeLens
+          RepoState.orderedMods composeOptional
+          index(i) set
+          Keyed(key, updated))
+      _ <- if (updated.stamp.installed) install(key) else noop
     } yield ()
   }
 
   private def modAt(i: Int) =
+    LocalMods.State.repo composeLens
     RepoState.orderedMods composeOptional
     index(i) composeLens
     Keyed.lens
@@ -44,7 +54,7 @@ class LocalMods[F[_]: MonadState[?[_], RepoState]: Filesystem: TempFolder](
     filter: Key => Boolean)(
     mState: Keyed[ModState])(
     tmpDir: F[Path]) = {
-    mods(mState.key)
+    mods(mState.key)._2
       .filterProvide {
         case Keyed(key, Content.Component) if filter(key) => true
         case _ => false
@@ -67,7 +77,7 @@ class LocalMods[F[_]: MonadState[?[_], RepoState]: Filesystem: TempFolder](
 
   private def install(key: Key) = runTmp[F, Unit] { tmpDir =>
     for {
-      rState <- stateM.get
+      rState <- state
       (i, mState) = rState.at(key)
       conflicts = !rState.hasConflicts(_: Path, i)
       changes <- prepareFiles(mState.get.contentEnabled)(mState)(tmpDir)
@@ -78,12 +88,12 @@ class LocalMods[F[_]: MonadState[?[_], RepoState]: Filesystem: TempFolder](
 
   private def uninstall(key: Key) = runTmp[F, Unit] { tmpDir =>
     for {
-      rState <- stateM.get
+      rState <- state
       (i, mState) = rState.at(key)
       targets = rState.recoveryIndex(_: Path, i)
       changes <- prepareFiles(mState.get.contentEnabled)(mState)(tmpDir) >>= { rmFiles compose collapse }
-      newState = modAt(i).modify(_.onResolve(changes, installed = false))(rState)
-      _ <- stateM.put(newState)
+      _ <- stateM.modify(modAt(i).modify(_.onResolve(changes, installed = false)))
+      newState <- state
       _ <- changes
         .foldMap { case (k, to) =>
           targets(to).foldMap(j => Map(j -> Set(k)))
@@ -96,4 +106,26 @@ class LocalMods[F[_]: MonadState[?[_], RepoState]: Filesystem: TempFolder](
         }
     } yield ()
   }
+
+  override def remove(key: Key) = for {
+    _ <- update(key, Deltas.OfMod(installed = Some(false)))
+    _ <- stateM.modify(LocalMods.State.repo.modify(_.remove(key)))
+  } yield ()
+
+  override def liftFile(p: Path) = {
+    val result = for {
+      _ <- OptionT(tryAsMod(p))
+      target = contentRoot / p.name
+      _ <- exists(target).ifM(none.point[F], some(()).point[F]).pipe(OptionT(_))
+      _ <- copy(p, target).liftM[OptionT]
+      mod <- OptionT(tryAsMod(target))
+      state <- runTmp[F, ModState](initMod(mod)).liftM[OptionT]
+      keyed = Keyed(Key(p.name), state)
+      // TODO - store state
+    } yield state
+  }
+}
+
+object LocalMods {
+  @Lenses case class State[F](repo: RepoState, mods: Map[Key, (Path, Mod[F])])
 }
