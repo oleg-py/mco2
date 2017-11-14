@@ -36,6 +36,8 @@ import monocle.macros.Lenses
     orderedMods.indexed.find(_._2.key == key)
       .err(s"Invariant violation at $key")
 
+  def add(mod: Keyed[ModState]): RepoState = copy(orderedMods :+ mod)
+
   def remove(key: Key): RepoState =
     copy(orderedMods = orderedMods.filter(_.key != key))
 }

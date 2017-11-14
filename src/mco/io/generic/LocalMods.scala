@@ -126,8 +126,12 @@ class LocalMods[F[_]: Monad: TempOps](
       _ <- copy(p, target).liftM[OptionT]
       mod <- OptionT(tryAsMod(target))
       state <- runTmp[F, ModState](initMod(mod)).liftM[OptionT]
-      keyed = Keyed(Key(p.name), state)
-      // TODO - store state
+      key = Key(p.name)
+      keyed = Keyed(key, state)
+      _ <- (repoState ~= { _ add keyed }).liftM[OptionT]
+      _ <- (mods ~= { _ updated (key, (target, mod))}).liftM[OptionT]
     } yield state
+
+    result.run
   }
 }
