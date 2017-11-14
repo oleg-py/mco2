@@ -13,13 +13,12 @@ import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import TempOps._
 import Filesystem._
-import mco.io.state.initMod
+import mco.io.state.{Hashing, initMod}
 import monocle.function.Index.index
-import monocle.macros.Lenses
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: Monad: TempOps](
+class LocalMods[F[_]: Monad: TempOps: Hashing](
   contentRoot: Path,
   repoState: Var[F, RepoState],
   mods: Var[F, Map[Key, (Path, Mod[F])]],
@@ -122,7 +121,7 @@ class LocalMods[F[_]: Monad: TempOps](
     val result = for {
       _ <- OptionT(tryAsMod(p))
       target = contentRoot / p.name
-      _ <- exists(target).ifM(none.point[F], some(()).point[F]).pipe(OptionT(_))
+      _ <- exists(target).ifM(none[Unit].point[F], some(()).point[F]).pipe(OptionT(_))
       _ <- copy(p, target).liftM[OptionT]
       mod <- OptionT(tryAsMod(target))
       state <- runTmp[F, ModState](initMod(mod)).liftM[OptionT]

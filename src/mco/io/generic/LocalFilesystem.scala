@@ -12,9 +12,9 @@ import mco.util.syntax.any._
 import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
 
-trait LocalFilesystem[F[_]]
-  extends Filesystem[F] with Capture[F]
-{
+class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
+  val capture = implicitly[Capture[F]]
+
   private def noWinRoot(path: Path): Unit = {
     if (PlatformUtil.isWindows && path == Path.root) {
       throw new IOException("Unsupported operation at (virtual) root path")
