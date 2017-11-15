@@ -8,14 +8,12 @@ import mco.data.Path
 import mco.util.Capture
 import better.files._
 
-class SerializedVar[F[_]: Apply, A <: Serializable](
+class SerializedVar[F[_]: Apply: Capture, A <: Serializable](
   target: Path,
   underlying: Var[F, A]
-)(
-  implicit capture: Capture[F]
 ) extends Var[F, A] {
-  override def apply() = underlying()
-  override def :=(a: A) = capture {
+  override def apply(): F[A] = underlying()
+  override def :=(a: A): F[Unit] = Capture {
     File(target.asString).writeSerialized(a)
   } *> { underlying := a }
 }
@@ -26,10 +24,9 @@ object SerializedVar {
     initial: F[A],
     underlying: A => Var[F, A]
   ): F[Var[F, A]] = {
-    val capture = implicitly[Capture[F]]
-    capture {
+    Capture {
       val file = File(target.asString)
-      if (file.exists) capture { file.readDeserialized[A] }
+      if (file.exists) Capture { file.readDeserialized[A] }
       else initial
     }
       .join

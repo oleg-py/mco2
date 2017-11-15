@@ -13,15 +13,13 @@ import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
 
 class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
-  val capture = implicitly[Capture[F]]
-
   private def noWinRoot(path: Path): Unit = {
     if (PlatformUtil.isWindows && path == Path.root) {
       throw new IOException("Unsupported operation at (virtual) root path")
     }
   }
 
-  final def childrenOf(path: Path) = capture {
+  final def childrenOf(path: Path) = Capture {
     val src =
       if (path == Path.root && PlatformUtil.isWindows) File.roots
       else File(path.asString).children
@@ -31,11 +29,11 @@ class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
       .toStream
   }
 
-  final def getBytes(path: Path) = capture {
+  final def getBytes(path: Path) = Capture {
     ImmutableArray.fromArray(File(path.asString).byteArray)
   }
 
-  final def setBytes(path: Path, cnt: ImmutableArray[Byte]) = capture {
+  final def setBytes(path: Path, cnt: ImmutableArray[Byte]) = Capture {
     File(path.asString)
       .tap(_.parent.createDirectories())
       .touch()
@@ -43,7 +41,7 @@ class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
     ()
   }
 
-  final def mkDir(path: Path) = capture {
+  final def mkDir(path: Path) = Capture {
     File(path.asString)
       .tap { f =>
         if (f.exists) throw new FileAlreadyExistsException(path.asString)
@@ -52,7 +50,7 @@ class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
     ()
   }
 
-  private def noCollision(source: Path, dest: Path, op: (File, File) => Any) = capture {
+  private def noCollision(source: Path, dest: Path, op: (File, File) => Any) = Capture {
     noWinRoot(source)
     noWinRoot(dest)
     val (from, to) = (File(source.asString), File(dest.asString))
@@ -70,22 +68,22 @@ class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
     ()
   }
 
-  final def copy(source: Path, dest: Path) =
+  final def copy(source: Path, dest: Path): F[Unit] =
     noCollision(source, dest, _.copyTo(_, overwrite = true))
 
-  final def move(source: Path, dest: Path) =
+  final def move(source: Path, dest: Path): F[Unit] =
     noCollision(source, dest, (a, b) => {
       a.copyTo(b, overwrite = true)
       a.delete()
     })
 
-  final def rmTree(path: Path) = capture {
+  final def rmTree(path: Path) = Capture {
     noWinRoot(path)
     File(path.asString).delete()
     ()
   }
 
-  final def stat(path: Path) = capture {
+  final def stat(path: Path) = Capture {
     noWinRoot(path)
     Try(File(path.asString).attributes).toOption
   }

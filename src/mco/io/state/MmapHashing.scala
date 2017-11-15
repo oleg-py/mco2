@@ -6,8 +6,7 @@ import mco.util.Capture
 import net.openhft.hashing.LongHashFunction
 
 class MmapHashing[F[_]: Capture] extends Hashing[F] {
-  private val capture = implicitly[Capture[F]]
-  final protected def hashFile(p: Path) = capture {
+  final protected def hashFile(p: Path) = Capture {
     val file = File(p.asString)
     for (ch <- file.fileChannel) yield {
       val mm = ch.toMappedByteBuffer
