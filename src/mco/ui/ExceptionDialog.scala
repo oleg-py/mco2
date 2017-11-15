@@ -6,9 +6,10 @@ import scalafx.scene.control._
 import mco.ui.props._
 import java.io.{PrintWriter, StringWriter}
 
+//noinspection ConvertibleToMethodValue
 object ExceptionDialog {
-  def apply(s: Prop[Option[Throwable]], trigger: Trigger) = {
-    def show() = s().foreach(display(trigger.closeErrorDialog _))
+  def apply(s: Prop[Option[Throwable]])(implicit dispatch: Dispatch) = {
+    def show() = s().foreach(display(dispatch.closeErrorDialog _))
     show()
     s.onChange { show() }
   }

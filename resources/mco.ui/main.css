@@ -1,0 +1,17 @@
+.root {
+    -fx-focus-color: -fx-outer-border;
+    -fx-faint-focus-color: transparent;
+}
+
+.table-row-cell:filled:selected {
+    -fx-background-color: derive(#44B, +80%);
+}
+
+.button:default {
+    -fx-font-weight: bold;
+    -fx-base: #44B
+}
+
+.table-row-cell:filled .box {
+    -fx-background-color: derive(#44B, +70%);
+}

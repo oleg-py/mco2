@@ -4,12 +4,10 @@ import scalafx.beans.binding.Bindings
 import scalafx.beans.property.ObjectProperty
 import scalaz._
 
-import mco.util.PropsImplementation
-
 import javafx.beans.{InvalidationListener, Observable}
 
 
-package object props extends PropsImplementation {
+package object props extends PropsImplementation with PropsSyntax {
   implicit val propInstances: Monad[Prop] with Comonad[Prop] with Foldable1[Prop] =
     new Monad[Prop] with Comonad[Prop] with Foldable1[Prop] {
       override def copoint[A](p: Prop[A]) = p.value
@@ -57,8 +55,4 @@ package object props extends PropsImplementation {
         Bindings.createObjectBinding(() => f(sfa.value, sfb.value), sfa, sfb)
       }
     }
-
-  implicit class PropOps[A] (val p: Prop[A]) {
-    def asProp = p
-  }
 }

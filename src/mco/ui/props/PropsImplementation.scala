@@ -1,4 +1,4 @@
-package mco.util
+package mco.ui.props
 
 import scalafx.beans.value.ObservableValue
 

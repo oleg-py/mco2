@@ -19,16 +19,16 @@ object Runner extends TaskApp {
       state <- algebra.state
     } yield {
       implicit val mods: Mods[Coeval] = algebra
-      new Trigger.Effectful[Coeval](f => f(), ObjectProperty(UiState(None)))
+      new Dispatch.Effectful[Coeval](f => f(), ObjectProperty(UiState(None)))
     }
 
-    val trigger = exec.run.fold ({
+    val dispatch = exec.run.fold ({
       case NonFatal(ex) =>
         ex.printStackTrace()
         implicit val dummyAlgebra = new DummyMods[Coeval]
-        new Trigger.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex))))
+        new Dispatch.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex))))
     }, x => x)
 
-    new MainWindow(trigger.state, trigger).main(args)
+    new MainWindow(dispatch.state)(dispatch).main(args)
   }
 }
