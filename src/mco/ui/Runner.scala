@@ -2,14 +2,12 @@ package mco.ui
 
 import better.files._
 import mco.data.{Key, Path}
-import mco.io.generic.PrototypeImplementation
+import mco.io.generic.{DummyMods, PrototypeImplementation}
 import mco.util.Capture
 import monix.eval.{Coeval, Task, TaskApp}
 import monix.scalaz._
 import Capture.coeval._
-import mco.core.{Deltas, Mods}
-import mco.core.state.{ModState, RepoState}
-
+import mco.core.Mods
 import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
@@ -27,7 +25,7 @@ object Runner extends TaskApp {
     val trigger = exec.run.fold ({
       case NonFatal(ex) =>
         ex.printStackTrace()
-        implicit val dummyAlgebra = new PrototypeImplementation.Dummy[Coeval]
+        implicit val dummyAlgebra = new DummyMods[Coeval]
         new Trigger.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex.getMessage))))
     }, x => x)
 

@@ -12,13 +12,6 @@ import Filesystem._
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
-  class Dummy[F[_]: Capture] extends Mods[F] {
-    override def state: F[RepoState] = Capture { RepoState(Vector()) }
-    override def update(key: Key, diff: Deltas.OfMod): F[Unit] = Capture { () }
-    override def remove(key: Key): F[Unit] = Capture { () }
-    override def liftFile(p: Path): F[Option[ModState]] = Capture { None }
-  }
-
   def algebra[F[_]: Capture: Monad](root: Path): F[Mods[F]] = {
     val serialized = "mco2.dat"
     val repoDir = "mods"
