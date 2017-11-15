@@ -11,22 +11,19 @@ import mco.core.state._
 import mco.data._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
-import TempOps._
 import Filesystem._
-import mco.io.state.{Hashing, initMod}
+import mco.io.state.initMod
 import monocle.function.Index.index
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: Monad: TempOps: Hashing](
+class LocalMods[F[_]: Monad: Filesystem](
   contentRoot: Path,
   repoState: Var[F, RepoState],
   mods: Var[F, Map[Key, (Path, Mod[F])]],
   tryAsMod: Path => F[Option[Mod[F]]],
   resolver: NameResolver[F]
 ) extends Mods[F] {
-  private implicit val filesystemF: Filesystem[F] = TempOps[F].filesystemF
-
   override def state: F[RepoState] = repoState()
 
   override def update(key: Key, diff: Deltas.OfMod): F[Unit] = {

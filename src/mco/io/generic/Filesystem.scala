@@ -1,10 +1,13 @@
 package mco.io.generic
 
 import scalaz._
-import scalaz.syntax.functor._
+import std.stream._
+import std.anyVal._
+import std.tuple._
 
 import com.olegpy.forwarders
 import mco.data.Path
+import mco.util.syntax.fp._
 
 import java.nio.file.attribute.BasicFileAttributes
 
@@ -20,6 +23,16 @@ import java.nio.file.attribute.BasicFileAttributes
 
   def stat(path: Path): F[Option[BasicFileAttributes]]
 
+  def runTmp[A](f: F[Path] => F[A]): F[A]
+
+  protected def hashFile(p: Path): F[(Long, Long)]
+
+  final def hashAt(p: Path)(implicit F: Filesystem[F], M: Monad[F]): F[(Long, Long)] = {
+    def dirHash = childrenOf(p) >>= { s => s.foldMapM(hashAt) }
+    def getHash = isDirectory(p).ifM(dirHash, hashFile(p))
+    exists(p).ifM(getHash, (0L, 0L).point[F])
+  }
+
   final def exists(path: Path)(implicit F: Functor[F]): F[Boolean] = {
     stat(path).map(_.isDefined)
   }
@@ -31,7 +44,7 @@ import java.nio.file.attribute.BasicFileAttributes
     stat(path).map(_.fold(false)(_.isDirectory))
 
   final def ensureDir(path: Path)(implicit F: Monad[F]): F[Unit] =
-    F.ifM(isDirectory(path), F.point(()), mkDir(path))
+    isDirectory(path).ifM(F.point(()), mkDir(path))
 }
 
 

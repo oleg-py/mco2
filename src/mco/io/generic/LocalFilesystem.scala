@@ -3,11 +3,12 @@ package mco.io.generic
 import scala.util.Try
 import scalaz.ImmutableArray
 
-import better.files.File
+import better.files._
 import com.sun.javafx.PlatformUtil
 import mco.data.Path
 import mco.util.Capture
 import mco.util.syntax.any._
+import net.openhft.hashing.LongHashFunction
 
 import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
@@ -86,5 +87,22 @@ class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
   final def stat(path: Path) = Capture {
     noWinRoot(path)
     Try(File(path.asString).attributes).toOption
+  }
+
+  final def runTmp[A](f: F[Path] => F[A]) = {
+    val file = Capture {
+      Path(File.newTemporaryDirectory().pathAsString)
+    }
+    f(file) // TODO: resource cleanup is required there
+  }
+
+  final protected def hashFile(p: Path) = Capture {
+    val file = File(p.asString)
+    for (ch <- file.fileChannel) yield {
+      val mm = ch.toMappedByteBuffer
+      val hi = LongHashFunction.xx(0L).hashBytes(mm)
+      val lo = LongHashFunction.farmNa(0L).hashBytes(mm)
+      (hi, lo)
+    }
   }
 }

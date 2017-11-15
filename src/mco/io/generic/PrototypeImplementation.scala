@@ -5,10 +5,10 @@ import std.vector._
 import mco.core.{Deltas, Mods}
 import mco.core.state.{ModState, RepoState}
 import mco.data.{Key, Keyed, Path}
-import mco.io.state.{MmapHashing, MutableVar, SerializedVar, initMod}
+import mco.io.state.{MutableVar, SerializedVar, initMod}
 import mco.util.Capture
 import mco.util.syntax.fp._
-import TempOps._
+import Filesystem._
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
@@ -23,14 +23,12 @@ object PrototypeImplementation {
     val serialized = "mco2.dat"
     val repoDir = "mods"
     val target = "testTarget"
-    implicit val hashing = new MmapHashing[F]
-    implicit val tempOps = new LocalTempOps[F]
-    implicit val filesystem = tempOps.filesystemF
+    implicit val filesystem = new LocalFilesystem[F]
     val typer = new SimpleModTypes
 
     val localModsF = for {
-      _ <- Filesystem.ensureDir(root / repoDir)
-      _ <- Filesystem.ensureDir(root / target)
+      _ <- ensureDir(root / repoDir)
+      _ <- ensureDir(root / target)
       mods <- typer.allIn(root / repoDir)
       modMap = mods.map { case t @ (path, _) => Key(path.asString) -> t }.toMap
       getState = mods.traverse { case (path, mod) =>
