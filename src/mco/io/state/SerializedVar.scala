@@ -8,6 +8,7 @@ import mco.data.Path
 import mco.util.Capture
 import better.files._
 
+// TODO - use Filesystem, not Capture
 class SerializedVar[F[_]: Apply: Capture, A <: Serializable](
   target: Path,
   underlying: Var[F, A]
