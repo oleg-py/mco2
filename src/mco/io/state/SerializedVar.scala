@@ -3,10 +3,10 @@ package mco.io.state
 import scalaz._
 import scalaz.syntax.bind._
 
+import better.files._
 import mco.core.state.Var
 import mco.data.Path
 import mco.util.Capture
-import better.files._
 
 // TODO - use Filesystem, not Capture
 class SerializedVar[F[_]: Apply: Capture, A <: Serializable](
@@ -32,6 +32,12 @@ object SerializedVar {
     }
       .join
       .map(underlying)
+      .>>! { var0 =>
+        for {
+          value <- var0()
+          _ <- Capture { File(target.asString).writeSerialized(value) }
+        } yield ()
+      }
       .map(new SerializedVar(target, _))
       .widen
   }
