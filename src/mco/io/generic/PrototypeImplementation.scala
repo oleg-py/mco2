@@ -2,8 +2,7 @@ package mco.io.generic
 
 import scalaz._
 import std.vector._
-
-import mco.core.Mods
+import mco.core.{Deltas, Mods}
 import mco.core.state.{ModState, RepoState}
 import mco.data.{Key, Keyed, Path}
 import mco.io.state.{MmapHashing, MutableVar, SerializedVar, initMod}
@@ -13,6 +12,13 @@ import TempOps._
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
+  class Dummy[F[_]: Capture] extends Mods[F] {
+    override def state: F[RepoState] = Capture { RepoState(Vector()) }
+    override def update(key: Key, diff: Deltas.OfMod): F[Unit] = Capture { () }
+    override def remove(key: Key): F[Unit] = Capture { () }
+    override def liftFile(p: Path): F[Option[ModState]] = Capture { None }
+  }
+
   def algebra[F[_]: Capture: Monad](root: Path): F[Mods[F]] = {
     val serialized = "mco2.dat"
     val repoDir = "mods"
@@ -23,6 +29,8 @@ object PrototypeImplementation {
     val typer = new SimpleModTypes
 
     val localModsF = for {
+      _ <- Filesystem.ensureDir(root / repoDir)
+      _ <- Filesystem.ensureDir(root / target)
       mods <- typer.allIn(root / repoDir)
       modMap = mods.map { case t @ (path, _) => Key(path.asString) -> t }.toMap
       getState = mods.traverse { case (path, mod) =>

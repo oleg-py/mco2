@@ -29,6 +29,9 @@ import java.nio.file.attribute.BasicFileAttributes
 
   final def isDirectory(path: Path)(implicit F: Functor[F])   : F[Boolean] =
     stat(path).map(_.fold(false)(_.isDirectory))
+
+  final def ensureDir(path: Path)(implicit F: Monad[F]): F[Unit] =
+    F.ifM(isDirectory(path), F.point(()), mkDir(path))
 }
 
 

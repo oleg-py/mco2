@@ -26,12 +26,8 @@ object Runner extends TaskApp {
 
     val trigger = exec.run.fold ({
       case NonFatal(ex) =>
-        implicit val dummyAlgebra: Mods[Coeval] = new Mods[Coeval] {
-          override def update(key: Key, diff: Deltas.OfMod) = Coeval(())
-          override def remove(key: Key) = Coeval(())
-          override def liftFile(p: Path) = Coeval(None)
-          override def state = Coeval(RepoState(Vector()))
-        }
+        ex.printStackTrace()
+        implicit val dummyAlgebra = new PrototypeImplementation.Dummy[Coeval]
         new Trigger.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex.getMessage))))
     }, x => x)
 
