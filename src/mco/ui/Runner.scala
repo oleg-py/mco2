@@ -26,7 +26,7 @@ object Runner extends TaskApp {
       case NonFatal(ex) =>
         ex.printStackTrace()
         implicit val dummyAlgebra = new DummyMods[Coeval]
-        new Trigger.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex.getMessage))))
+        new Trigger.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex))))
     }, x => x)
 
     new MainWindow(trigger.state, trigger).main(args)

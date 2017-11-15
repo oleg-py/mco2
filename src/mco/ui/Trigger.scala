@@ -13,6 +13,7 @@ trait Trigger {
   def update(key: Key, diff: Deltas.OfMod): Unit
   def remove(key: Key): Unit
   def liftFile(p: Path): Unit
+  def closeErrorDialog(): Unit
 }
 
 object Trigger {
@@ -44,5 +45,8 @@ object Trigger {
       syncChanges(Mods.liftFile(p)) { (_, rs, us) =>
         us
       }
+
+    override def closeErrorDialog(): Unit =
+      state() = state().clearError
   }
 }
