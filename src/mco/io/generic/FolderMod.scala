@@ -17,6 +17,8 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
 {
   import FolderMod._
 
+  override val label: String = self.name
+
   private def toWriter[A](fa: F[A]): WriterT[F, DataM, A] =
     WriterT.put(fa)(mzero[DataM])
 

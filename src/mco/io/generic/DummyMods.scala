@@ -10,7 +10,7 @@ import mco.data.{Key, Path}
 
 
 class DummyMods[F[_]: Applicative] extends Mods[F] {
-  override def state = RepoState(Vector()).point[F]
+  override def state = RepoState(Vector(), Map()).point[F]
   override def update(key: Key, diff: Deltas.OfMod) = ().point[F]
   override def remove(key: Key) = ().point[F]
   override def liftFile(p: Path) = none[ModState].point[F]

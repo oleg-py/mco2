@@ -11,6 +11,7 @@ final class FileMod[F[_]: Filesystem: Applicative](path: Path)
   extends Mod[F]
 {
   private val key = Key(path.name)
+  val label = path.name
 
   def list: F[Vector[Keyed[Content]]] =
     Vector(Content.Component(key)).point[F].widen

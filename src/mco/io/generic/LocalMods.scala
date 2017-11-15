@@ -124,7 +124,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       state <- runTmp[F, ModState](initMod(mod)).liftM[OptionT]
       key = Key(p.name)
       keyed = Keyed(key, state)
-      _ <- (repoState ~= { _ add keyed }).liftM[OptionT]
+      _ <- (repoState ~= { _ add (keyed, mod.label) }).liftM[OptionT]
       _ <- (mods ~= { _ updated (key, (target, mod))}).liftM[OptionT]
     } yield state
 

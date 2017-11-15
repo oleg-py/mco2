@@ -7,6 +7,7 @@ import mco.util.syntax.fp._
 
 
 trait Mod[F[_]] {
+  val label: String
   def list: F[Vector[Keyed[Content]]]
   def provide(contents: Vector[Key]): Path.Temp[F, Map[Key, Path]]
 

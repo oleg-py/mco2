@@ -31,9 +31,10 @@ object PrototypeImplementation {
             .map(Keyed(Key(path.asString), _))
         }
       }
+      labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
       repoVar <- SerializedVar[F, RepoState](
         root / serialized,
-        getState.map(RepoState(_)),
+        getState.map(RepoState(_, labels)),
         new MutableVar(_)
       )
     } yield new LocalMods(

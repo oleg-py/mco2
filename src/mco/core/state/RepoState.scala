@@ -13,7 +13,8 @@ import monocle.macros.Lenses
 
 
 @Lenses case class RepoState (
-  orderedMods: Vector[Keyed[ModState]]
+  orderedMods: Vector[Keyed[ModState]],
+  labels: Map[Key, String]
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
     orderedMods.indexed.foldMap { case (i, Keyed(_, mod)) =>
@@ -36,7 +37,8 @@ import monocle.macros.Lenses
     orderedMods.indexed.find(_._2.key == key)
       .err(s"Invariant violation at $key")
 
-  def add(mod: Keyed[ModState]): RepoState = copy(orderedMods :+ mod)
+  def add(mod: Keyed[ModState], label: String): RepoState =
+    copy(orderedMods :+ mod, labels.updated(mod.key, label))
 
   def remove(key: Key): RepoState =
     copy(orderedMods = orderedMods.filter(_.key != key))
