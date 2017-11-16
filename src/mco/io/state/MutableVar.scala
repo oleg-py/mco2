@@ -1,6 +1,6 @@
 package mco.io.state
 
-import mco.core.state.Var
+import mco.core.Var
 import mco.util.Capture
 
 

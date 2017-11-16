@@ -8,7 +8,7 @@ import std.option._
 import syntax.id._
 import syntax.std.map._
 
-import mco.core.state.Var
+import mco.core.Var
 import mco.data.Path
 import mco.io.generic.Filesystem
 import mco.stubs.Cell._

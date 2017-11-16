@@ -4,7 +4,7 @@ import scalaz._
 import scalaz.syntax.bind._
 
 import better.files._
-import mco.core.state.Var
+import mco.core.Var
 import mco.data.Path
 import mco.util.Capture
 
