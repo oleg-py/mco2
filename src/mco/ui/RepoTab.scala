@@ -13,7 +13,7 @@ class RepoTab(state: Prop[UiState])(implicit dispatch: Dispatch) extends Tab {
     padding = Insets(10)
 
     private val mainView = Seq(
-//      RepoPackagesTable(state),
+      new RepoPackagesTable(state.map(_.repoState)),
       new VBox {
         padding = Insets(0, 0, 0, 10)
         prefWidth <== (contentRoot.width / 3)
