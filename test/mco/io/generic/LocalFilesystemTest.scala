@@ -13,7 +13,10 @@ import mco.util.syntax.any._
 
 
 class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelpers {
-  implicit val impureFs: Filesystem[Id] = new LocalFilesystem[Id] with Capture.Impure
+  implicit val captureImpure: Capture[Id] = new Capture[Id] {
+    override def apply[A](a: => A): Id[A] = a
+  }
+  implicit val impureFs: Filesystem[Id] = new LocalFilesystem[Id]
 
   // --------------------------------------------------------------------------
 
@@ -340,6 +343,33 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
       rmTree(p)
     }
   }
+
+  // --------------------------------------------------------------------------
+
+  behavior of "LocalFilesystem#hashAt on a file"
+
+  it should "hash it contents" in { dirs =>
+    hashAt(dirs.src / "test_folder/file1") shouldEqual helloHash
+  }
+
+  it should "hash independently of file location" in { dirs =>
+    val target = dirs.src / "test_file"
+    target.asFile.write("Hello")
+    hashAt(target) shouldEqual helloHash
+  }
+
+  // --------------------------------------------------------------------------
+
+  behavior of "LocalFilesystem#hashAt on a directory"
+
+  it should "generate meaningful hash" in { dirs =>
+    hashAt(dirs.src) shouldEqual testDirHash
+  }
+
+  // --------------------------------------------------------------------------
+
+  val helloHash   = ( 753694413698530628L, 1860348619331993311L)
+  val testDirHash = (3969179940749501790L, 1702180032275553555L)
 
   // --------------------------------------------------------------------------
 

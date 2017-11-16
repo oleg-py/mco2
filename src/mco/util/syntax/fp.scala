@@ -1,5 +1,6 @@
 package mco.util.syntax
 
+import scalaz.std.OptionFunctions
 import scalaz.syntax._
 import std.{ToOptionIdOps, ToOptionOps}
 

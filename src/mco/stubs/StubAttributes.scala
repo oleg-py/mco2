@@ -1,12 +1,12 @@
 package mco.stubs
 
-import Cell._
 import mco.data.Path
+import mco.stubs.Cell._
 
 import java.nio.file.attribute.{BasicFileAttributes, FileTime}
 
 
-case class StubAttributes(path: Path, obj: Cell) extends BasicFileAttributes {
+case class StubAttributes (path: Path, obj: Cell) extends BasicFileAttributes {
   private val stubTime = FileTime.fromMillis(1L)
   override def lastModifiedTime(): FileTime = stubTime
   override def creationTime(): FileTime = stubTime
