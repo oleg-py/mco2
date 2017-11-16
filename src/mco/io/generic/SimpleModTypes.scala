@@ -10,9 +10,13 @@ import Filesystem._
 
 class SimpleModTypes[F[_]: Filesystem: Monad] extends (Path => F[Option[Mod[F]]]) {
   override def apply(v1: Path) =
-    for (isDir <- isDirectory(v1)) yield
-      if (isDir) Some(new FolderMod[F](v1))
-      else Some(new FileMod[F](v1))
+    for {
+      ok <- exists(v1)
+      isDir <- isDirectory(v1)
+    } yield if (isDir) Some(new FolderMod[F](v1))
+            else if (ok) Some(new FileMod[F](v1))
+            else None
+
 
   def allIn(path: Path): F[Vector[(Path, Mod[F])]] =
     for {
