@@ -1,11 +1,11 @@
-package mco.ui
-
-import javafx.scene.image.{Image, ImageView}
+package mco.ui.components
 
 import scalafx.Includes._
 import scalafx.beans.property.{BooleanProperty, ObjectProperty}
 import scalafx.delegate.SFXDelegate
 import scalafx.scene.layout.Region
+
+import javafx.scene.image.{Image, ImageView}
 
 /**
  * An `ImageView` that will attempt to fit the width or height of the window

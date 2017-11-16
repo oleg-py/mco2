@@ -1,5 +1,4 @@
-package mco.ui
-
+package mco.ui.components
 
 import scalafx.Includes._
 import scalafx.scene.Node

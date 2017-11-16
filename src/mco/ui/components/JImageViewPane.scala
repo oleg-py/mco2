@@ -1,4 +1,4 @@
-package mco.ui
+package mco.ui.components
 
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.{ChangeListener, ObservableValue}

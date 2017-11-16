@@ -11,6 +11,7 @@ import scalafx.scene.layout.Priority
 import mco.core.state.{ModState, RepoState}
 import mco.data.{Key, Keyed}
 import mco.ui.props._
+import mco.ui.components.DropFilesReceiver
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
 

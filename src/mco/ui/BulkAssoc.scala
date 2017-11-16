@@ -15,6 +15,7 @@ import scalaz.std.option._
 import better.files.File
 import mco.data.Path
 import mco.ui.props._
+import mco.ui.components.ImageViewPane
 import mco.util.syntax.fp._
 
 import javafx.scene.control.TableColumn.CellEditEvent
