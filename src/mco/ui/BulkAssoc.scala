@@ -13,6 +13,7 @@ import scalaz.std.vector._
 import scalaz.std.option._
 
 import better.files.File
+import mco.data.Path
 import mco.ui.props._
 import mco.util.syntax.fp._
 
@@ -83,10 +84,7 @@ class BulkAssoc(state: Prop[UiState.PendingAdds])(implicit dispatch: Dispatch) e
       }
     )
 
-    private def lastPathSegment(s: String) = {
-      val m = Math.max(s.lastIndexOf('/'), s.lastIndexOf('\\'))
-      if (m == -1) s else s.drop(m + 1)
-    }
+    private def lastPathSegment(s: String) = Path(s).name
 
     private val pathToString = toStringConverter[Option[String]](_.fold("<none>")(lastPathSegment))
   }
