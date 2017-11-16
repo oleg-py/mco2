@@ -1,5 +1,6 @@
 package mco.ui
 
+import mco.core.state.RepoState
 import mco.ui.UiState.PendingAdds
 
 
@@ -16,4 +17,10 @@ object UiState {
     images: Vector[String] = Vector(),
     assoc: Map[String, Option[String]] = Map()
   )
+
+  def startupError(throwable: Throwable) =
+    UiState(None, Some(throwable))
+
+  def initial(repoState: RepoState) =
+    UiState(None, None)
 }

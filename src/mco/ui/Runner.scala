@@ -19,14 +19,14 @@ object Runner extends TaskApp {
       state <- algebra.state
     } yield {
       implicit val mods: Mods[Coeval] = algebra
-      new Dispatch.Effectful[Coeval](f => f(), ObjectProperty(UiState(None)))
+      new Dispatch.Effectful[Coeval](f => f(), ObjectProperty(UiState.initial(state)))
     }
 
     val dispatch = exec.run.fold ({
       case NonFatal(ex) =>
         ex.printStackTrace()
         implicit val dummyAlgebra = new DummyMods[Coeval]
-        new Dispatch.Effectful[Coeval](_ => (), ObjectProperty(UiState(Some(ex))))
+        new Dispatch.Effectful[Coeval](_ => (), ObjectProperty(UiState.startupError(ex)))
     }, x => x)
 
     new MainWindow(dispatch.state)(dispatch).main(args)
