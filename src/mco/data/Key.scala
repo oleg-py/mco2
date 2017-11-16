@@ -3,7 +3,13 @@ package mco.data
 import scalaz._
 import scalaz.std.string._
 
-// TODO: Unwrapping means there's some semantic meaning to keys. That's horrible
+
+/**
+ * Class used to represent unique map keys without particular
+ * semantic value
+ * @param unwrap internal string representation
+ */
+// TODO: Unwrapping means there's some semantic meaning to keys. Should be removed
 case class Key(unwrap: String) extends AnyVal
 
 object Key {

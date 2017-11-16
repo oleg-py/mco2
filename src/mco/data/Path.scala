@@ -3,6 +3,16 @@ package mco.data
 import scala.annotation.tailrec
 
 
+/**
+ * Class representing filesystem paths in a pure fashion.
+ *
+ * Being a pure implementation, this class does not disambiguate
+ * between "/" and "\" separator, as well as Windows or Linux
+ * roots. It's suggested that interpreter provides a "virtual"
+ * path on Windows at "/" containing FS roots.
+ *
+ * @param segments parts this path consists of, without ".", ".." and slashes
+ */
 final class Path private (val segments: Vector[String]) {
   def name: String = segments.lastOption.getOrElse("")
   def extension: String = name.dropWhile(_ == '.').dropWhile(_ != '.')
@@ -40,6 +50,9 @@ final class Path private (val segments: Vector[String]) {
   override def toString = s"Path($asString)"
 }
 
+/**
+ * Companion object to the Path class
+ */
 object Path {
   type Temp[F[_], A] = F[Path] => F[A]
 
