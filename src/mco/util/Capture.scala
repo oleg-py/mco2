@@ -1,8 +1,5 @@
 package mco.util
 
-import scalaz._
-import Id._
-
 import monix.eval.Coeval
 
 
@@ -14,14 +11,21 @@ import monix.eval.Coeval
  */
 trait Capture[F[_]] {
   def apply[A](a: => A): F[A]
-  final def todo[A]: F[A] = apply { throw new NotImplementedError() }
 }
 
 /**
  * Basic implementations for IO-like types
  */
 object Capture {
+  /**
+   * Enables syntax sugar of form `Capture { ??? }` whenever
+   * implicit Capture instance is in scope
+   */
   def apply[F[_], A](a: => A)(implicit C: Capture[F]) = C { a }
+
+  /**
+   * Implementation of Capture for monix.eval.Coeval
+   */
   object coeval {
     implicit val captureOfCoeval: Capture[Coeval] = new Capture[Coeval] {
       override def apply[A](a: => A): Coeval[A] = Coeval(a)
