@@ -10,10 +10,14 @@ import scalaz.Monad
 import scalaz.syntax.monad._
 
 trait Dispatch {
-  def setLabel(key: Key, label: String): Unit = ???
+  final def setLabel(key: Key, label: String): Unit =
+    update(key, Deltas.OfMod(label = Some(label)))
 
-  def install(key: Key): Unit = ???
-  def uninstall(key: Key): Unit = ???
+  final def install(key: Key): Unit =
+    update(key, Deltas.OfMod(installed = Some(true)))
+
+  final def uninstall(key: Key): Unit =
+    update(key, Deltas.OfMod(installed = Some(false)))
 
   def setActivePackage(key: Key) = ???
   def liftPackages(paths: Vector[String]): Unit = ???

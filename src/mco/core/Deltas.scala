@@ -15,6 +15,7 @@ object Deltas {
   }
 
   case class OfMod(
+    label: Option[String] = None,
     installed: Option[Boolean] = None,
     contents: Map[Key, OfContent] = Map()
   ) {
