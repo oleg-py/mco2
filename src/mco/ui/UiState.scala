@@ -5,9 +5,9 @@ import mco.ui.UiState.PendingAdds
 
 
 case class UiState(
-  repoState: RepoState,
-  pendingAdds: Option[PendingAdds],
-  error: Option[Throwable]
+  repoState: RepoState = RepoState(),
+  pendingAdds: Option[PendingAdds] = None,
+  error: Option[Throwable] = None
 ) {
   def clearError = copy(error = None)
 }
@@ -20,8 +20,8 @@ object UiState {
   )
 
   def startupError(throwable: Throwable) =
-    UiState(RepoState(Vector(), Map()), None, Some(throwable))
+    UiState(error = Some(throwable))
 
   def initial(repoState: RepoState) =
-    UiState(repoState, None, None)
+    UiState(repoState)
 }

@@ -13,8 +13,8 @@ import monocle.macros.Lenses
 
 
 @Lenses case class RepoState (
-  orderedMods: Vector[Keyed[ModState]],
-  labels: Map[Key, String]
+  orderedMods: Vector[Keyed[ModState]] = Vector(),
+  labels: Map[Key, String] = Map()
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
     orderedMods.indexed.foldMap { case (i, Keyed(_, mod)) =>
