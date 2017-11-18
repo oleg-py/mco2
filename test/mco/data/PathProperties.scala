@@ -1,8 +1,6 @@
 package mco.data
 
 import mco.Tests
-import org.scalacheck.Arbitrary
-import org.scalacheck.Arbitrary.{arbitrary => arb}
 
 class PathProperties extends Tests.Prop {
   property("self inverse") {
@@ -48,8 +46,5 @@ class PathProperties extends Tests.Prop {
       Path.normalize(Seq(p.asString)) should be (p.segments)
     }
   }
-
-  implicit val arbitrary: Arbitrary[Path] =
-    Arbitrary(arb[List[String]].map(Path.of))
 
 }

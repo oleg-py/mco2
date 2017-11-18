@@ -2,7 +2,7 @@ package mco.io.generic
 
 import scalaz._
 import std.vector._
-import mco.core.{Deltas, Mods}
+import mco.core.Mods
 import mco.core.state.{ModState, RepoState}
 import mco.data.{Key, Keyed, Path}
 import mco.io.state.{MutableVar, SerializedVar, initMod}

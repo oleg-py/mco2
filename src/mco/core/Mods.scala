@@ -3,7 +3,7 @@ package mco.core
 import scalaz.\/
 
 import com.olegpy.forwarders
-import mco.core.state.{ModState, RepoState}
+import mco.core.state.{Deltas, ModState, RepoState}
 import mco.data.{Key, Keyed, Path}
 
 

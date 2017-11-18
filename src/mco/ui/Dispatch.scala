@@ -1,10 +1,9 @@
 package mco.ui
 
-import mco.core.{Deltas, Mods}
-import mco.core.state.RepoState
+import mco.core.Mods
+import mco.core.state.{Deltas, RepoState}
 import mco.data.{Key, Path}
 import mco.util.Capture
-
 import scalafx.beans.property.ObjectProperty
 import scalaz.Monad
 import scalaz.syntax.monad._
@@ -14,10 +13,10 @@ trait Dispatch {
     update(key, Deltas.OfMod(label = Some(label)))
 
   final def install(key: Key): Unit =
-    update(key, Deltas.OfMod(installed = Some(true)))
+    update(key, Deltas.OfMod(enabled = Some(true)))
 
   final def uninstall(key: Key): Unit =
-    update(key, Deltas.OfMod(installed = Some(false)))
+    update(key, Deltas.OfMod(enabled = Some(false)))
 
   def setActivePackage(key: Key) = ???
   def liftPackages(paths: Vector[String]): Unit = ???

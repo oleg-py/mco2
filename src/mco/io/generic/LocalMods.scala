@@ -106,7 +106,7 @@ class LocalMods[F[_]: Monad: Filesystem](
   }
 
   override def remove(key: Key) = for {
-    _ <- update(key, Deltas.OfMod(installed = Some(false)))
+    _ <- update(key, Deltas.OfMod(enabled = Some(false)))
     _ <- repoState ~= (_.remove(key))
     path <- mods().map(dict => dict(key)._1)
     _ <- rmTree(path)

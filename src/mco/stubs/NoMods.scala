@@ -4,8 +4,8 @@ import scalaz._
 import scalaz.std.option._
 import scalaz.syntax.applicative._
 
-import mco.core.state.{ModState, RepoState}
-import mco.core.{Deltas, Mods}
+import mco.core.state.{Deltas, ModState, RepoState}
+import mco.core.Mods
 import mco.data.{Key, Path}
 
 
