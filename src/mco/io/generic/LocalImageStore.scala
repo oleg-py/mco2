@@ -1,11 +1,15 @@
 package mco.io.generic
 
-import scalaz.Monad
-import scalaz.std.stream._
+import scalaz._
+import std.option._
+import std.stream._
+import syntax.std.map._
 
-import mco.core.ImageStore
+import mco.core.{ImageStore, Var}
 import mco.data.{Key, Path}
+import mco.util.syntax.any._
 import mco.util.syntax.fp._
+import mco.util.misc.{strHashes, nextFreeName}
 import Filesystem._
 
 
@@ -19,25 +23,36 @@ import Filesystem._
  */
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
-  root: Path
+  root: Path,
+  store: Var[F, Map[Key, String]]
 ) extends ImageStore[F] {
-  // TODO - png / jpg separation
-  private def toPath(key: Key) =
-    root / (Path(key.unwrap).segments.mkString("$slash$") ++ ".png")
+  private def mkName(path: Path) =
+    nextFreeName[F](root, path.extension)(strHashes(path.asString))
 
-  override def getImage(key: Key) = {
-    val target = toPath(key)
-    for (children <- childrenOf(root)) yield
-      children.find(_ == target)
-  }
+  override def getImage(key: Key) =
+    for {
+      dict <- store()
+    } yield dict.get(key).map(root / _)
 
   override def putImage(key: Key, path: Option[Path]) =
-    path.cata(copy(_, toPath(key)), rmTree(toPath(key)))
+    for {
+      dict <- store()
+      newName <- path.traverse(mkName)
+      named = path.tuple(newName)
+      _ <- dict.get(key).cata(name => rmTree(root / name), unit.point[F])
+      _ <- named.fold(unit.point[F]) { case (src, target) =>
+        move(src, target)
+      }
+      _ <- store ~= { _.alter(key)(_ => newName.map(_.relStringTo(root))) }
+    } yield ()
 
-  override def stripImages(keys: Vector[Key]) = {
-    childrenOf(root) >>= { _
-      .filterNot(keys.map(toPath).toSet)
-      .traverse_(rmTree(_))
-    }
-  }
+  override def stripImages(keys: Vector[Key]) =
+    for {
+      dict <- store()
+      keySet = keys.toSet
+      (oks, dels) = dict.partition { case (k, _) => keySet(k) }
+      _ <- store := oks
+      _ <- dels.valuesIterator.toStream
+        .traverse { name => rmTree(root / name) }
+    } yield ()
 }
