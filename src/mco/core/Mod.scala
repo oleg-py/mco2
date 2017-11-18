@@ -2,25 +2,28 @@ package mco.core
 
 import scalaz._
 
-import mco.data.{Key, Keyed, Path}
+import mco.data._
 import mco.util.syntax.fp._
-
 
 trait Mod[F[_]] {
   val label: String
   def list: F[Vector[Keyed[Content]]]
-  def provide(contents: Vector[Key]): Path.Temp[F, Map[Key, Path]]
+  def provide: TempOp[F, Vector[Key] => Map[Key, Path]]
 
   final def filterProvide(f: Keyed[Content] => Boolean)(
     implicit F: Monad[F]
-  ): Path.Temp[F, Vector[Keyed[Path]]] = tempF =>
-    for {
-      children <- list
-      files = children collect { case k if f(k) => k.key }
-      paths <- provide(files)(tempF)
-    } yield for (lc <- files) yield Keyed(lc, paths(lc))
+  ): TempOp[F, Vector[Keyed[Path]]] = {
+    val vec = TempOp(list.map(_ collect { case k if f(k) => k.key }))
+    /*_*/
+    val paths = vec <*> provide
+    (vec |@| paths) { (files, pathMap) =>
+      files.map(lc => Keyed(lc, pathMap(lc)))
+    }
+    /*_*/
+
+  }
 
   final def provideChildren(c: Content.Plain)(
     implicit F: Monad[F]
-  ): Path.Temp[F, Vector[Keyed[Path]]] = filterProvide(_.get == c)
+  ): TempOp[F, Vector[Keyed[Path]]] = filterProvide(_.get == c)
 }

@@ -1,7 +1,8 @@
 package mco.io.generic
 
 import scala.util.Try
-import scalaz.ImmutableArray
+import scalaz.{Bind, ImmutableArray}
+import scalaz.syntax.bind._
 
 import better.files._
 import com.sun.javafx.PlatformUtil
@@ -13,7 +14,7 @@ import net.openhft.hashing.LongHashFunction
 import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
 
-class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
+class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   private def noWinRoot(path: Path): Unit = {
     if (PlatformUtil.isWindows && path == Path.root) {
       throw new IOException("Unsupported operation at (virtual) root path")
@@ -89,12 +90,11 @@ class LocalFilesystem[F[_]: Capture] extends Filesystem[F] {
     Try(File(path.asString).attributes).toOption
   }
 
-  final def runTmp[A](f: F[Path] => F[A]) = {
-    val file = Capture {
-      Path(File.newTemporaryDirectory().pathAsString)
+  final def runTmp[A](f: Path => F[A]) = Capture {
+    for (file <- File.temporaryDirectory()) yield {
+      f(Path(file.pathAsString))
     }
-    f(file) // TODO: resource cleanup is required there
-  }
+  }.join
 
   final protected def hashFile(p: Path) = Capture {
     val file = File(p.asString)

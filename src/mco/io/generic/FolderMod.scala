@@ -9,7 +9,7 @@ import mco.core._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
-import mco.data.{Key, Keyed, Path}
+import mco.data._
 import mco.util.instances.mapRightMonoid
 
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
@@ -49,10 +49,10 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide(contents: Vector[Key]) = _ => {
+  override def provide = TempOp {
     for {
       data <- structureF
-    } yield contents
+    } yield (_: Vector[Key])
       .collect(data)
       .map { case (path, content) => content.key -> path }
       .toMap

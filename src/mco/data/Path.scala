@@ -54,8 +54,6 @@ final class Path private (val segments: Vector[String]) {
  * Companion object to the Path class
  */
 object Path {
-  type Temp[F[_], A] = F[Path] => F[A]
-
   private val sepRx = """[\\/]+""".r
 
   val root = Path("/")

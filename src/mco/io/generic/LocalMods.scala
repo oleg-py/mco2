@@ -48,18 +48,14 @@ class LocalMods[F[_]: Monad: Filesystem](
 
   private def prepareFiles(
     filter: Key => Boolean)(
-    mState: Keyed[ModState])(
-    tmpDir: F[Path]) = {
-      mods()
-        .map(dict => dict(mState.key)._2.filterProvide _)
-        .map { fn =>
-          fn {
-            case Keyed(key, Content.Component) if filter(key) => true
-            case _ => false
-          }
+    mState: Keyed[ModState]) = {
+    for (dict <- mods())
+      yield dict(mState.key)._2
+        .filterProvide {
+          case Keyed(key, Content.Component) if filter(key) => true
+          case _ => false
         }
-        .flatMap(fn => fn(tmpDir))
-        .flatMap(resolver.bulk(mState))
+        .andThen(resolver.bulk(mState))
     }
 
   private def collapse[A, B](xs: Vector[(A, Keyed[Option[B]])]): Vector[Keyed[(A, B)]] =
@@ -79,8 +75,10 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, mState) = rState.at(key)
       conflicts = !rState.hasConflicts(_: Path, i)
-      changes <- prepareFiles(mState.get.contentEnabled)(mState)(tmpDir)
-        .>>= { copyFiles compose filter2(conflicts) compose collapse }
+      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
+      changes <- prepared
+        .andThen(copyFiles compose filter2(conflicts) compose collapse)
+        .runFS
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = true))
     } yield ()
   }
@@ -90,7 +88,8 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, mState) = rState.at(key)
       targets = rState.recoveryIndex(_: Path, i)
-      changes <- prepareFiles(mState.get.contentEnabled)(mState)(tmpDir) >>= { rmFiles compose collapse }
+      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
+      changes <- prepared.andThen(rmFiles compose collapse).runFS
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = false))
       newState <- state
       _ <- changes
@@ -99,8 +98,8 @@ class LocalMods[F[_]: Monad: Filesystem](
         }
         .toVector
         .traverse_ { case (j, keys) =>
-          prepareFiles(keys)(newState.orderedMods(j))(tmpDir)
-            .flatMap { copyFiles compose collapse }
+          prepareFiles(keys)(newState.orderedMods(j))
+            .map(_.andThen(copyFiles compose collapse).runFS)
             .void
         }
     } yield ()
@@ -118,10 +117,10 @@ class LocalMods[F[_]: Monad: Filesystem](
     val result = for {
       _ <- OptionT(tryAsMod(p))
       target = contentRoot / p.name
-      _ <- exists(target).ifM(none[Unit].point[F], some(()).point[F]).pipe(OptionT(_))
+      _ <- OptionT(exists(target).ifM(none[Unit].point[F], some(unit).point[F]))
       _ <- copy(p, target).liftM[OptionT]
       mod <- OptionT(tryAsMod(target))
-      state <- runTmp[F, ModState](initMod(mod)).liftM[OptionT]
+      state <- initMod(mod).liftM[OptionT]
       key = Key(p.name)
       keyed = Keyed(key, state)
       _ <- (repoState ~= { _ add (keyed, mod.label) }).liftM[OptionT]

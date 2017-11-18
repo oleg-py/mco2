@@ -5,7 +5,7 @@ import std.vector._
 
 import mco.core._
 import mco.core.state._
-import mco.data.Path
+import mco.data.{Path, TempOp}
 import mco.io.generic.Filesystem
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
@@ -21,9 +21,9 @@ package object state {
     }
   }
 
-  def initMod[F[_]: Filesystem: Monad](mod: Mod[F]): Path.Temp[F, ModState] = tmp =>
+  def initMod[F[_]: Filesystem: Monad](mod: Mod[F]): F[ModState] =
     for {
-      data <- mod.filterProvide(_.get == Content.Component).apply(tmp)
+      data <- mod.filterProvide(_.get == Content.Component).runFS
       inner <- data
         .map(la => (la.key, la.get))
         .pipe(IMap.fromFoldable(_))

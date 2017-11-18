@@ -25,11 +25,7 @@ object PrototypeImplementation {
       mods <- typer.allIn(root / repoDir)
       modMap = mods.map { case t @ (path, _) => Key(path.asString) -> t }.toMap
       getState = mods.traverse { case (path, mod) =>
-        runTmp[F, Keyed[ModState]] { f =>
-          initMod[F](mod)
-            .apply(f)
-            .map(Keyed(Key(path.asString), _))
-        }
+        initMod[F](mod).map(Keyed(Key(path.asString), _))
       }
       labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
       repoVar <- SerializedVar[F, RepoState](

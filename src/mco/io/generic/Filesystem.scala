@@ -23,7 +23,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
   def stat(path: Path): F[Option[BasicFileAttributes]]
 
-  def runTmp[A](f: F[Path] => F[A]): F[A]
+  def runTmp[A](f: Path => F[A]): F[A]
 
   protected def hashFile(p: Path): F[(Long, Long)]
 

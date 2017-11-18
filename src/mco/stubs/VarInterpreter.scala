@@ -101,9 +101,10 @@ class VarInterpreter[F[_]: Monad] (rootVar: Var[F, Dir])
 
   val stdTmpDir = Path("/tmp/$buffer")
 
-  override def runTmp[A](f: F[Path] => F[A]) =
+  override def runTmp[A](f: Path => F[A]) =
     for {
-      a <- f(ensureDir(stdTmpDir) as stdTmpDir)
+      _ <- ensureDir(stdTmpDir)
+      a <- f(stdTmpDir)
       _ <- rmTree(stdTmpDir)
     } yield a
 }
