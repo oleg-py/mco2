@@ -17,7 +17,7 @@ import mco.util.syntax.fp._
 import java.nio.file.attribute.BasicFileAttributes
 
 
-class VarInterpreter[F[_]: Monad] (rootVar: Var[F, Dir])
+class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
   extends Filesystem[F]
 {
   import Cell._
