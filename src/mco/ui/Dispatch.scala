@@ -9,6 +9,10 @@ import scalaz.Monad
 import scalaz.syntax.monad._
 
 trait Dispatch {
+  def showNotification(str: String): Unit = ???
+
+  def setThumbnail(path: String): Unit = ???
+
   def installActive(): Unit = ???
 
   def uninstallActive(): Unit = ???
