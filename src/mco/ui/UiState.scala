@@ -1,12 +1,13 @@
 package mco.ui
 
-import mco.core.state.RepoState
+import mco.core.state.{ModState, RepoState}
 import mco.ui.UiState.PendingAdds
 
 
 case class UiState(
   repoState: RepoState = RepoState(),
   pendingAdds: Option[PendingAdds] = None,
+  currentMod: Option[ModState] = None,
   error: Option[Throwable] = None
 ) {
   def clearError = copy(error = None)

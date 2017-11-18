@@ -9,6 +9,10 @@ import scalaz.Monad
 import scalaz.syntax.monad._
 
 trait Dispatch {
+  def installActive(): Unit = ???
+
+  def uninstallActive(): Unit = ???
+
   final def setLabel(key: Key, label: String): Unit =
     update(key, Deltas.OfMod(label = Some(label)))
 

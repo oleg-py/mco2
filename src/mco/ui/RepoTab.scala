@@ -20,7 +20,7 @@ class RepoTab(state: Prop[UiState])(implicit dispatch: Dispatch) extends Tab {
         children = Seq(
 //          PackageThumbnail(state.map(_.thumbnailURL) product width, act),
 //          PackageContentTable(state.map(_.currentPackage.map(_.contents).getOrElse(Set())), act),
-//          PackageActionButtons(state.map(_.currentPackage), act)
+          new PackageActionButtons(state.map(_.currentMod))
         )
       }
     )
