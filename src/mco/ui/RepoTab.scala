@@ -19,7 +19,7 @@ class RepoTab(state: Prop[UiState])(implicit dispatch: Dispatch) extends Tab {
         prefWidth <== (contentRoot.width / 3)
         children = Seq(
           new PackageThumbnail(state.map(_.thumbnailUrl), width),
-//          PackageContentTable(state.map(_.currentPackage.map(_.contents).getOrElse(Set())), act),
+          new PackageContentTable(state.map(_.currentContent)),
           new PackageActionButtons(state.map(_.currentMod))
         )
       }
