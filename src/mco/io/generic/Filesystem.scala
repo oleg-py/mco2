@@ -27,7 +27,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
   protected def hashFile(p: Path): F[(Long, Long)]
 
-  final def hashAt(p: Path)(implicit F: Filesystem[F], M: Monad[F]): F[(Long, Long)] = {
+  final def hashAt(p: Path)(implicit M: Monad[F]): F[(Long, Long)] = {
     def dirHash = childrenOf(p) >>= { s => s.foldMapM(hashAt) }
     def getHash = isDirectory(p).ifM(dirHash, hashFile(p))
     exists(p).ifM(getHash, (0L, 0L).point[F])
