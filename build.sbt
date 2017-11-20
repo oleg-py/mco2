@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
   "com.github.pathikrit" %% "better-files" % "3.1.0",
   "net.openhft" % "zero-allocation-hashing" % "0.8",
   "org.scalafx" %% "scalafx" % "8.0.144-R12",
+  "com.lihaoyi" %% "pprint" % "0.5.3",
   "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.7" % Test,
   "org.scalatest" %% "scalatest" % "3.0.1" % Test,
   "org.scalacheck" %% "scalacheck" % "1.13.4" % Test

@@ -15,7 +15,7 @@ import monocle.macros.Lenses
   def contentEnabled(key: Key): Boolean =
     contents.lookup(key).cata(_.stamp.enabled, false)
 
-  def onResolve[F[_]: Foldable](targets: F[(Key, Path)], installed: Boolean) = {
+  def onResolve[F[_]: Foldable](targets: F[(Key, Path)], installed: Boolean): ModState = {
     val newContents = targets.foldLeft(contents) { case (map, (key, path)) =>
       map.adjust(key, _.onResolve(path, installed))
     }

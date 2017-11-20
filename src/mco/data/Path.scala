@@ -32,21 +32,21 @@ final class Path private (val segments: Vector[String]) {
     loop(segments, other.segments)
   }
 
-  def relStringTo(other: Path) = relTo(other).mkString("/")
+  def relStringTo(other: Path): String = relTo(other).mkString("/")
 
   private def isWinLike = segments.headOption.exists(_ endsWith ":")
 
-  def asString = {
+  def asString: String = {
     if (isWinLike) segments.mkString("\\")
     else segments.mkString("/", "/", "")
   }
 
-  override def equals(other: Any) = other match {
+  override def equals(other: Any): Boolean = other match {
     case p: Path => segments == p.segments
     case _       => false
   }
 
-  override def hashCode() = segments.##
+  override def hashCode(): Int = segments.##
   override def toString = s"Path($asString)"
 }
 
@@ -56,10 +56,10 @@ final class Path private (val segments: Vector[String]) {
 object Path {
   private val sepRx = """[\\/]+""".r
 
-  val root = Path("/")
-  def apply(str: String) = of(Seq(str))
+  val root: Path = Path("/")
+  def apply(str: String): Path = of(Seq(str))
 
-  def of(segments: Seq[String]) = new Path(normalize(segments))
+  def of(segments: Seq[String]): Path = new Path(normalize(segments))
 
   def normalize(segments: Seq[String]): Vector[String] = {
     (Vector.empty[String] /: segments.flatMap(sepRx.split)) {

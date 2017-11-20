@@ -3,12 +3,12 @@ package mco.data
 import scalaz._
 import syntax.bind._
 
-import mco.data.TempOp.{NoTemp, WithTemp}
 import mco.io.generic.Filesystem
 
 
 sealed trait TempOp[F[_], A] extends Product with Serializable {
-  def runFS(implicit F: Filesystem[F]) = this match {
+  import TempOp._
+  def runFS(implicit F: Filesystem[F]): F[A] = this match {
     case NoTemp(fa) => fa
     case WithTemp(func) => F.runTmp(func)
   }
@@ -18,7 +18,7 @@ sealed trait TempOp[F[_], A] extends Product with Serializable {
     case wt @ WithTemp(_) => wt
   }
 
-  def andThen[B](f: A => F[B])(implicit F: Bind[F]) = this match {
+  def andThen[B](f: A => F[B])(implicit F: Bind[F]): TempOp[F, B] = this match {
     case NoTemp(fa) => NoTemp(fa >>= f)
     case WithTemp(func) => WithTemp(func(_) >>= f)
   }
@@ -34,13 +34,12 @@ object TempOp {
     new Applicative[TempOp[F, ?]] {
       override def point[A](a: => A) = NoTemp(Applicative[F].point(a))
 
-      override def ap[A, B](fa: => TempOp[F, A])(f: => TempOp[F, A => B]) =
+      override def ap[A, B](fa: => TempOp[F, A])(f: => TempOp[F, A => B]): TempOp[F, B] =
         (fa, f) match {
           case (NoTemp(l), NoTemp(r)) => NoTemp(Applicative[F].ap(l)(r))
           case (WithTemp(fl), WithTemp(fr)) => WithTemp { path =>
             Applicative[F].ap(fl(path))(fr(path))
           }
-          /*_*/
           case (l, r) => ap(l.unify)(r.unify)
         }
     }

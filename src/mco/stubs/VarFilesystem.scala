@@ -2,19 +2,17 @@ package mco.stubs
 
 import scalaz._
 import std.anyVal._
-import std.stream._
-import std.tuple._
 import std.option._
 import syntax.id._
 import syntax.std.map._
 
-import mco.core.Var
 import mco.data.Path
 import mco.io.generic.Filesystem
 import mco.stubs.Cell._
 import mco.util.syntax.fp._
-
 import java.nio.file.attribute.BasicFileAttributes
+
+import mco.core.vars.Var
 
 
 class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
@@ -22,7 +20,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
 {
   import Cell._
 
-  def complainAbout(path: Path) = sys.error(s"Assertion failure at $path")
+  private def complainAbout(path: Path) = sys.error(s"Assertion failure at $path")
 
   def deepGet(path: Path): F[Option[Cell]] =
     for (root <- rootVar()) yield
@@ -48,14 +46,14 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
     rootVar ~= recurse(path.segments.toList)
   }
 
-  def check(pf: PartialFunction[Option[Cell], Unit]) = (path: Path) =>
+  private def check(pf: PartialFunction[Option[Cell], Unit])= (path: Path) =>
     deepGet(path) map { x =>
       if (!pf.isDefinedAt(x)) complainAbout(path)
     }
 
-  val notFolder = check { case None | Some(File(_)) => }
-  val notFile   = check { case None | Some(Dir(_)) => }
-  val mustExist = check { case Some(_) => }
+  private val notFolder = check { case None | Some(File(_)) => }
+  private val notFile   = check { case None | Some(Dir(_)) => }
+  private val mustExist = check { case Some(_) => }
 
   override def childrenOf(path: Path): F[Stream[Path]] =
     deepGet(path) map {
@@ -101,7 +99,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
 
   val stdTmpDir = Path("/tmp/$buffer")
 
-  override def runTmp[A](f: Path => F[A]) =
+  override def runTmp[A](f: Path => F[A]): F[A] =
     for {
       _ <- ensureDir(stdTmpDir)
       a <- f(stdTmpDir)

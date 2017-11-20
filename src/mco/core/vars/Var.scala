@@ -1,7 +1,7 @@
-package mco.core
+package mco.core.vars
 
 import scalaz._
-import syntax.bind._
+import scalaz.syntax.bind._
 
 
 /**

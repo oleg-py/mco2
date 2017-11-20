@@ -5,11 +5,12 @@ import std.option._
 import std.stream._
 import syntax.std.map._
 
-import mco.core.{ImageStore, Var}
+import mco.core.ImageStore
+import mco.core.vars.Var
 import mco.data.{Key, Path}
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
-import mco.util.misc.{strHashes, nextFreeName}
+import mco.util.misc.{nextFreeName, strHashes}
 import Filesystem._
 
 
@@ -29,12 +30,12 @@ class LocalImageStore[F[_]: Filesystem: Monad](
   private def mkName(path: Path) =
     nextFreeName[F](root, path.extension)(strHashes(path.asString))
 
-  override def getImage(key: Key) =
+  override def getImage(key: Key): F[Option[Path]] =
     for {
       dict <- store()
     } yield dict.get(key).map(root / _)
 
-  override def putImage(key: Key, path: Option[Path]) =
+  override def putImage(key: Key, path: Option[Path]): F[Unit] =
     for {
       dict <- store()
       newName <- path.traverse(mkName)
@@ -46,7 +47,7 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       _ <- store ~= { _.alter(key)(_ => newName.map(_.relStringTo(root))) }
     } yield ()
 
-  override def stripImages(keys: Vector[Key]) =
+  override def stripImages(keys: Vector[Key]): F[Unit] =
     for {
       dict <- store()
       keySet = keys.toSet

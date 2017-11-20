@@ -8,6 +8,7 @@ import std.set._
 
 import mco.core._
 import mco.core.state._
+import mco.core.vars.Var
 import mco.data._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
@@ -105,7 +106,7 @@ class LocalMods[F[_]: Monad: Filesystem](
     } yield ()
   }
 
-  override def remove(key: Key) = for {
+  override def remove(key: Key): F[Unit] = for {
     _ <- update(key, Deltas.OfMod(enabled = Some(false)))
     _ <- repoState ~= (_.remove(key))
     path <- mods().map(dict => dict(key)._1)
@@ -113,7 +114,7 @@ class LocalMods[F[_]: Monad: Filesystem](
     _ <- mods ~= (_ - key)
   } yield ()
 
-  override def liftFile(p: Path) = {
+  override def liftFile(p: Path): F[Option[ModState]] = {
     val result = for {
       _ <- OptionT(tryAsMod(p))
       target = contentRoot / p.name

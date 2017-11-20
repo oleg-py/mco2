@@ -15,7 +15,7 @@ import mco.util.instances.mapRightMonoid
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
   extends Mod[F]
 {
-  import FolderMod._
+  type DataM = Map[Key, (Path, Keyed[Content])]
 
   override val label: String = self.name
 
@@ -41,15 +41,15 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
   }
 
   /*_*/
-  private val structureF: F[Map[Key, (Path, Keyed[Content])]] =
+  private val structureF: F[DataM] =
     scanDeepRec(childrenOf(self)).written
   /*_*/
 
-  override def list = structureF.map { data =>
+  override def list: F[Vector[Keyed[Content]]] = structureF.map { data =>
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide = TempOp {
+  override def provide: TempOp[F, Vector[Key] => Map[Key, Path]] = TempOp {
     for {
       data <- structureF
     } yield (_: Vector[Key])
@@ -57,8 +57,4 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
       .map { case (path, content) => content.key -> path }
       .toMap
   }
-}
-
-object FolderMod {
-  type DataM = Map[Key, (Path, Keyed[Content])]
 }
