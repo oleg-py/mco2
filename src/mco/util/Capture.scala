@@ -1,5 +1,6 @@
 package mco.util
 
+import scalaz.Id._
 import monix.eval.Coeval
 
 
@@ -29,6 +30,17 @@ object Capture {
   object coeval {
     implicit val captureOfCoeval: Capture[Coeval] = new Capture[Coeval] {
       override def apply[A](a: => A): Coeval[A] = Coeval(a)
+    }
+  }
+
+  /**
+   * Implementation of Capture for Id (identity type)
+   *
+   * Allows execution of unbounded side effects. Useful for REPL testing.
+   */
+  object yolo {
+    implicit val captureOfId: Capture[Id] = new Capture[Id] {
+      override def apply[A](a: => A): A = a
     }
   }
 }

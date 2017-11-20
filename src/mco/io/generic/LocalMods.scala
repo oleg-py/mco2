@@ -23,6 +23,7 @@ class LocalMods[F[_]: Monad: Filesystem](
   repoState: Var[F, RepoState],
   mods: Var[F, Map[Key, (Path, Mod[F])]],
   tryAsMod: Path => F[Option[Mod[F]]],
+  toKey: Path => Key,
   resolver: NameResolver[F]
 ) extends Mods[F] {
   override def state: F[RepoState] = repoState()
@@ -32,13 +33,13 @@ class LocalMods[F[_]: Monad: Filesystem](
     for {
       rState <- state
       (i, Keyed(_, modState)) = rState.at(key)
-      _ <- if (modState.stamp.installed) uninstall(key) else noop
+      _ <- if (modState.stamp.enabled) uninstall(key) else noop
       updated = diff.patch(modState)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
           Keyed(key, updated))
-      _ <- if (updated.stamp.installed) install(key) else noop
+      _ <- if (updated.stamp.enabled) install(key) else noop
     } yield ()
   }
 

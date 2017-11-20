@@ -1,10 +1,12 @@
 package mco.io.generic
 
+import java.nio.file.attribute.BasicFileAttributes
+
 import scalaz._
 import std.stream._
 import syntax.equal._
-import mco.util.syntax.fp._
 
+import mco.util.syntax.fp._
 import mco.data.Path
 
 
@@ -28,19 +30,23 @@ class VirtualizedFilesystem[F[_]: Monad](
     op(fs, p)
   }
 
-  override def childrenOf(path: Path) = {
+  override def childrenOf(path: Path): F[Stream[Path]] = {
     val (p, fs, head) = retranslate(path)
-    fs.childrenOf(p)
-      .map { paths => paths.map(Path(head) / _.relStringTo(p)) }
+    if (fs === this) {
+      roots.keys.toStream.map(Path(_)).point[F]
+    } else {
+      fs.childrenOf(p)
+        .map { paths => paths.map(Path(head) / _.relStringTo(p)) }
+    }
   }
 
-  override def getBytes(path: Path) =
+  override def getBytes(path: Path): F[ImmutableArray[Byte]] =
     unaryOp(path) { _ getBytes _ }
 
-  override def setBytes(path: Path, cnt: ImmutableArray[Byte]) =
+  override def setBytes(path: Path, cnt: ImmutableArray[Byte]): F[Unit] =
     unaryOp(path) { _ setBytes (_, cnt) }
 
-  override def mkDir(path: Path) =
+  override def mkDir(path: Path): F[Unit] =
     unaryOp(path) { _ mkDir _ }
 
   private def slowCopy(from: Path, to: Path): F[Unit] = {
@@ -55,29 +61,29 @@ class VirtualizedFilesystem[F[_]: Monad](
     isRegularFile(from).ifM(fileCopy, folderCopy)
   }
 
-  override def copy(source: Path, dest: Path) = {
+  override def copy(source: Path, dest: Path): F[Unit] = {
     val (p1, fs1, _) = retranslate(source)
     val (p2, fs2, _) = retranslate(dest)
     if (fs1 === fs2) fs1.copy(p1, p2)
     else slowCopy(source, dest)
   }
 
-  override def move(source: Path, dest: Path) = {
+  override def move(source: Path, dest: Path): F[Unit] = {
     val (p1, fs1, _) = retranslate(source)
     val (p2, fs2, _) = retranslate(dest)
     if (fs1 === fs2) fs1.move(p1, p2)
     else slowCopy(source, dest) >> rmTree(source)
   }
 
-  override def rmTree(path: Path) =
+  override def rmTree(path: Path): F[Unit] =
     unaryOp(path) { _ rmTree _ }
 
-  override def stat(path: Path) =
+  override def stat(path: Path): F[Option[BasicFileAttributes]] =
     unaryOp(path) { _ stat _ }
 
-  override def runTmp[A](f: Path => F[A]) =
+  override def runTmp[A](f: Path => F[A]): F[A] =
     runTmpFs.runTmp(f)
 
-  override protected def hashFile(path: Path) =
+  override protected def hashFile(path: Path): F[(Long, Long)] =
     unaryOp(path) { _ hashAt _ }
 }

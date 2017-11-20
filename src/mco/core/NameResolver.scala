@@ -14,8 +14,20 @@ trait NameResolver[F[_]] {
   final def bulk(
     modInfo: Keyed[ModState]
   )(targets: Vector[Keyed[Path]]
-  )(implicit F: Applicative[F]): F[Vector[(Path, Keyed[Option[Path]])]] = {
-    val resolve = apply(modInfo) _
+  )(implicit F: Monad[F]): F[Vector[(Path, Keyed[Option[Path]])]] = {
+    val resolveMissing = apply(modInfo) _
+
+    val resolveExisting = (key: Key) => modInfo.get
+      .contents
+      .lookup(key)
+      .flatMap(_.target)
+      .point[F]
+
+    val resolve = (key: Key) =>
+      OptionT(resolveExisting(key))
+        .orElse(OptionT(resolveMissing(key)))
+        .run
+
     val resolved = targets
       .map(_.key)
       .traverse(k => resolve(k).map(Keyed(k, _)))

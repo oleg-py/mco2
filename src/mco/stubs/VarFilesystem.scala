@@ -63,13 +63,13 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
 
   override def getBytes(path: Path): F[ImmutableArray[Byte]] =
     deepGet(path) map {
-      case Some(File(arr)) => arr
+      case Some(File(arr)) => ImmutableArray.fromArray(arr)
       case _ => complainAbout(path)
     }
 
   override def setBytes(path: Path, cnt: ImmutableArray[Byte]): F[Unit] =
     notFolder(path) >>
-      deepSet(path)(File(cnt).some)
+      deepSet(path)(File(cnt.toArray).some)
 
   override def mkDir(path: Path): F[Unit] =
     notFile(path) >>
@@ -95,7 +95,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
   override def hashFile(p: Path): F[(Long, Long)] = for {
     file <- deepGet(p)
     Some(File(bs)) = file
-  } yield (bs.length.toLong, bs.foldMap(_.toLong))
+  } yield (bs.length.toLong, bs.map(_.toLong).sum)
 
   val stdTmpDir = Path("/tmp/$buffer")
 

@@ -14,6 +14,7 @@ import scalaz.{Applicative, Comonad, Traverse}
  * @tparam A type of value contained together witk ey
  */
 case class Keyed[+A](key: Key, get: A) {
+  def replace[B](b: B): Keyed[B] = copy(get = b)
   def coflatMap[B](f: Keyed[A] => B): Keyed[B] = copy(get = f(this))
 }
 

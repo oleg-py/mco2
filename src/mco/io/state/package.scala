@@ -28,5 +28,8 @@ package object state {
         .map(la => (la.key, la.get))
         .pipe(IMap.fromFoldable(_))
         .traverse(initContent[F](Content.Component))
-    } yield ModState(inner.foldMap(_.stamp), inner)
+    } yield ModState(inner.foldMap(_.stamp).copy(
+      enabled = false,
+      installed = false
+    ), inner)
 }

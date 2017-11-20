@@ -11,38 +11,54 @@ import mco.io.state.initMod
 import mco.util.Capture
 import mco.util.syntax.fp._
 import Filesystem._
+import mco.stubs.{Cell, LoggingFilesystem, VarFilesystem}
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
   def algebra[F[_]: Capture: Monad](root: Path): F[Mods[F]] = {
-    val serialized = "mco2.dat"
-    val repoDir = "mods"
-    val target = "testTarget"
-    implicit val filesystem: Filesystem[F] = new LocalFilesystem[F]
-    val typer = new SimpleModTypes
+    val target = root / "testing"
+    val toKey = (p: Path) => Key(p.name)
 
-    val localModsF = for {
-      _ <- ensureDir(root / repoDir)
-      _ <- ensureDir(root / target)
-      mods <- typer.allIn(root / repoDir)
-      modMap = mods.map { case t @ (path, _) => Key(path.asString) -> t }.toMap
-      oldState <- mods.traverse { case (path, mod) =>
-        initMod[F](mod).map(Keyed(Key(path.asString), _))
-      }
-      labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
-      repoVar <- SerializedVar[F, RepoState](
-        root / serialized,
-        RepoState(oldState, labels),
-        new MutableVar(_).point[F].widen
+    val localFS = new LocalFilesystem[F]
+    val var0 = SerializedVar[F, Cell.Dir](
+      target / "store.dat",
+      Cell.Dir(),
+      new MutableVar(_).point[F].widen
+    )(implicitly, localFS)
+
+    val result = for (rootVar <- var0) yield {
+      val varFS = new VarFilesystem[F](new PrintingVar(rootVar))
+      implicit val fsEq: Equal[Filesystem[F]] = Equal.equalRef
+      implicit val filesystem: Filesystem[F] =
+        new LoggingFilesystem(new VirtualizedFilesystem[F](
+          Map(
+            ("-source", (Path.root, varFS)),
+            ("-target", (target / "installed", localFS)),
+            ("-os", (Path.root, localFS))
+          ),
+          localFS
+        ))
+
+      for {
+        _ <- Vector("-target").traverse_(s => ensureDir(Path(s)))
+        typer = new SimpleModTypes
+        mods <- typer.allIn(Path("-source"))
+        orderedMods <- mods.traverse { case (path, mod) =>
+          initMod[F](mod).map(Keyed(toKey(path), _))
+        }
+        modMap = mods.map { case t @ (path, _) => Key(path.asString) -> t }.toMap
+        labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
+        repoVar = new MutableVar(RepoState(orderedMods, labels))
+      } yield new LocalMods(
+        Path("-source"),
+        repoVar,
+        new MutableVar(modMap),
+        typer,
+        toKey,
+        new MangleNames(Path("-target"))
       )
-    } yield new LocalMods(
-      root / repoDir,
-      repoVar,
-      new MutableVar(modMap),
-      typer,
-      new MangleNames(root / target)
-    )
+    }
 
-    localModsF.widen
+    result.join.widen
   }
 }
