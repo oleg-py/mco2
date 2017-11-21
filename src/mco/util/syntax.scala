@@ -25,4 +25,6 @@ object syntax {
     with ToOptionOps
     with ToOptionIdOps
     with ToComonadOps
+
+  @inline def ??[A](implicit a: A): A = a
 }

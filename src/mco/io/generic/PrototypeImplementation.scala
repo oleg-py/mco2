@@ -10,34 +10,32 @@ import mco.data.{Key, Keyed, Path}
 import mco.io.state.initMod
 import mco.util.Capture
 import mco.util.syntax.fp._
+import mco.util.syntax.??
 import Filesystem._
 import mco.stubs.{Cell, LoggingFilesystem, VarFilesystem}
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
-  def algebra[F[_]: Capture: Monad](root: Path): F[Mods[F]] = {
+  def algebra[F[_]: Capture: MonadError[?[_], Throwable]](root: Path): F[Mods[F]] = {
     val target = root / "testing"
     val toKey = (p: Path) => Key(p.name)
 
     val localFS = new LocalFilesystem[F]
-    val var0 = SerializedVar[F, Cell.Dir](
-      target / "store.dat",
-      Cell.Dir(),
-      new MutableVar(_).point[F].widen
-    )(implicitly, localFS)
-
-    val result = for (rootVar <- var0) yield {
-      val varFS = new VarFilesystem[F](new PrintingVar(rootVar))
-      implicit val fsEq: Equal[Filesystem[F]] = Equal.equalRef
+    val result = for {
+      rootVar <- CacheVar(Cell.Dir().point[F])(
+        new JavaSerializableVar(target / "store.dat")(??, ??, localFS),
+        new MutableVar(_).point[F].widen
+      )
+    } yield {
       implicit val filesystem: Filesystem[F] =
         new LoggingFilesystem(new VirtualizedFilesystem[F](
           Map(
-            ("-source", (Path.root, varFS)),
+            ("-source", (Path.root, new VarFilesystem[F](new PrintingVar(rootVar)))),
             ("-target", (target / "installed", localFS)),
-            ("-os", (Path.root, localFS))
+            ("-os",     (Path.root, localFS))
           ),
           localFS
-        ))
+        )(??, Equal.equalRef))
 
       for {
         _ <- Vector("-target").traverse_(s => ensureDir(Path(s)))
