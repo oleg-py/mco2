@@ -105,4 +105,8 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
       (hi, lo)
     }
   }
+
+  final def fileToUrl(p: Path) = Capture {
+    File(p.asString).url
+  }
 }

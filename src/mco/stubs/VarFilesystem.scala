@@ -10,9 +10,12 @@ import mco.data.Path
 import mco.io.generic.Filesystem
 import mco.stubs.Cell._
 import mco.util.syntax.fp._
-import java.nio.file.attribute.BasicFileAttributes
 
+import java.nio.file.attribute.BasicFileAttributes
 import mco.core.vars.Var
+
+import java.net.URL
+import java.util.Base64
 
 
 class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
@@ -105,4 +108,9 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
       a <- f(stdTmpDir)
       _ <- rmTree(stdTmpDir)
     } yield a
+
+  override def fileToUrl(p: Path) = for {
+    file <- deepGet(p)
+    Some(File(bs)) = file
+  } yield new URL(new String(Base64.getEncoder.encode(bs)))
 }

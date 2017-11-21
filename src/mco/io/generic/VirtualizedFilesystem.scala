@@ -86,4 +86,7 @@ class VirtualizedFilesystem[F[_]: Monad](
 
   override protected[mco] def hashFile(path: Path): F[(Long, Long)] =
     unaryOp(path) { _ hashFile _ }
+
+  override def fileToUrl(p: Path) =
+    unaryOp(p) { _ fileToUrl _ }
 }

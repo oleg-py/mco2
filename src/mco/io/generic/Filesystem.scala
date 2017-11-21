@@ -9,6 +9,7 @@ import com.olegpy.forwarders
 import mco.data.Path
 import mco.util.syntax.fp._
 
+import java.net.URL
 import java.nio.file.attribute.BasicFileAttributes
 
 
@@ -24,6 +25,8 @@ import java.nio.file.attribute.BasicFileAttributes
   def stat(path: Path): F[Option[BasicFileAttributes]]
 
   def runTmp[A](f: Path => F[A]): F[A]
+
+  def fileToUrl(p: Path): F[URL]
 
   protected[mco] def hashFile(p: Path): F[(Long, Long)]
 

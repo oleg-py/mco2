@@ -3,6 +3,8 @@ package mco.core
 import com.olegpy.forwarders
 import mco.data.{Key, Path}
 
+import java.net.URL
+
 
 /**
  * Algebra of operations related to storing images
@@ -15,10 +17,10 @@ import mco.data.{Key, Path}
   /**
    * Get an image associated with provided key
    * @param key the key image was previously associated with
-   * @return Some(path to image) if association exists, None
+   * @return Some(url of image) if association exists, None
    *         otherwise
    */
-  def getImage(key: Key): F[Option[Path]]
+  def getImage(key: Key): F[Option[URL]]
 
   /**
    * Change association of given key to provided path

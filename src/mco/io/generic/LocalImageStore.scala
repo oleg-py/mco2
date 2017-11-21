@@ -13,6 +13,8 @@ import mco.util.syntax.fp._
 import mco.util.misc.{nextFreeName, strHashes}
 import Filesystem._
 
+import java.net.URL
+
 
 /**
  * Image store based on separate folder
@@ -30,10 +32,12 @@ class LocalImageStore[F[_]: Filesystem: Monad](
   private def mkName(path: Path) =
     nextFreeName[F](root, path.extension)(strHashes(path.asString))
 
-  override def getImage(key: Key): F[Option[Path]] =
+  override def getImage(key: Key): F[Option[URL]] =
     for {
       dict <- store()
-    } yield dict.get(key).map(root / _)
+      filename = dict.get(key)
+      url <- filename.traverse(s => fileToUrl(root / s))
+    } yield url
 
   override def putImage(key: Key, path: Option[Path]): F[Unit] =
     for {

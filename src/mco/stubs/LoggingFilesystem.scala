@@ -59,4 +59,9 @@ class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F]
     pprint.log(p.asString)
     inner.hashFile(p)
   }
+
+  override def fileToUrl(p: Path) = {
+    pprint.log(p.asString)
+    inner.fileToUrl(p)
+  }
 }
