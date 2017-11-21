@@ -46,7 +46,7 @@ object PrototypeImplementation {
         orderedMods <- mods.traverse { case (path, mod) =>
           initMod[F](mod).map(Keyed(toKey(path), _))
         }
-        modMap = mods.map { case t @ (path, _) => Key(path.asString) -> t }.toMap
+        modMap = mods.map { case t @ (path, _) => toKey(path) -> t }.toMap
         labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
         repoVar = new MutableVar(RepoState(orderedMods, labels))
       } yield new LocalMods(
