@@ -96,7 +96,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
     }
   }.join
 
-  final protected def hashFile(p: Path) = Capture {
+  final protected[mco] def hashFile(p: Path) = Capture {
     val file = File(p.asString)
     for (ch <- file.fileChannel) yield {
       val mm = ch.toMappedByteBuffer

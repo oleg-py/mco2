@@ -92,7 +92,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
   override def stat(path: Path): F[Option[BasicFileAttributes]] =
     deepGet(path) map { _.map(StubAttributes(path, _)) }
 
-  override def hashFile(p: Path): F[(Long, Long)] = for {
+  override protected[mco] def hashFile(p: Path): F[(Long, Long)] = for {
     file <- deepGet(p)
     Some(File(bs)) = file
   } yield (bs.length.toLong, bs.map(_.toLong).sum)

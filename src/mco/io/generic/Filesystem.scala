@@ -25,7 +25,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
   def runTmp[A](f: Path => F[A]): F[A]
 
-  protected def hashFile(p: Path): F[(Long, Long)]
+  protected[mco] def hashFile(p: Path): F[(Long, Long)]
 
   final def hashAt(p: Path)(implicit M: Monad[F]): F[(Long, Long)] = {
     def dirHash = childrenOf(p) >>= { s => s.foldMapM(hashAt) }

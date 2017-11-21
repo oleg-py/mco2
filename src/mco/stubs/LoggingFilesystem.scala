@@ -55,8 +55,8 @@ class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F]
     inner.runTmp(f)
   }
 
-  override protected def hashFile(p: Path) = {
+  override protected[mco] def hashFile(p: Path) = {
     pprint.log(p.asString)
-    inner.hashAt(p)
+    inner.hashFile(p)
   }
 }

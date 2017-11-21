@@ -84,6 +84,6 @@ class VirtualizedFilesystem[F[_]: Monad](
   override def runTmp[A](f: Path => F[A]): F[A] =
     runTmpFs.runTmp(f)
 
-  override protected def hashFile(path: Path): F[(Long, Long)] =
-    unaryOp(path) { _ hashAt _ }
+  override protected[mco] def hashFile(path: Path): F[(Long, Long)] =
+    unaryOp(path) { _ hashFile _ }
 }
