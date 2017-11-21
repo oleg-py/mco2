@@ -8,6 +8,8 @@ import scalafx.scene.control.TabPane
 import mco.ui.props._
 import scalaz.syntax.functor._
 
+import javafx.scene.image.Image
+
 
 class MainWindow(state: Prop[UiState])(implicit dispatch: Dispatch) extends JFXApp {
   Thread.currentThread.setUncaughtExceptionHandler((_, throwable) => {
@@ -25,5 +27,7 @@ class MainWindow(state: Prop[UiState])(implicit dispatch: Dispatch) extends JFXA
       root = new TabPane { tabs = Seq(new RepoTab(state)) }
     }
   }
+
+  stage.icons += new Image(getClass.getResourceAsStream("/app-icon.png"))
 }
 
