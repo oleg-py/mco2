@@ -34,7 +34,8 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, Keyed(_, modState)) = rState.at(key)
       _ <- if (modState.stamp.enabled) uninstall(key) else noop
-      updated = diff.patch(modState)
+      modState2 <- state.map(_.at(key)._2.get)
+      updated = diff.patch(modState2)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
