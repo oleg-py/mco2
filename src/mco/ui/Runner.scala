@@ -1,7 +1,7 @@
 package mco.ui
 
 import better.files._
-import mco.data.{Key, Path}
+import mco.data.Path
 import mco.io.generic.PrototypeImplementation
 import mco.util.Capture
 import monix.eval.{Coeval, Task, TaskApp}
@@ -12,26 +12,38 @@ import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
 import mco.stubs.NoMods
+import mco.ui.props.PropertyBasedVar
 
 
 object Runner extends TaskApp {
-  override def run(args: Array[String]) = Task.eval {
+  override def run(args: Array[String]): Task[Unit] = Task.defer {
     val cwd = Path(File(".").pathAsString)
     val exec = for {
       algebra <- PrototypeImplementation.algebra(cwd)
       state <- algebra.state
     } yield {
       implicit val mods: Mods[Coeval] = algebra
-      new Dispatch.Effectful[Coeval](f => f(), ObjectProperty(UiState.initial(state)))
+      val initialState = UiState.initial(state)
+      val mkDispatch = new Dispatch.Effectful[Coeval](coeval => coeval())(_)
+      (initialState, mkDispatch)
     }
 
-    val dispatch = exec.run.fold ({
-      case NonFatal(ex) =>
-        ex.printStackTrace()
-        implicit val dummyAlgebra = new NoMods[Coeval]
-        new Dispatch.Effectful[Coeval](_ => (), ObjectProperty(UiState.startupError(ex)))
-    }, x => x)
+    val recovered = exec.onErrorRecover { case NonFatal(ex) =>
+      ex.printStackTrace()
+      implicit val dummyAlgebra: Mods[Coeval] = new NoMods[Coeval]
+      val state = UiState.startupError(ex)
+      val mkDispatch = new Dispatch.Effectful[Coeval](_ => ())(_)
+      (state, mkDispatch)
+    }
 
-    new MainWindow(dispatch.state)(dispatch).main(args)
+    recovered
+      .flatMap { case (initialState, mkDispatch) =>
+        Coeval {
+          val state = ObjectProperty(initialState)
+          val dispatch = mkDispatch(new PropertyBasedVar[UiState](state))
+          new MainWindow(state)(dispatch).main(args)
+        }
+      }
+      .task
   }
 }

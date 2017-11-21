@@ -1,21 +1,30 @@
 package mco.ui
 
+import scalaz.Id._
+
 import mco.core.Mods
 import mco.core.state.{Deltas, RepoState}
-import mco.data.{Key, Path}
+import mco.data.Key
 import mco.util.Capture
-import scalafx.beans.property.ObjectProperty
 import scalaz.Monad
 import scalaz.syntax.monad._
 
+import mco.core.vars.Var
+
 trait Dispatch {
-  def showNotification(str: String): Unit = ???
+  protected def state: Var[Id, UiState]
 
-  def setThumbnail(path: String): Unit = ???
+  def setThumbnail(path: String): Unit
+  def liftPackages(paths: Vector[String]): Unit
+  def update(key: Key, diff: Deltas.OfMod): Unit
+  def remove(key: Key): Unit
+  def applyPendingAdds(): Unit
 
-  def installActive(): Unit = ???
+  final def installActive(): Unit =
+    state().currentModKey.foreach(install)
 
-  def uninstallActive(): Unit = ???
+  final def uninstallActive(): Unit =
+    state().currentModKey.foreach(uninstall)
 
   final def setLabel(key: Key, label: String): Unit =
     update(key, Deltas.OfMod(label = Some(label)))
@@ -26,33 +35,36 @@ trait Dispatch {
   final def uninstall(key: Key): Unit =
     update(key, Deltas.OfMod(enabled = Some(false)))
 
-  def setActivePackage(key: Key) = ???
-  def liftPackages(paths: Vector[String]): Unit = ???
+  final def setActivePackage(key: Key): Unit =
+    state ~= UiState.currentModKey.set(Some(key))
 
-  def update(key: Key, diff: Deltas.OfMod): Unit
-  def remove(key: Key): Unit
-  def liftFile(p: Path): Unit
-  def closeErrorDialog(): Unit
+  final def showNotification(str: String): Unit =
+    ???
 
-  def associatePending(k: String, v: Option[String]): Unit
-  def applyPendingAdds(): Unit
-  def cancelPendingAdds(): Unit
+  final def closeErrorDialog(): Unit =
+    state ~= UiState.error.set(None)
+
+  final def associatePending(k: String, v: Option[String]): Unit =
+    state ~= UiState.assocL.modify(_.updated(k, v))
+
+  final def cancelPendingAdds(): Unit =
+    state ~= UiState.pendingAdds.set(None)
 }
 
 object Dispatch {
   class Effectful[F[_]: Monad: Capture: Mods]
-  (
-    consume: F[Unit] => Unit,
-    val state: ObjectProperty[UiState]
+  (runLater: F[Unit] => Unit)(
+    protected val state: Var[Id, UiState],
   ) extends Dispatch {
-    private def syncChanges[A](fa: F[A])(f: (A, RepoState, UiState) => UiState): Unit = consume {
-      for {
-        a         <- fa
-        rState    <- Mods.state
-        nextState <- Capture { f(a, rState, state()) }
-        _         <- Capture { state.value = nextState }
-      } yield ()
-    }
+    private def syncChanges[A](fa: F[A])(f: (A, RepoState, UiState) => UiState): Unit =
+      runLater {
+        for {
+          a         <- fa
+          rState    <- Mods.state
+          nextState <- Capture { f(a, rState, state()) }
+          _         <- Capture { state := nextState }
+        } yield ()
+      }
 
     def update(key: Key, diff: Deltas.OfMod): Unit =
       syncChanges(Mods.update(key, diff)) { (_, rs, us) =>
@@ -64,19 +76,8 @@ object Dispatch {
         us
       }
 
-    def liftFile(p: Path): Unit =
-      syncChanges(Mods.liftFile(p)) { (_, rs, us) =>
-        us
-      }
-
-    override def closeErrorDialog(): Unit =
-      state() = state().clearError
-
-
-    override def associatePending(k: String, v: Option[String]): Unit = ???
-
+    override def setThumbnail(path: String): Unit = ???
+    override def liftPackages(paths: Vector[String]): Unit = ???
     override def applyPendingAdds(): Unit = ???
-
-    override def cancelPendingAdds(): Unit = ???
   }
 }
