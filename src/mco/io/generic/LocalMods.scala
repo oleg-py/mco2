@@ -72,7 +72,7 @@ class LocalMods[F[_]: Monad: Filesystem](
   private val copyFiles = runOp[Path](copy(_, _)) _
   private val rmFiles = runOp[Path]((_, to) => rmTree(to)) _
 
-  private def install(key: Key) = runTmp[F, Unit] { tmpDir =>
+  private def install(key: Key) =
     for {
       rState <- state
       (i, mState) = rState.at(key)
@@ -83,9 +83,8 @@ class LocalMods[F[_]: Monad: Filesystem](
         .runFS
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = true))
     } yield ()
-  }
 
-  private def uninstall(key: Key) = runTmp[F, Unit] { tmpDir =>
+  private def uninstall(key: Key) =
     for {
       rState <- state
       (i, mState) = rState.at(key)
@@ -105,7 +104,6 @@ class LocalMods[F[_]: Monad: Filesystem](
             .void
         }
     } yield ()
-  }
 
   override def remove(key: Key): F[Unit] = for {
     _ <- update(key, Deltas.OfMod(enabled = Some(false)))
