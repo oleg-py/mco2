@@ -10,6 +10,10 @@ import scalaz.syntax.functor._
 
 
 class MainWindow(state: Prop[UiState])(implicit dispatch: Dispatch) extends JFXApp {
+  Thread.currentThread.setUncaughtExceptionHandler((_, throwable) => {
+    throwable.printStackTrace()
+  })
+
   stage = new JFXApp.PrimaryStage {
     ExceptionDialog(state.asProp.map(_.error))
 

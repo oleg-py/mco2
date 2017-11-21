@@ -10,6 +10,7 @@ import mco.core.Mods
 import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
+import mco.core.vars.PrintingVar
 import mco.stubs.NoMods
 import mco.ui.props.PropertyBasedVar
 import mco.variant.generic._

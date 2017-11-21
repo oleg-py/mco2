@@ -35,7 +35,7 @@ class RepoPackagesTable(
   rowFactory = _ => new PackageRow
 
   override def onFilesReceived(paths: Vector[String]): Unit =
-    dispatch.liftPackages(paths)
+    dispatch.addPending(paths)
 
   class PackageRow extends TableRow[Triple] {
     onMouseClicked = handle {

@@ -1,21 +1,22 @@
 package mco.ui
 
-import scalaz.Id._
+import scalaz._
+import Id._
+import std.option._
+import std.vector._
 
 import mco.core.Mods
 import mco.core.state.{Deltas, RepoState}
-import mco.data.Key
+import mco.data.{Key, Path}
 import mco.util.Capture
-import scalaz.Monad
-import scalaz.syntax.monad._
-
+import mco.util.syntax.fp._
 import mco.core.vars.Var
 
 trait Dispatch {
   protected def state: Var[Id, UiState]
 
   def setThumbnail(path: String): Unit
-  def liftPackages(paths: Vector[String]): Unit
+  def addPending(paths: Vector[String]): Unit
   def update(key: Key, diff: Deltas.OfMod): Unit
   def remove(key: Key): Unit
   def applyPendingAdds(): Unit
@@ -61,7 +62,7 @@ object Dispatch {
         for {
           a         <- fa
           rState    <- Mods.state
-          nextState <- Capture { f(a, rState, state()) }
+          nextState <- Capture { f(a, rState, state().copy(rState)) }
           _         <- Capture { state := nextState }
         } yield ()
       }
@@ -77,7 +78,23 @@ object Dispatch {
       }
 
     override def setThumbnail(path: String): Unit = ???
-    override def liftPackages(paths: Vector[String]): Unit = ???
-    override def applyPendingAdds(): Unit = ???
+
+    override def addPending(paths: Vector[String]): Unit = {
+      val assoc = paths.strengthR(none[String]).toMap
+      val mod = UiState.pendingAdds.set(Some(
+        UiState.PendingAdds(packages = paths, assoc = assoc)
+      ))
+
+      state ~= mod
+    }
+    override def applyPendingAdds(): Unit = {
+      val assocs = UiState.assocL.getOption(state()).getOrElse(Map())
+
+      val op = assocs.keys.toVector.traverse_ { str =>
+        Mods.liftFile(Path("-os") / str).void
+      }
+
+      syncChanges(op) { (_, rs, us) => us.copy(pendingAdds = None) }
+    }
   }
 }

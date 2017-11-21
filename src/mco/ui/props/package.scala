@@ -46,13 +46,20 @@ package object props extends PropsImplementation with PropsSyntax {
       }
 
       override def map[A, B](fa: Prop[A])(f: A => B) = {
-        Bindings.createObjectBinding(() => f(fa.value), fa)
+        val property = ObjectProperty(f(fa()))
+        val watch: InvalidationListener = (_) => { property() = f(fa()) }
+        fa.addListener(watch)
+        property
       }
 
       override def apply2[A, B, C](fa: => Prop[A], fb: => Prop[B])(f: (A, B) => C) = {
         val sfa = fa
         val sfb = fb
-        Bindings.createObjectBinding(() => f(sfa.value, sfb.value), sfa, sfb)
+        val property = ObjectProperty(f(sfa(), sfb()))
+        val watch: InvalidationListener = (_) => { property() = f(sfa(), sfb()) }
+        sfa.addListener(watch)
+        sfb.addListener(watch)
+        property
       }
     }
 }
