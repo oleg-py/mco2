@@ -2,7 +2,6 @@ package mco.ui
 
 import better.files._
 import mco.data.Path
-import mco.io.generic.PrototypeImplementation
 import mco.util.Capture
 import monix.eval.{Coeval, Task, TaskApp}
 import monix.scalaz._
@@ -13,13 +12,20 @@ import scalafx.beans.property.ObjectProperty
 
 import mco.stubs.NoMods
 import mco.ui.props.PropertyBasedVar
+import mco.variant.generic._
+import pureconfig.loadConfig
 
 
 object Runner extends TaskApp {
   override def run(args: Array[String]): Task[Unit] = Task.defer {
     val cwd = Path(File(".").pathAsString)
+    val configCoeval = loadConfig[GenericConfig]
+      .fold(
+        fails => Coeval.raiseError(new Exception(fails.toList.mkString("\n"))),
+        parsed => Coeval.now(parsed))
     val exec = for {
-      algebra <- PrototypeImplementation.algebra(cwd)
+      config <- configCoeval
+      algebra <- PrototypeImplementation.algebra(config, cwd)
       state <- algebra.state
     } yield {
       implicit val mods: Mods[Coeval] = algebra

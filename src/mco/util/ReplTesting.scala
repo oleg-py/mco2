@@ -1,11 +1,12 @@
 package mco.util
 
-import scalaz.{Scalaz, _}
+import scalaz._
 import scalaz.Scalaz._
 
 import better.files._
 import mco.core.Mods
-import mco.io.generic.PrototypeImplementation
+import mco.variant.generic.{GenericConfig, PrototypeImplementation}
+import pureconfig.loadConfig
 
 //noinspection TypeAnnotation
 object ReplTesting {
@@ -26,7 +27,7 @@ object ReplTesting {
       override def point[A](a: => A) = a
     }
 
-    val tmp = PrototypeImplementation.algebra(Path(
+    val tmp = PrototypeImplementation.algebra(loadConfig[GenericConfig].right.get, Path(
       file".".pathAsString
     ))
     tmp: Mods[Id]
