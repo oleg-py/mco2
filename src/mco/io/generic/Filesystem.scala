@@ -48,6 +48,9 @@ import java.nio.file.attribute.BasicFileAttributes
 
   final def ensureDir(path: Path)(implicit F: Monad[F]): F[Unit] =
     isDirectory(path).ifM(F.point(()), mkDir(path))
+
+  final def rmIfExists(path: Path)(implicit F: Monad[F]): F[Unit] =
+    exists(path).ifM(rmTree(path), F.point(()))
 }
 
 

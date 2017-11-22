@@ -35,8 +35,9 @@ class LocalImageStore[F[_]: Filesystem: Monad](
   override def getImage(key: Key): F[Option[URL]] =
     for {
       dict <- store()
-      filename = dict.lookup(key)
-      url <- filename.traverse(s => fileToUrl(root / s))
+      path = dict.lookup(key).map(root / _)
+      exists <- path.traverse(exists(_)).map(_ | false)
+      url <- path.filter(_ => exists).traverse(fileToUrl(_))
     } yield url
 
   override def putImage(key: Key, path: Option[Path]): F[Unit] =
@@ -44,7 +45,7 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       dict <- store()
       newName = path.map(getTarget(key))
       named = path.tuple(newName.map(root / _))
-      _ <- dict.lookup(key).cata(name => rmTree(root / name), noop)
+      _ <- dict.lookup(key).cata(name => rmIfExists(root / name), noop)
       _ <- named.cata(Function.tupled(copy(_, _)), noop)
       _ <- store ~= { _.alter(key, _ => newName) }
     } yield ()
@@ -55,6 +56,6 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       keySet = keys.toSet
       (oks, dels) = dict.partitionWithKey { case (k, _) => keySet(k) }
       _ <- store := oks
-      _ <- dels.values.traverse { name => rmTree(root / name) }
+      _ <- dels.values.traverse { name => rmIfExists(root / name) }
     } yield ()
 }
