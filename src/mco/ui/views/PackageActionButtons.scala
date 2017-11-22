@@ -13,7 +13,7 @@ import mco.util.syntax.fp._
 class PackageActionButtons(state: Prop[Option[ModState]])(implicit dispatch: Dispatch) extends HBox {
   hgrow = Priority.Always
   alignmentInParent = Pos.CenterRight
-  padding = Insets(10, 0, 10, 0)
+  padding = Insets(10)
   spacing = 10
   children = Seq(
     new Region {

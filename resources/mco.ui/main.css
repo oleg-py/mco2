@@ -15,3 +15,7 @@
 .table-row-cell:filled .box {
     -fx-background-color: derive(#44B, +70%);
 }
+
+.split-pane {
+    -fx-background-insets: 0
+}

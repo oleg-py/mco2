@@ -1,6 +1,7 @@
 package mco.ui.views
 
-import scalafx.scene.layout.Priority
+
+import scalafx.geometry.Insets
 import scalaz.syntax.functor._
 
 import mco.ui.Dispatch
@@ -10,17 +11,15 @@ import mco.ui.props._
 import java.net.URL
 import javafx.scene.image.Image
 
-class PackageThumbnail(state: Prop[Option[URL]], parentHeight: Prop[Double])(
+class PackageThumbnail(state: Prop[Option[URL]])(
   implicit dispatch: Dispatch)
   extends ImageViewPane with DropFilesReceiver
 {
   image <== state.map(_.map(url => new Image(url.toString)).orNull)
   smooth = true
   preserveRatio = true
+  margin = Insets(4, 0, 4, 0)
 
-  minHeight <== parentHeight
-  hgrow = Priority.Always
-  vgrow = Priority.Always
 
   override def onFilesReceived(paths: Vector[String]): Unit = {
     paths match {

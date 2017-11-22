@@ -1,6 +1,7 @@
 package mco.ui.views
 
 import scalafx.beans.property.ObjectProperty
+import scalafx.geometry.Insets
 import scalafx.scene.control.{TableColumn, TableView}
 import scalafx.scene.layout.Priority
 
@@ -13,12 +14,12 @@ class PackageContentTable(
   type Val = (String, ContentState)
   columnResizePolicy = TableView.ConstrainedResizePolicy
   editable = true
-  vgrow = Priority.Sometimes
   items <== state
   columns ++= Seq(
     new NameColumn,
     new ContentKindColumn
   )
+  margin = Insets(4, 0, 4, 0)
 
   class NameColumn extends TableColumn[Val, String] {
     maxWidth = Double.MaxValue
