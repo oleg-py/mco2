@@ -1,19 +1,20 @@
-package mco.ui
+package mco.ui.views
 
 import scalafx.Includes._
 import scalafx.beans.property.{BooleanProperty, ObjectProperty}
 import scalafx.geometry.Insets
 import scalafx.scene.control.TableColumn._
-import scalafx.scene.control.{TableColumn, TableRow, TableView}
 import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
+import scalafx.scene.control.{TableColumn, TableRow, TableView}
 import scalafx.scene.layout.Priority
 
 import mco.core.state.{ModState, RepoState}
 import mco.data.{Key, Keyed}
-import mco.ui.props._
+import mco.ui.Dispatch
 import mco.ui.components.DropFilesReceiver
-import mco.util.syntax.fp._
+import mco.ui.props._
 import mco.util.syntax.any._
+import mco.util.syntax.fp._
 
 class RepoPackagesTable(
   state: Prop[RepoState]

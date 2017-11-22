@@ -1,8 +1,10 @@
-package mco.ui
+package mco.ui.views
 
 import scalafx.geometry.Insets
 import scalafx.scene.control.Tab
 import scalafx.scene.layout.{HBox, VBox}
+
+import mco.ui._
 import mco.ui.props._
 import mco.util.syntax.fp._
 

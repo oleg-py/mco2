@@ -1,5 +1,4 @@
-package mco.ui
-
+package mco.ui.views
 
 import scalafx.Includes._
 import scalafx.geometry.{Insets, Pos}
@@ -7,6 +6,7 @@ import scalafx.scene.control.Button
 import scalafx.scene.layout.{HBox, Priority, Region}
 
 import mco.core.state.ModState
+import mco.ui.Dispatch
 import mco.ui.props._
 import mco.util.syntax.fp._
 

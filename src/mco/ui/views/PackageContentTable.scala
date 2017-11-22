@@ -1,4 +1,4 @@
-package mco.ui
+package mco.ui.views
 
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.control.{TableColumn, TableView}

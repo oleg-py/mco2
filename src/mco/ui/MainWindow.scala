@@ -8,6 +8,8 @@ import scalafx.scene.control.TabPane
 import mco.ui.props._
 import scalaz.syntax.functor._
 
+import mco.ui.views.RepoTab
+
 import javafx.scene.image.Image
 
 

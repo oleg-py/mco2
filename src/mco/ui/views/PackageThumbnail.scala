@@ -1,11 +1,14 @@
-package mco.ui
+package mco.ui.views
+
+import scalafx.scene.layout.Priority
+import scalaz.syntax.functor._
+
+import mco.ui.Dispatch
+import mco.ui.components.{DropFilesReceiver, ImageViewPane}
+import mco.ui.props._
+
 import java.net.URL
 import javafx.scene.image.Image
-import scalaz.syntax.functor._
-import scalafx.scene.layout.Priority
-
-import mco.ui.props._
-import mco.ui.components.{DropFilesReceiver, ImageViewPane}
 
 class PackageThumbnail(state: Prop[Option[URL]], parentHeight: Prop[Double])(
   implicit dispatch: Dispatch)
