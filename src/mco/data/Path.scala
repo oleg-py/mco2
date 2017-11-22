@@ -58,6 +58,7 @@ object Path {
 
   val root: Path = Path("/")
   def apply(str: String): Path = of(Seq(str))
+  def segment(str: String): String = sepRx.replaceAllIn(str, "-")
 
   def of(segments: Seq[String]): Path = new Path(normalize(segments))
 
