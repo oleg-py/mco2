@@ -13,6 +13,7 @@ import scalafx.beans.property.ObjectProperty
 import mco.core.vars.PrintingVar
 import mco.stubs.NoMods
 import mco.ui.props.PropertyBasedVar
+import mco.util.misc.macOSIcon
 import mco.variant.generic._
 import pureconfig.loadConfig
 
@@ -25,6 +26,7 @@ object Runner extends TaskApp {
         fails => Coeval.raiseError(new Exception(fails.toList.mkString("\n"))),
         parsed => Coeval.now(parsed))
     val exec = for {
+      _ <- macOSIcon
       config <- configCoeval
       algebra <- PrototypeImplementation.algebra(config, cwd)
       state <- algebra.state

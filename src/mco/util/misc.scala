@@ -8,8 +8,10 @@ import mco.data.Path
 import mco.io.generic.Filesystem
 import net.openhft.hashing.LongHashFunction
 import mco.util.syntax.fp._
-
 import java.util.UUID
+import javax.swing.ImageIcon
+
+import monix.eval.Coeval
 
 
 object misc {
@@ -33,4 +35,13 @@ object misc {
       candidate.point[F]
     )
   }
+
+  val macOSIcon: Coeval[Unit] = Coeval {
+    val cls = Class.forName("com.apple.eawt.Application")
+    cls.getMethod("setDockIconImage", classOf[java.awt.Image]).invoke(
+      cls.getMethod("getApplication").invoke(null),
+      new ImageIcon(getClass.getResource("/app-icon.png")).getImage
+    )
+    ()
+  }.onErrorHandle(_ => ())
 }
