@@ -76,10 +76,11 @@ object Dispatch {
       }
 
     override def setThumbnail(path: String): Unit = {
-      val op = state().currentModKey.traverse_(key =>
+      val op = state().currentModKey.traverse(key =>
         ImageStore.putImage(key, Some(Path("-os") / path))
+          >> ImageStore.getImage(key)
       )
-      syncChanges(op) { (_, _, us) => us }
+      syncChanges(op) { (url, _, us) => us.copy(thumbnailUrl = url.flatten) }
     }
 
 
