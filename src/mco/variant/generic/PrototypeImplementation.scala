@@ -3,7 +3,7 @@ package mco.variant.generic
 import scalaz._
 import std.vector._
 
-import mco.core.Mods
+import mco.core.{ImageStore, Mods}
 import mco.core.state.RepoState
 import mco.core.vars._
 import mco.data.{Key, Keyed, Path}
@@ -18,64 +18,78 @@ import mco.util.syntax.fp._
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
+  private val toKey = (p: Path) => Key(p.name)
+  type MThrow[F[_]] = MonadError[F, Throwable]
 
-  def algebra[F[_]: Capture: MonadError[?[_], Throwable]](
+  private def filesystem[F[_]: Capture: MThrow](
     config: GenericConfig,
-    root: Path
-  ): F[Mods[F]] = {
-    val toKey = (p: Path) => Key(p.name)
-
+    cwd: Path
+  ): F[Filesystem[F]] = {
     val localFS = new LocalFilesystem[F]
 
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
         val file = subpath.drop("varfs!".length)
         val backend = CacheVar(Cell.Dir().point[F])(
-          new JavaSerializableVar(root / file)(??, ??, localFS),
+          new JavaSerializableVar(cwd / file)(??, ??, localFS),
           new MutableVar(_).point[F].widen
-        )
-          .map(new PrintingVar(_)) // TODO - remove logging here
-          .map(new VarFilesystem(_))
-          .widen[Filesystem[F]]
+        ).map(new VarFilesystem(_): Filesystem[F])
         backend.strengthL(Path.root)
       } else {
-        localFS.ensureDir(root / subpath).as(
-          (root / subpath, localFS: Filesystem[F])
+        localFS.ensureDir(cwd / subpath).as(
+          (cwd / subpath, localFS: Filesystem[F])
         )
       }
 
     config.paths
       .traverse(determineFS)
-      .flatMap { case Vector(source, _, target) =>
-        implicit val filesystem: Filesystem[F] =
-          new LoggingFilesystem(new VirtualizedFilesystem[F](
-            Map(
-              ("-source", source),
-              ("-target", target),
-              ("-os",     (Path.root, localFS))
-            ),
-            localFS
-          )(??, Equal.equalRef))
-
-        for {
-          _ <- Vector("-target").traverse_(s => ensureDir(Path(s)))
-          typer = new SimpleModTypes
-          mods <- typer.allIn(Path("-source"))
-          orderedMods <- mods.traverse { case (path, mod) =>
-            initMod[F](mod).map(Keyed(toKey(path), _))
-          }
-          modMap = mods.map { case t @ (path, _) => toKey(path) -> t }.toMap
-          labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
-          repoVar = new MutableVar(RepoState(orderedMods, labels))
-        } yield new LocalMods(
-          Path("-source"),
-          repoVar,
-          new MutableVar(modMap),
-          typer,
-          toKey,
-          new MangleNames(Path("-target"))
-        )
+      .map { case Vector(source, images, target) =>
+        new LoggingFilesystem(new VirtualizedFilesystem[F](
+          Map(
+            ("-source", source),
+            ("-target", target),
+            ("-images", images),
+            ("-os", (Path.root, localFS))
+          ),
+          localFS
+        )(??, Equal.equalRef))
       }
       .widen
   }
+
+  private def images[F[_]: Filesystem: Capture: MThrow]: F[ImageStore[F]] = {
+    CacheVar(IMap.empty[Key, String].point[F])(
+      new JavaSerializableVar(Path("-target/.imgdb")),
+      new MutableVar(_).point[F].widen
+    )
+      .map(new LocalImageStore(Path("-images"), _))
+      .widen
+  }
+
+  private def mods[F[_]: Filesystem: Capture: MThrow]: F[Mods[F]] = {
+    for {
+      _ <- ensureDir(Path("-target"))
+      typer = new SimpleModTypes
+      mods <- typer.allIn(Path("-source"))
+      orderedMods <- mods.traverse { case (path, mod) =>
+        initMod[F](mod).map(Keyed(toKey(path), _))
+      }
+      modMap = mods.map { case t @ (path, _) => toKey(path) -> t }.toMap
+      labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
+      repoVar = new MutableVar(RepoState(orderedMods, labels))
+    } yield new LocalMods(
+      Path("-source"),
+      repoVar,
+      new MutableVar(modMap),
+      typer,
+      toKey,
+      new MangleNames(Path("-target"))
+    )
+  }.widen
+
+  def algebras[F[_]: Capture: MThrow](
+    config: GenericConfig,
+    cwd: Path
+  ): F[(Mods[F], ImageStore[F])] =
+    filesystem(config, cwd) >>= { implicit fs => mods tuple images }
 }

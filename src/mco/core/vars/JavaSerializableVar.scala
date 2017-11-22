@@ -10,7 +10,7 @@ import mco.io.generic.Filesystem
 import mco.io.generic.Filesystem._
 import mco.util.Capture
 
-class JavaSerializableVar[F[_]: Monad: Capture: Filesystem, A <: java.io.Serializable](
+class JavaSerializableVar[F[_]: Monad: Capture: Filesystem, A](
   target: Path
 )
   extends Var[F, A] {

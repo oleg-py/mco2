@@ -112,5 +112,5 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
   override def fileToUrl(p: Path) = for {
     file <- deepGet(p)
     Some(File(bs)) = file
-  } yield new URL(new String(Base64.getEncoder.encode(bs)))
+  } yield new URL("data:;base64," + new String(Base64.getEncoder.encode(bs)))
 }

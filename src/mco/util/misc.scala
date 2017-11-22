@@ -1,5 +1,8 @@
 package mco.util
 
+import java.io.{ByteArrayInputStream, InputStream}
+import java.net.{URL, URLConnection, URLStreamHandler}
+
 import scalaz._
 import std.anyVal._
 import std.tuple._
@@ -8,7 +11,7 @@ import mco.data.Path
 import mco.io.generic.Filesystem
 import net.openhft.hashing.LongHashFunction
 import mco.util.syntax.fp._
-import java.util.UUID
+import java.util.{Base64, UUID}
 import javax.swing.ImageIcon
 
 import monix.eval.Coeval
@@ -36,12 +39,33 @@ object misc {
     )
   }
 
-  val macOSIcon: Coeval[Unit] = Coeval {
+  def macOSIcon[F[_]: Capture: MonadError[?[_], Throwable]]: F[Unit] = Capture {
     val cls = Class.forName("com.apple.eawt.Application")
     cls.getMethod("setDockIconImage", classOf[java.awt.Image]).invoke(
       cls.getMethod("getApplication").invoke(null),
       new ImageIcon(getClass.getResource("/app-icon.png")).getImage
     )
     ()
-  }.onErrorHandle(_ => ())
+  }.handleError(_ => Capture { () })
+
+  private val dataUrl = "data:(.*?);(.*?),(.*)".r
+  private class DataConnection(u: URL) extends URLConnection(u) {
+    override def connect(): Unit = ()
+
+    override def getInputStream: InputStream = {
+      u.toString match {
+        case dataUrl(_, "base64", content) =>
+          new ByteArrayInputStream(Base64.getDecoder.decode(content))
+        case dataUrl(_, scheme, _) =>
+          throw new Exception(s"Unsupported data URI scheme: $scheme")
+        case _ =>
+          throw new Exception(s"Could not read $u")
+      }
+    }
+  }
+
+  def base64url[F[_]: Capture] = Capture {
+    val handler: URLStreamHandler = new DataConnection(_)
+    URL.setURLStreamHandlerFactory(protocol => if (protocol == "data") handler else null)
+  }
 }

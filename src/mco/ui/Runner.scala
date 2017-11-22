@@ -6,14 +6,14 @@ import mco.util.Capture
 import monix.eval.{Coeval, Task, TaskApp}
 import monix.scalaz._
 import Capture.coeval._
-import mco.core.Mods
+import mco.core.{ImageStore, Mods}
 import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
 import mco.core.vars.PrintingVar
-import mco.stubs.NoMods
+import mco.stubs.{NoImageStore, NoMods}
 import mco.ui.props.PropertyBasedVar
-import mco.util.misc.macOSIcon
+import mco.util.misc.{macOSIcon, base64url}
 import mco.variant.generic._
 import pureconfig.loadConfig
 
@@ -27,11 +27,13 @@ object Runner extends TaskApp {
         parsed => Coeval.now(parsed))
     val exec = for {
       _ <- macOSIcon
+      _ <- base64url
       config <- configCoeval
-      algebra <- PrototypeImplementation.algebra(config, cwd)
-      state <- algebra.state
+      algebras <- PrototypeImplementation.algebras(config, cwd)
+      state <- algebras._1.state
     } yield {
-      implicit val mods: Mods[Coeval] = algebra
+      implicit val mods: Mods[Coeval] = algebras._1
+      implicit val images: ImageStore[Coeval] = algebras._2
       val initialState = UiState.initial(state)
       val mkDispatch = new Dispatch.Effectful[Coeval](coeval => coeval())(_)
       (initialState, mkDispatch)
@@ -39,7 +41,8 @@ object Runner extends TaskApp {
 
     val recovered = exec.onErrorRecover { case NonFatal(ex) =>
       ex.printStackTrace()
-      implicit val dummyAlgebra: Mods[Coeval] = new NoMods[Coeval]
+      implicit val mods: Mods[Coeval] = new NoMods[Coeval]
+      implicit val images: ImageStore[Coeval] = new NoImageStore[Coeval]
       val state = UiState.startupError(ex)
       val mkDispatch = new Dispatch.Effectful[Coeval](_ => ())(_)
       (state, mkDispatch)

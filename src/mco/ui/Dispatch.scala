@@ -5,7 +5,7 @@ import Id._
 import std.option._
 import std.vector._
 
-import mco.core.Mods
+import mco.core.{ImageStore, Mods}
 import mco.core.state.{Deltas, RepoState}
 import mco.data.{Key, Path}
 import mco.util.Capture
@@ -20,6 +20,7 @@ trait Dispatch {
   def update(key: Key, diff: Deltas.OfMod): Unit
   def remove(key: Key): Unit
   def applyPendingAdds(): Unit
+  def setActivePackage(key: Key): Unit
 
   final def installActive(): Unit =
     state().currentModKey.foreach(install)
@@ -36,9 +37,6 @@ trait Dispatch {
   final def uninstall(key: Key): Unit =
     update(key, Deltas.OfMod(enabled = Some(false)))
 
-  final def setActivePackage(key: Key): Unit =
-    state ~= UiState.currentModKey.set(Some(key))
-
   final def showNotification(str: String): Unit =
     ???
 
@@ -53,7 +51,7 @@ trait Dispatch {
 }
 
 object Dispatch {
-  class Effectful[F[_]: Monad: Capture: Mods]
+  class Effectful[F[_]: Monad: Capture: Mods: ImageStore]
   (runLater: F[Unit] => Unit)(
     protected val state: Var[Id, UiState],
   ) extends Dispatch {
@@ -77,7 +75,22 @@ object Dispatch {
         us
       }
 
-    override def setThumbnail(path: String): Unit = ???
+    override def setThumbnail(path: String): Unit = {
+      val op = state().currentModKey.traverse_(key =>
+        ImageStore.putImage(key, Some(Path("-os") / path))
+      )
+      syncChanges(op) { (_, _, us) => us }
+    }
+
+
+    override def setActivePackage(key: Key): Unit = {
+      syncChanges(ImageStore.getImage(key)) { (img, _, us) =>
+        us.copy(
+          currentModKey = Some(key),
+          thumbnailUrl = img
+        )
+      }
+    }
 
     override def addPending(paths: Vector[String]): Unit = {
       val assoc = paths.strengthR(none[String]).toMap

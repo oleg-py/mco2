@@ -2,8 +2,7 @@ package mco.io.generic
 
 import scalaz._
 import std.option._
-import std.stream._
-import syntax.std.map._
+import std.list._
 
 import mco.core.ImageStore
 import mco.core.vars.Var
@@ -26,7 +25,7 @@ import java.net.URL
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
   root: Path,
-  store: Var[F, Map[Key, String]]
+  store: Var[F, IMap[Key, String]]
 ) extends ImageStore[F] {
   private def getTarget(key: Key)(path: Path) =
     Path.segment(key.unwrap) ++ path.extension
@@ -36,7 +35,7 @@ class LocalImageStore[F[_]: Filesystem: Monad](
   override def getImage(key: Key): F[Option[URL]] =
     for {
       dict <- store()
-      filename = dict.get(key)
+      filename = dict.lookup(key)
       url <- filename.traverse(s => fileToUrl(root / s))
     } yield url
 
@@ -45,18 +44,17 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       dict <- store()
       newName = path.map(getTarget(key))
       named = path.tuple(newName.map(root / _))
-      _ <- dict.get(key).cata(name => rmTree(root / name), noop)
+      _ <- dict.lookup(key).cata(name => rmTree(root / name), noop)
       _ <- named.cata(Function.tupled(copy(_, _)), noop)
-      _ <- store ~= { _.alter(key)(_ => newName) }
+      _ <- store ~= { _.alter(key, _ => newName) }
     } yield ()
 
   override def stripImages(keys: Vector[Key]): F[Unit] =
     for {
       dict <- store()
       keySet = keys.toSet
-      (oks, dels) = dict.partition { case (k, _) => keySet(k) }
+      (oks, dels) = dict.partitionWithKey { case (k, _) => keySet(k) }
       _ <- store := oks
-      _ <- dels.valuesIterator.toStream
-        .traverse { name => rmTree(root / name) }
+      _ <- dels.values.traverse { name => rmTree(root / name) }
     } yield ()
 }
