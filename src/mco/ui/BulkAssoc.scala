@@ -20,7 +20,7 @@ import mco.util.syntax.fp._
 
 import javafx.scene.control.TableColumn.CellEditEvent
 
-class BulkAssoc(state: Prop[UiState.PendingAdds])(implicit dispatch: Dispatch) extends VBox { contentRoot =>
+class BulkAssoc(state: Prop[UiState.PendingAdds])(implicit cmd: Commands) extends VBox { contentRoot =>
   private val table = new TableComponent
 
   hgrow = Priority.Always
@@ -48,12 +48,12 @@ class BulkAssoc(state: Prop[UiState.PendingAdds])(implicit dispatch: Dispatch) e
         new Button("Cancel") {
           prefWidth = 125
           cancelButton = true
-          onAction = handle { dispatch.cancelPendingAdds() }
+          onAction = handle { cmd.cancelPendingAdds() }
         },
         new Button("Submit") {
           prefWidth = 125
           defaultButton = true
-          onAction = handle { dispatch.applyPendingAdds() }
+          onAction = handle { cmd.applyPendingAdds() }
         }
       )
     }
@@ -80,7 +80,7 @@ class BulkAssoc(state: Prop[UiState.PendingAdds])(implicit dispatch: Dispatch) e
           }
 
         onEditCommit = (ev: CellEditEvent[(String, Option[String]), Option[String]]) => {
-          dispatch.associatePending(ev.rowValue._1, ev.newValue)
+          cmd.associatePending(ev.rowValue._1, ev.newValue)
         }
       }
     )

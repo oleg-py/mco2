@@ -6,11 +6,11 @@ import scalafx.scene.control.Button
 import scalafx.scene.layout.{HBox, Priority, Region}
 
 import mco.core.state.ModState
-import mco.ui.Dispatch
+import mco.ui.Commands
 import mco.ui.props._
 import mco.util.syntax.fp._
 
-class PackageActionButtons(state: Prop[Option[ModState]])(implicit dispatch: Dispatch) extends HBox {
+class PackageActionButtons(state: Prop[Option[ModState]])(implicit cmd: Commands) extends HBox {
   hgrow = Priority.Always
   alignmentInParent = Pos.CenterRight
   padding = Insets(10)
@@ -34,8 +34,8 @@ class PackageActionButtons(state: Prop[Option[ModState]])(implicit dispatch: Dis
       disable <== state.map(_.isEmpty)
       onAction = handle {
         for (value <- state()) {
-          if (value.stamp.installed) dispatch.uninstallActive()
-          else dispatch.installActive()
+          if (value.stamp.installed) cmd.uninstallActive()
+          else cmd.installActive()
         }
       }
       defaultButton = true

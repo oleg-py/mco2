@@ -9,7 +9,7 @@ import mco.ui._
 import mco.ui.props._
 import mco.util.syntax.fp._
 
-class RepoTab(state: Prop[UiState])(implicit dispatch: Dispatch) extends Tab {
+class RepoTab(state: Prop[UiState])(implicit cmd: Commands) extends Tab {
   text = "Stub Repo Tab"
   closable = false
   content = new SplitPane { contentRoot =>

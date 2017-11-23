@@ -35,8 +35,8 @@ object Runner extends TaskApp {
       implicit val mods: Mods[Coeval] = algebras._1
       implicit val images: ImageStore[Coeval] = algebras._2
       val initialState = UiState.initial(state)
-      val mkDispatch = new Dispatch.Effectful[Coeval](coeval => coeval())(_)
-      (initialState, mkDispatch)
+      val mkCommands = Commands[Coeval](coeval => coeval()) _
+      (initialState, mkCommands)
     }
 
     val recovered = exec.onErrorRecover { case NonFatal(ex) =>
@@ -44,8 +44,8 @@ object Runner extends TaskApp {
       implicit val mods: Mods[Coeval] = new NoMods[Coeval]
       implicit val images: ImageStore[Coeval] = new NoImageStore[Coeval]
       val state = UiState.startupError(ex)
-      val mkDispatch = new Dispatch.Effectful[Coeval](_ => ())(_)
-      (state, mkDispatch)
+      val mkCommands = Commands[Coeval](_ => ()) _
+      (state, mkCommands)
     }
 
     recovered

@@ -13,7 +13,7 @@ import mco.ui.views.RepoTab
 import javafx.scene.image.Image
 
 
-class MainWindow(state: Prop[UiState])(implicit dispatch: Dispatch) extends JFXApp {
+class MainWindow(state: Prop[UiState])(implicit cmd: Commands) extends JFXApp {
   Thread.currentThread.setUncaughtExceptionHandler((_, throwable) => {
     throwable.printStackTrace()
   })

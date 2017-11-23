@@ -10,15 +10,13 @@ import scalafx.scene.layout.Priority
 
 import mco.core.state.{ModState, RepoState}
 import mco.data.{Key, Keyed}
-import mco.ui.Dispatch
+import mco.ui.Commands
 import mco.ui.components.DropFilesReceiver
 import mco.ui.props._
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 
-class RepoPackagesTable(
-  state: Prop[RepoState]
-)(implicit dispatch: Dispatch)
+class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   extends TableView[(Key, String, ModState)]
     with DropFilesReceiver
 { table =>
@@ -36,11 +34,11 @@ class RepoPackagesTable(
   rowFactory = _ => new PackageRow
 
   override def onFilesReceived(paths: Vector[String]): Unit =
-    dispatch.addPending(paths)
+    cmd.addPending(paths)
 
   class PackageRow extends TableRow[Triple] {
     onMouseClicked = handle {
-      if (!empty()) dispatch.setActivePackage(item()._1)
+      if (!empty()) cmd.setActivePackage(item()._1)
     }
   }
 
@@ -59,16 +57,16 @@ class RepoPackagesTable(
     cellFactory = _ => new LabelEditTableCell
     cellValueFactory = s => ObjectProperty(s.value._2)
     onEditCommit = (ev: CellEditEvent[Triple, String]) => {
-      dispatch.setLabel(ev.rowValue._1, ev.newValue)
+      cmd.setLabel(ev.rowValue._1, ev.newValue)
     }
   }
 
-  def mkCheckBox(i: Int) = {
+  private def mkCheckBox(i: Int) = {
     def tuple = table.items().get(i)
     BooleanProperty(tuple._3.stamp.installed)
       .tap(prop => prop.onChange {
-        if (prop()) dispatch.install(tuple._1)
-        else dispatch.uninstall(tuple._1)
+        if (prop()) cmd.install(tuple._1)
+        else cmd.uninstall(tuple._1)
       })
   }
 
