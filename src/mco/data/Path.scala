@@ -15,7 +15,10 @@ import scala.annotation.tailrec
  */
 final class Path private (val segments: Vector[String]) {
   def name: String = segments.lastOption.getOrElse("")
-  def extension: String = name.dropWhile(_ == '.').dropWhile(_ != '.')
+  def extension: String = {
+    val idx = name.lastIndexOf('.')
+    if (idx == -1) "" else name.drop(idx)
+  }
 
   def / (s: String): Path = this / Seq(s)
   def / (ss: Seq[String]): Path = Path.of(segments ++ ss)
@@ -54,6 +57,7 @@ final class Path private (val segments: Vector[String]) {
  * Companion object to the Path class
  */
 object Path {
+  private val extRx = """(.\w+)$"""
   private val sepRx = """[\\/]+""".r
 
   val root: Path = Path("/")

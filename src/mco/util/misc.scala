@@ -26,19 +26,6 @@ object misc {
     (hi, lo)
   }
 
-  def nextFreeName[F[_]: Filesystem: Monad](
-    target: Path,
-    ext: String,
-    step: (Long, Long) = (1L, 3L))(
-    hash: (Long, Long)
-  ): F[Path] = {
-    val candidate = target / (uuidName(hash) ++ ext)
-    Filesystem.exists(candidate).ifM(
-      nextFreeName(target, ext, step)(hash |+| step),
-      candidate.point[F]
-    )
-  }
-
   def macOSIcon[F[_]: Capture: MonadError[?[_], Throwable]]: F[Unit] = Capture {
     val cls = Class.forName("com.apple.eawt.Application")
     cls.getMethod("setDockIconImage", classOf[java.awt.Image]).invoke(

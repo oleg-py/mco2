@@ -24,7 +24,7 @@ class LocalMods[F[_]: Monad: Filesystem](
   mods: Var[F, Map[Key, (Path, Mod[F])]],
   tryAsMod: Path => F[Option[Mod[F]]],
   toKey: Path => Key,
-  resolver: NameResolver[F]
+  resolver: NameResolver
 ) extends Mods[F] {
   override def state: F[RepoState] = repoState()
 
@@ -51,6 +51,7 @@ class LocalMods[F[_]: Monad: Filesystem](
 
   private def prepareFiles(
     filter: Key => Boolean)(
+    index: Int,
     mState: Keyed[ModState]) = {
     for (dict <- mods())
       yield dict(mState.key)._2
@@ -58,11 +59,8 @@ class LocalMods[F[_]: Monad: Filesystem](
           case Keyed(key, Content.Component) if filter(key) => true
           case _ => false
         }
-        .andThen(resolver.bulk(mState))
+        .map(resolver.bulk(index, mState))
     }
-
-  private def collapse[A, B](xs: Vector[(A, Keyed[Option[B]])]): Vector[Keyed[(A, B)]] =
-    xs.collect { case (from, Keyed(k, Some(to))) => Keyed(k, from -> to) }
 
   private def filter2[A](f: A => Boolean)(xs: Vector[Keyed[(A, A)]]) =
     xs.filter { case Keyed(_, (_, to)) => f(to) }
@@ -78,9 +76,9 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, mState) = rState.at(key)
       conflicts = !rState.hasConflicts(_: Path, i)
-      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
+      prepared <- prepareFiles(mState.get.contentEnabled)(i, mState)
       changes <- prepared
-        .andThen(copyFiles compose filter2(conflicts) compose collapse)
+        .andThen(copyFiles compose filter2(conflicts))
         .runFS
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = true))
     } yield ()
@@ -90,8 +88,8 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, mState) = rState.at(key)
       targets = rState.recoveryIndex(_: Path, i)
-      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
-      changes <- prepared.andThen(rmFiles compose collapse).runFS
+      prepared <- prepareFiles(mState.get.contentEnabled)(i, mState)
+      changes <- prepared.andThen(rmFiles).runFS
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = false))
       newState <- state
       _ <- changes
@@ -100,8 +98,8 @@ class LocalMods[F[_]: Monad: Filesystem](
         }
         .toVector
         .traverse_ { case (j, keys) =>
-          prepareFiles(keys)(newState.orderedMods(j))
-            .map(_.andThen(copyFiles compose collapse).runFS)
+          prepareFiles(keys)(j, newState.orderedMods(j))
+            .map(_.andThen(copyFiles).runFS)
             .void
         }
     } yield ()
