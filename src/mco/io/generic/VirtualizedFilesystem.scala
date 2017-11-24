@@ -35,7 +35,7 @@ class VirtualizedFilesystem[F[_]: Monad](
       roots.keys.toStream.map(Path.root / _).point[F]
     } else {
       fs.childrenOf(p)
-        .map { paths => paths.map(Path.root / head / _.fromToP(p)) }
+        .map { paths => paths.map(Path.root / head / _.relTo(p)) }
     }
   }
 
@@ -53,7 +53,7 @@ class VirtualizedFilesystem[F[_]: Monad](
     def folderCopy = for {
       children <- childrenOf(from)
       _ <- children.traverse_ { path =>
-        slowCopy(path, to / path.fromToP(from))
+        slowCopy(path, to / path.relTo(from))
       }
     } yield ()
 

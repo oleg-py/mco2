@@ -13,11 +13,8 @@ import scala.annotation.tailrec
  *
  * @param segments parts this path consists of, without ".", ".." and slashes
  */
-sealed abstract case class Path (segments: Vector[Segment]) {
-  def name: Segment = segments.lastOption.getOrElse(Segment.empty)
-  def extension: String = name.extension
-
-  def fromToP(other: Path): RelPath = {
+sealed abstract case class Path (segments: Vector[Segment]) extends PathLike[Path] {
+  def relTo(other: Path): RelPath = {
     @tailrec def loop(from: Vector[Segment], to: Vector[Segment]): Vector[Segment] =
       (from, to) match {
         case (a +: as, b +: bs) if a == b =>
@@ -43,7 +40,7 @@ sealed abstract case class Path (segments: Vector[Segment]) {
  */
 object Path {
   val root: Path = Path("/")
-  def apply(str: String): Path = Path.of(Segment.multi(Seq(str)))
+  def apply(str: String): Path = Path.of(Segment.multi(str))
   def of(segments: Vector[Segment]): Path =
-    new Path(Segment.multi(Seq(segments.mkString("/"))).dropWhile(_ == Segment.`..`)) {}
+    new Path(Segment.multi(segments.mkString("/")).dropWhile(_ == Segment.`..`)) {}
 }

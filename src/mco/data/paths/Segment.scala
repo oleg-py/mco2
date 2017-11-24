@@ -19,9 +19,8 @@ object Segment {
   val empty = Segment("")
   val `..` = Segment("..")
 
-  // TODO - maybe single string in signature is enough
-  def multi(segments: Seq[String]): Vector[Segment] = {
-    (Vector.empty[Segment] /: segments.flatMap(sepRx.split)) {
+  def multi(s: String): Vector[Segment] = {
+    (Vector.empty[Segment] /: sepRx.split(s)) {
       case (ss, "" | ".")          => ss
       case (v @ (`..` +: _), "..") => `..` +: v
       case (rest :+ _, "..")       => rest

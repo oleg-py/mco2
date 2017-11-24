@@ -33,7 +33,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     for {
       isDir   <- isDirectory(path) |> toWriter
       inner   <- scanDeepRec(isDir ?? childrenOf(path))
-      key     =  path fromToP self
+      key     =  path relTo self
       kind    =  isDir.fold(Container(inner.toVector), Component)
       content =  Keyed(key, kind)
       info    =  Map(key -> ((path, content)))

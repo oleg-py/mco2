@@ -6,13 +6,13 @@ import mco.data.paths._
 class PathProperties extends Tests.Prop {
   property("self inverse") {
     forAll { (p: Path) =>
-      p.fromToP(p) shouldBe RelPath("")
+      p.relTo(p) shouldBe RelPath("")
     }
   }
 
   property("relTo -> `/` inversion") {
     forAll { (p1: Path, p2: Path) =>
-      p1 / (p2 fromToP p1) should be (p2)
+      p1 / (p2 relTo p1) should be (p2)
     }
   }
 
