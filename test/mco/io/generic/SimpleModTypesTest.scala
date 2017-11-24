@@ -1,10 +1,9 @@
 package mco.io.generic
 
 import mco.Tests
-import mco.stubs.Cell._
-import mco.stubs.{ImmutableVar, VarFilesystem}
+import mco.stubs.cells._
+import mco.data.paths._
 import scalaz.Id._
-import scalaz.syntax.id._
 
 import mco.data.paths.Path
 
@@ -12,8 +11,8 @@ class SimpleModTypesTest extends Tests.Sync {
   behavior of "SimpleModTypes"
 
   implicit val fs = immutableFs(
-    "folder" -> dir(),
-    "file" -> file()
+    seg"folder" -> dir(),
+    seg"file" -> file()
   )
   val simpleModTypes = new SimpleModTypes[Id]
 

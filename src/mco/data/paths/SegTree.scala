@@ -2,11 +2,35 @@ package mco.data.paths
 
 import scalaz._
 import std.map._
+import std.option._
+import std.vector._
+import syntax.std.map._
 
 import mco.util.syntax.fp._
 
 
-sealed trait SegTree[+A]
+sealed trait SegTree[+A] {
+  import SegTree._
+  final def lookup(p: RelPath): Option[SegTree[A]] =
+    p.segments.foldLeft(some(this)) {
+      case (Some(SegRoot(cc)), key) => cc.get(key)
+      case _ => None
+    }
+
+  final def update[B >: A](p: RelPath, next: Option[SegTree[B]]): Option[SegTree[B]] = {
+    def recurse(d: SegTree[B])(p: NonEmptyList[Segment]): Option[SegTree[B]] = Some {
+      d match {
+        case s @ SegLeaf(_) => s // Noop if the path leads past "file"
+        case SegRoot(map) => p.tail.toNel
+          .cata(subpath => root(map.alter(p.head) { opt =>
+            recurse(opt.getOrElse(root(Map())))(subpath) // auto-create new "folders"
+          }), root(map.alter(p.head) { _ => next }))
+      }
+    }
+    p.segments.toIList.toNel.cata(recurse(this), next)
+  }
+}
+
 object SegTree {
   case class SegLeaf[A](value: A) extends SegTree[A]
   case class SegRoot[A](map: Map[Segment, SegTree[A]]) extends SegTree[A]

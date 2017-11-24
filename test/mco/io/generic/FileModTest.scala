@@ -6,13 +6,13 @@ import mco.Tests
 import mco.core.Content
 import mco.data.Keyed
 import mco.data.paths._
-import mco.stubs.Cell._
+import mco.stubs.cells._
 import org.scalatest.LoneElement._
 
 class FileModTest extends Tests.Sync {
   implicit val filesystem = immutableFs(
-    "mods" -> dir(
-      "fileMod.dat" -> file("Hello")
+    seg"mods" -> dir(
+      seg"fileMod.dat" -> file("Hello")
     )
   )
   val fm = new FileMod[Id](path"mods/fileMod.dat")

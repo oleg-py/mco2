@@ -11,7 +11,8 @@ import mco.data.Keyed
 import mco.io.generic._
 import mco.io.generic.Filesystem._
 import mco.io.state.initMod
-import mco.stubs.{Cell, LoggingFilesystem, VarFilesystem}
+import mco.stubs.{LoggingFilesystem, VarFilesystem}
+import mco.stubs.cells._
 import mco.util.Capture
 import mco.util.syntax.??
 import mco.util.syntax.fp._
@@ -31,7 +32,7 @@ object PrototypeImplementation {
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
         val file = RelPath(subpath.drop("varfs!".length))
-        val backend = CacheVar(Cell.Dir().point[F])(
+        val backend = CacheVar(dir().point[F])(
           new JavaSerializableVar(cwd / file)(??, ??, localFS),
           new MutableVar(_).point[F].widen
         ).map(new VarFilesystem(_): Filesystem[F])

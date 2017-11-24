@@ -3,7 +3,8 @@ package mco
 import scalaz._
 
 import mco.data.paths._
-import mco.stubs.{Cell, ImmutableVar, VarFilesystem}
+import mco.stubs.{ImmutableVar, VarFilesystem}
+import mco.stubs.cells._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.{arbitrary => arb}
 import org.scalatest._
@@ -13,8 +14,8 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
 object Tests {
   trait Sync extends FlatSpec with Matchers {
-    def immutableFs(contents: (String, Cell)*) =
-      new VarFilesystem(new ImmutableVar(Cell.dir(contents: _*)))
+    def immutableFs(contents: (Segment, Cell)*) =
+      new VarFilesystem(new ImmutableVar(dir(contents: _*)))
   }
 
   trait Prop extends PropSpec with Matchers with GeneratorDrivenPropertyChecks {

@@ -1,7 +1,7 @@
 package mco.stubs
 
-import mco.data.paths.Path
-import mco.stubs.Cell._
+import mco.data.paths.{Path, SegTree}
+import mco.stubs.cells._
 
 import java.nio.file.attribute.{BasicFileAttributes, FileTime}
 
@@ -15,19 +15,19 @@ case class StubAttributes (path: Path, obj: Cell) extends BasicFileAttributes {
   override def lastAccessTime(): FileTime = stubTime
 
   override def isRegularFile: Boolean = obj match {
-    case File(_) => true
+    case SegTree.SegLeaf(_) => true
     case _ => false
   }
 
   override def size(): Long = obj match {
-    case File(d) => d.length.toLong
-    case Dir(_) => 1L
+    case SegTree.SegLeaf(d) => d.length.toLong
+    case _ => 1L
   }
 
   override def isOther: Boolean = false
 
   override def isDirectory: Boolean = obj match {
-    case Dir(_) => true
+    case SegTree.SegRoot(_) => true
     case _ => false
   }
 }

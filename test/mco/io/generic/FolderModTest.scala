@@ -6,18 +6,18 @@ import mco.Tests
 import mco.core.Content
 import mco.data.paths._
 import mco.data.Keyed
-import mco.stubs.Cell._
+import mco.stubs.cells._
 
 
 class FolderModTest extends Tests.Sync {
   implicit val filesystem = immutableFs(
-    "mods" -> dir(
-      "folderMod" -> dir(
-        "innerFile" -> file("InnerFileContent"),
-        "emptySubdir" -> dir(),
-        "nonEmptySubdir" -> dir(
-          "nestedFile" -> file("NestedFileContent"),
-          "nestedFile2" -> file("NestedFile2Content")
+    seg"mods" -> dir(
+      seg"folderMod" -> dir(
+        seg"innerFile" -> file("InnerFileContent"),
+        seg"emptySubdir" -> dir(),
+        seg"nonEmptySubdir" -> dir(
+          seg"nestedFile" -> file("NestedFileContent"),
+          seg"nestedFile2" -> file("NestedFile2Content")
         )
       )
     )
