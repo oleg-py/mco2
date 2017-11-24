@@ -2,7 +2,7 @@ package mco.core.vars
 
 import scalaz.Bind
 
-import mco.util.Capture
+import mco.core.Capture
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 import monix.execution.atomic.PaddingStrategy.NoPadding
 

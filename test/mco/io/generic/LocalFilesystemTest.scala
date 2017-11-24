@@ -6,9 +6,9 @@ import scalaz._
 
 import better.files.File
 import mco.Tests
+import mco.core.Capture
 import mco.data.paths._
 import mco.io.generic.Filesystem._
-import mco.util.Capture
 import mco.util.syntax.any._
 
 

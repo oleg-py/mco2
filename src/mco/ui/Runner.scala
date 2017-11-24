@@ -1,11 +1,10 @@
 package mco.ui
 
 import better.files._
-import mco.util.Capture
 import monix.eval.{Coeval, Task, TaskApp}
 import monix.scalaz._
+import mco.core.{Capture, ImageStore, Mods}
 import Capture.coeval._
-import mco.core.{ImageStore, Mods}
 import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
@@ -52,7 +51,7 @@ object Runner extends TaskApp {
       .flatMap { case (initialState, mkDispatch) =>
         Coeval {
           val state = ObjectProperty(initialState)
-          val dispatch = mkDispatch(new PropertyBasedVar[UiState](state))
+          val dispatch = mkDispatch(new PropertyBasedVar(state))
           new MainWindow(state)(dispatch).main(args)
         }
       }

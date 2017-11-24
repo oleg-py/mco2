@@ -6,8 +6,8 @@ import scalaz.syntax.bind._
 
 import better.files._
 import com.sun.javafx.PlatformUtil
+import mco.core.Capture
 import mco.data.paths.Path
-import mco.util.Capture
 import mco.util.syntax.any._
 import net.openhft.hashing.LongHashFunction
 

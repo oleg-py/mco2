@@ -3,7 +3,7 @@ package mco.variant.generic
 import scalaz._
 import std.vector._
 
-import mco.core.{ImageStore, Mods}
+import mco.core.{Capture, ImageStore, Mods}
 import mco.core.state.RepoState
 import mco.core.vars._
 import mco.data.paths._
@@ -13,7 +13,6 @@ import mco.io.generic.Filesystem._
 import mco.io.state.initMod
 import mco.stubs.{LoggingFilesystem, VarFilesystem}
 import mco.stubs.cells._
-import mco.util.Capture
 import mco.util.syntax.??
 import mco.util.syntax.fp._
 

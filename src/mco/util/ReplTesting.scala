@@ -4,7 +4,7 @@ import scalaz._
 import scalaz.Scalaz._
 
 import better.files._
-import mco.core.{ImageStore, Mods}
+import mco.core.{ImageStore, Mods, Capture}
 import mco.variant.generic.{GenericConfig, PrototypeImplementation}
 import pureconfig.loadConfig
 

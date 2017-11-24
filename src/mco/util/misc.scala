@@ -6,6 +6,7 @@ import scalaz._
 import std.anyVal._
 import std.tuple._
 
+import mco.core.Capture
 import mco.data.paths.Path
 import mco.io.generic.Filesystem
 import net.openhft.hashing.LongHashFunction

@@ -1,12 +1,13 @@
-package mco.util
+package mco.core
 
 import scalaz.Id._
+
 import monix.eval.Coeval
 
 
 /**
- * Typeclass allowing expressing effectful operations in terms of polymorphic
- * by-name `pure` without any additional constraints
+ * Typeclass allowing importing effects into
+ * possibly pure context F
  *
  * @tparam F - effect type to lift into
  */

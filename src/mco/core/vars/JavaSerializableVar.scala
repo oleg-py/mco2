@@ -4,10 +4,11 @@ import java.io._
 import scalaz._
 import syntax.monad._
 
+import mco.core.Capture
 import mco.data.paths.Path
 import mco.io.generic.Filesystem
 import mco.io.generic.Filesystem._
-import mco.util.Capture
+
 
 class JavaSerializableVar[F[_]: Monad: Capture: Filesystem, A](
   target: Path
