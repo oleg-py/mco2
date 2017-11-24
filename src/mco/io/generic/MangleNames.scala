@@ -9,7 +9,7 @@ import std.tuple._
 import mco.core._
 import mco.core.state.ModState
 import mco.data.paths._
-import mco.data.{Key, Keyed}
+import mco.data.Keyed
 import mco.util.syntax.fp._
 import mco.util.misc.uuidName
 
@@ -20,8 +20,8 @@ class MangleNames(target: Path) extends NameResolver
     new Random(i).nextInt().toHexString
 
 
-  override def apply(index: Int, mod: Keyed[ModState], content: Key): Path = {
-    val ext = path"${content.unwrap}".extension
+  override def apply(index: Int, mod: Keyed[ModState], content: RelPath): Path = {
+    val ext = content.extension
     val id = indexToId(index)
     val hashes = mod.get.contents.lookup(content).foldMap(_.stamp.hash)
     path"$target/$id-${uuidName(hashes)}$ext"

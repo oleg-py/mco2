@@ -1,8 +1,7 @@
 package mco.core
 
 import com.olegpy.forwarders
-import mco.data.Key
-import mco.data.paths.Path
+import mco.data.paths.{Path, RelPath}
 
 import java.net.URL
 
@@ -21,7 +20,7 @@ import java.net.URL
    * @return Some(url of image) if association exists, None
    *         otherwise
    */
-  def getImage(key: Key): F[Option[URL]]
+  def getImage(key: RelPath): F[Option[URL]]
 
   /**
    * Change association of given key to provided path
@@ -34,12 +33,12 @@ import java.net.URL
    *             None to remove it
    * @return Unit inside context F
    */
-  def putImage(key: Key, path: Option[Path]): F[Unit]
+  def putImage(key: RelPath, path: Option[Path]): F[Unit]
 
   /**
    * Removes all images with keys not present inside a vector
    * @param keys association keys which should be retained
    * @return Unit inside context F
    */
-  def stripImages(keys: Vector[Key]): F[Unit]
+  def stripImages(keys: Vector[RelPath]): F[Unit]
 }

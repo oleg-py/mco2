@@ -6,7 +6,7 @@ import mco.data.paths._
 class PathProperties extends Tests.Prop {
   property("self inverse") {
     forAll { (p: Path) =>
-      p.fromTo(p) should be (Vector())
+      p.fromToP(p) shouldBe RelPath("")
     }
   }
 

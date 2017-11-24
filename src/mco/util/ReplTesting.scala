@@ -10,7 +10,6 @@ import pureconfig.loadConfig
 
 //noinspection TypeAnnotation
 object ReplTesting {
-  val Key = mco.data.Key
   val Path = mco.data.paths.Path
   val Deltas = mco.core.state.Deltas
 

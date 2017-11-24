@@ -1,9 +1,7 @@
 package mco
 
 import scalaz._
-import Id._
 
-import mco.data.Key
 import mco.data.paths._
 import mco.stubs.{Cell, ImmutableVar, VarFilesystem}
 import org.scalacheck.Arbitrary
@@ -12,13 +10,9 @@ import org.scalatest._
 import org.scalatest.enablers.{Emptiness, Existence}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
+
 object Tests {
   trait Sync extends FlatSpec with Matchers {
-    implicit class Helpers(sc: StringContext) {
-      def p(parts: Any*) = Path(sc.s(parts: _*))
-      def key(parts: Any*) = Key(sc.s(parts: _*))
-    }
-
     def immutableFs(contents: (String, Cell)*) =
       new VarFilesystem(new ImmutableVar(Cell.dir(contents: _*)))
   }

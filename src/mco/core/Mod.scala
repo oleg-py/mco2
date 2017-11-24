@@ -3,13 +3,13 @@ package mco.core
 import scalaz._
 
 import mco.data._
-import mco.data.paths.Path
+import mco.data.paths.{Path, RelPath}
 import mco.util.syntax.fp._
 
 trait Mod[F[_]] {
   val label: String
   def list: F[Vector[Keyed[Content]]]
-  def provide: TempOp[F, Vector[Key] => Map[Key, Path]]
+  def provide: TempOp[F, Vector[RelPath] => Map[RelPath, Path]]
 
   final def filterProvide(f: Keyed[Content] => Boolean)(
     implicit F: Monad[F]

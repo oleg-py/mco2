@@ -7,7 +7,7 @@ import mco.core.{ImageStore, Mods}
 import mco.core.state.RepoState
 import mco.core.vars._
 import mco.data.paths._
-import mco.data.{Key, Keyed}
+import mco.data.Keyed
 import mco.io.generic._
 import mco.io.generic.Filesystem._
 import mco.io.state.initMod
@@ -19,7 +19,7 @@ import mco.util.syntax.fp._
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
-  private val toKey = (p: Path) => Key(p.name.toString)
+  private val toKey = (p: Path) => RelPath(p.name.toString)
   type MThrow[F[_]] = MonadError[F, Throwable]
 
   private def filesystem[F[_]: Capture: MThrow](
@@ -59,7 +59,7 @@ object PrototypeImplementation {
   }
 
   private def images[F[_]: Filesystem: Capture: MThrow]: F[ImageStore[F]] = {
-    CacheVar(IMap.empty[Key, RelPath].point[F])(
+    CacheVar(IMap.empty[RelPath, RelPath].point[F])(
       new JavaSerializableVar(Path("-target/.imgdb")),
       new MutableVar(_).point[F].widen
     )

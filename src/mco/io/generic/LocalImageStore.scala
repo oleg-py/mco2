@@ -6,7 +6,6 @@ import std.list._
 
 import mco.core.ImageStore
 import mco.core.vars.Var
-import mco.data.Key
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 import Filesystem._
@@ -26,14 +25,14 @@ import java.net.URL
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
   root: Path,
-  store: Var[F, IMap[Key, RelPath]]
+  store: Var[F, IMap[RelPath, RelPath]]
 ) extends ImageStore[F] {
-  private def getTarget(key: Key)(path: Path) =
-    rel"${key.unwrap}${path.extension}"
+  private def getTarget(key: RelPath)(path: Path) =
+    rel"${key.name}${path.extension}"
 
   private val noop = unit.point[F]
 
-  override def getImage(key: Key): F[Option[URL]] =
+  override def getImage(key: RelPath): F[Option[URL]] =
     for {
       dict <- store()
       path = dict.lookup(key).map(root / _)
@@ -41,7 +40,7 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       url <- path.filter(_ => exists).traverse(fileToUrl(_))
     } yield url
 
-  override def putImage(key: Key, path: Option[Path]): F[Unit] =
+  override def putImage(key: RelPath, path: Option[Path]): F[Unit] =
     for {
       dict <- store()
       newName = path.map(getTarget(key))
@@ -51,7 +50,7 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       _ <- store ~= { _.alter(key, _ => newName) }
     } yield ()
 
-  override def stripImages(keys: Vector[Key]): F[Unit] =
+  override def stripImages(keys: Vector[RelPath]): F[Unit] =
     for {
       dict <- store()
       keySet = keys.toSet

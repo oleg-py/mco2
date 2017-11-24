@@ -5,8 +5,7 @@ import std.option._
 import syntax.applicative._
 
 import mco.core.ImageStore
-import mco.data.Key
-import mco.data.paths.Path
+import mco.data.paths.{Path, RelPath}
 import mco.util.syntax.any._
 
 import java.net.URL
@@ -18,7 +17,7 @@ import java.net.URL
  * @tparam F context of result values
  */
 class NoImageStore[F[_]: Applicative] extends ImageStore[F] {
-  override def getImage(key: Key) = none[URL].point[F]
-  override def putImage(key: Key, path: Option[Path]) = unit.point[F]
-  override def stripImages(keys: Vector[Key]) = unit.point[F]
+  override def getImage(key: RelPath) = none[URL].point[F]
+  override def putImage(key: RelPath, path: Option[Path]) = unit.point[F]
+  override def stripImages(keys: Vector[RelPath]) = unit.point[F]
 }

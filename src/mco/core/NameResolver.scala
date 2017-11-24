@@ -1,16 +1,12 @@
 package mco.core
 
-import scalaz._
-import std.vector._
-
-import mco.util.syntax.fp._
 import mco.core.state.ModState
-import mco.data.paths.Path
-import mco.data.{Key, Keyed}
+import mco.data.paths.{Path, RelPath}
+import mco.data.Keyed
 
 
 trait NameResolver {
-  def apply(index: Int, mod: Keyed[ModState], content: Key): Path
+  def apply(index: Int, mod: Keyed[ModState], content: RelPath): Path
 
   final def bulk(
     index: Int,

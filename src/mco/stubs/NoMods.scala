@@ -6,13 +6,12 @@ import scalaz.syntax.applicative._
 
 import mco.core.state.{Deltas, ModState, RepoState}
 import mco.core.Mods
-import mco.data.Key
-import mco.data.paths.Path
+import mco.data.paths.{Path, RelPath}
 
 
 class NoMods[F[_]: Applicative] extends Mods[F] {
   override def state = RepoState(Vector(), Map()).point[F]
-  override def update(key: Key, diff: Deltas.OfMod) = ().point[F]
-  override def remove(key: Key) = ().point[F]
+  override def update(key: RelPath, diff: Deltas.OfMod) = ().point[F]
+  override def remove(key: RelPath) = ().point[F]
   override def liftFile(p: Path) = none[ModState].point[F]
 }

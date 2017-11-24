@@ -7,7 +7,6 @@ import std.vector._
 
 import mco.core.{ImageStore, Mods}
 import mco.core.state.{Deltas, RepoState}
-import mco.data.Key
 import mco.data.paths._
 import mco.util.Capture
 import mco.util.syntax.fp._
@@ -33,12 +32,12 @@ abstract class Commands {
       } yield ()
     }
 
-  def update(key: Key, diff: Deltas.OfMod): Unit =
+  def update(key: RelPath, diff: Deltas.OfMod): Unit =
     syncChanges(Mods.update(key, diff)) { (_, rs, us) =>
       us
     }
 
-  def remove(key: Key): Unit =
+  def remove(key: RelPath): Unit =
     syncChanges(Mods.remove(key)) { (_, rs, us) =>
       us
     }
@@ -52,7 +51,7 @@ abstract class Commands {
   }
 
 
-  def setActivePackage(key: Key): Unit = {
+  def setActivePackage(key: RelPath): Unit = {
     syncChanges(ImageStore.getImage(key)) { (img, _, us) =>
       us.copy(
         currentModKey = Some(key),
@@ -85,13 +84,13 @@ abstract class Commands {
   final def uninstallActive(): Unit =
     state().currentModKey.foreach(uninstall)
 
-  final def setLabel(key: Key, label: String): Unit =
+  final def setLabel(key: RelPath, label: String): Unit =
     update(key, Deltas.OfMod(label = Some(label)))
 
-  final def install(key: Key): Unit =
+  final def install(key: RelPath): Unit =
     update(key, Deltas.OfMod(enabled = Some(true)))
 
-  final def uninstall(key: Key): Unit =
+  final def uninstall(key: RelPath): Unit =
     update(key, Deltas.OfMod(enabled = Some(false)))
 
   final def showNotification(str: String): Unit =

@@ -1,22 +1,20 @@
 package mco.core.state
 
 import scalaz._
-import syntax.foldable._
 import syntax.std.option._
 
-import mco.data.Key
-import mco.data.paths.Path
+import mco.data.paths._
 import monocle.macros.Lenses
 
 
 @Lenses case class ModState(
   stamp: Stamp,
-  contents: IMap[Key, ContentState]
+  contents: IMap[RelPath, ContentState]
 ) {
-  def contentEnabled(key: Key): Boolean =
+  def contentEnabled(key: RelPath): Boolean =
     contents.lookup(key).cata(_.stamp.enabled, false)
 
-  def onResolve[F[_]: Foldable](targets: F[(Key, Path)], installed: Boolean): ModState = {
+  def onResolve(targets: Vector[(RelPath, Path)], installed: Boolean): ModState = {
     val newContents = targets.foldLeft(contents) { case (map, (key, path)) =>
       map.adjust(key, _.onResolve(path, installed))
     }

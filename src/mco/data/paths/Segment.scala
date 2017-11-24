@@ -1,5 +1,9 @@
 package mco.data.paths
 
+import scalaz._
+import std.string._
+
+
 sealed abstract case class Segment(override val toString: String) {
   def extension: String = {
     val idx = toString.lastIndexOf('.')
@@ -10,7 +14,7 @@ sealed abstract case class Segment(override val toString: String) {
 object Segment {
   private val sepRx = """[\\/]+""".r
 
-  def apply(s: String) = new Segment(sepRx.replaceAllIn(s, "")) {}
+  def apply(s: String) = new Segment(sepRx.replaceAllIn(s, "").trim) {}
 
   val empty = Segment("")
   val `..` = Segment("..")
@@ -24,4 +28,5 @@ object Segment {
       case (ss, next)              => ss :+ Segment(next)
     }
   }
+  implicit val order: Order[Segment] = Order.orderBy(_.toString)
 }

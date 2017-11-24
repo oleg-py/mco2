@@ -13,7 +13,7 @@ import mco.data._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
-import mco.data.paths.Path
+import mco.data.paths.{Path, RelPath}
 import mco.io.state.initMod
 import monocle.function.Index.index
 
@@ -22,14 +22,14 @@ import monocle.function.Index.index
 class LocalMods[F[_]: Monad: Filesystem](
   contentRoot: Path,
   repoState: Var[F, RepoState],
-  mods: Var[F, Map[Key, (Path, Mod[F])]],
+  mods: Var[F, Map[RelPath, (Path, Mod[F])]],
   tryAsMod: Path => F[Option[Mod[F]]],
-  toKey: Path => Key,
+  toKey: Path => RelPath,
   resolver: NameResolver
 ) extends Mods[F] {
   override def state: F[RepoState] = repoState()
 
-  override def update(key: Key, diff: Deltas.OfMod): F[Unit] = {
+  override def update(key: RelPath, diff: Deltas.OfMod): F[Unit] = {
     val noop = ().point[F]
     for {
       rState <- state
@@ -51,7 +51,7 @@ class LocalMods[F[_]: Monad: Filesystem](
     Keyed.lens
 
   private def prepareFiles(
-    filter: Key => Boolean)(
+    filter: RelPath => Boolean)(
     index: Int,
     mState: Keyed[ModState]) = {
     for (dict <- mods())
@@ -72,7 +72,7 @@ class LocalMods[F[_]: Monad: Filesystem](
   private val copyFiles = runOp[Path](copy(_, _)) _
   private val rmFiles = runOp[Path]((_, to) => rmTree(to)) _
 
-  private def install(key: Key) =
+  private def install(key: RelPath) =
     for {
       rState <- state
       (i, mState) = rState.at(key)
@@ -84,7 +84,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = true))
     } yield ()
 
-  private def uninstall(key: Key) =
+  private def uninstall(key: RelPath) =
     for {
       rState <- state
       (i, mState) = rState.at(key)
@@ -105,7 +105,7 @@ class LocalMods[F[_]: Monad: Filesystem](
         }
     } yield ()
 
-  override def remove(key: Key): F[Unit] = for {
+  override def remove(key: RelPath): F[Unit] = for {
     _ <- update(key, Deltas.OfMod(enabled = Some(false)))
     _ <- repoState ~= (_.remove(key))
     path <- mods().map(dict => dict(key)._1)
@@ -121,7 +121,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       _ <- copy(p, target).liftM[OptionT]
       mod <- OptionT(tryAsMod(target))
       state <- initMod(mod).liftM[OptionT]
-      key = Key(p.name.toString)
+      key = RelPath(p.name.toString)
       keyed = Keyed(key, state)
       _ <- (repoState ~= { _ add (keyed, mod.label) }).liftM[OptionT]
       _ <- (mods ~= { _ updated (key, (target, mod))}).liftM[OptionT]

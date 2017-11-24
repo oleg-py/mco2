@@ -4,7 +4,8 @@ import scalaz.Id._
 
 import mco.Tests
 import mco.core.Content
-import mco.data.{Key, Keyed}
+import mco.data.Keyed
+import mco.data.paths._
 import mco.stubs.Cell._
 import org.scalatest.LoneElement._
 
@@ -14,7 +15,7 @@ class FileModTest extends Tests.Sync {
       "fileMod.dat" -> file("Hello")
     )
   )
-  val fm = new FileMod[Id](p"mods/fileMod.dat")
+  val fm = new FileMod[Id](path"mods/fileMod.dat")
 
   "FileMod#label" should "use filename as label" in {
     fm.label shouldBe "fileMod.dat"
@@ -22,15 +23,15 @@ class FileModTest extends Tests.Sync {
 
   "FileMod#list" should "provide file itself as a single component" in {
     (fm.list: Vector[Keyed[Content]])
-      .loneElement shouldBe Keyed(key"fileMod.dat", Content.Component)
+      .loneElement shouldBe Keyed(rel"fileMod.dat", Content.Component)
   }
 
   /*_*/
   "FileMod#provide" should "provide only own file" in {
     val fun = fm.provide.runFS
-    fun(Vector(key"fileMod.dat")) shouldBe Map(
-      key"fileMod.dat" -> p"mods/fileMod.dat"
+    fun(Vector(rel"fileMod.dat")) shouldBe Map(
+      rel"fileMod.dat" -> path"mods/fileMod.dat"
     )
-    fun(Vector(key"zuul.qux")) shouldBe Map()
+    fun(Vector(rel"zuul.qux")) shouldBe Map()
   }
 }

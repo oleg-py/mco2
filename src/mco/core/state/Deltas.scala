@@ -1,6 +1,6 @@
 package mco.core.state
 
-import mco.data.Key
+import mco.data.paths.RelPath
 import monocle.function.Index.index
 
 
@@ -16,7 +16,7 @@ object Deltas {
   case class OfMod(
     label: Option[String] = None,
     enabled: Option[Boolean] = None,
-    contents: Map[Key, OfContent] = Map()
+    contents: Map[RelPath, OfContent] = Map()
   ) {
     def patch(m: ModState): ModState = {
       val installedSet =

@@ -7,15 +7,15 @@ import std.anyVal._
 import std.map._
 import syntax.std.boolean._
 
-import mco.data.paths.Path
-import mco.data.{Key, Keyed}
+import mco.data.paths._
+import mco.data.Keyed
 import mco.util.syntax.fp._
 import monocle.macros.Lenses
 
 
 @Lenses case class RepoState (
   orderedMods: Vector[Keyed[ModState]] = Vector(),
-  labels: Map[Key, String] = Map()
+  labels: Map[RelPath, String] = Map()
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
     orderedMods.indexed.foldMap { case (i, Keyed(_, mod)) =>
@@ -34,13 +34,13 @@ import monocle.macros.Lenses
   def hasConflicts(path: Path, idx: Int): Boolean =
     overrideIndex(path, idx).cata(idx < _, false)
 
-  def at(key: Key): (Int, Keyed[ModState]) =
+  def at(key: RelPath): (Int, Keyed[ModState]) =
     orderedMods.indexed.find(_._2.key == key)
       .err(s"Invariant violation at $key")
 
   def add(mod: Keyed[ModState], label: String): RepoState =
     copy(orderedMods :+ mod, labels.updated(mod.key, label))
 
-  def remove(key: Key): RepoState =
+  def remove(key: RelPath): RepoState =
     copy(orderedMods = orderedMods.filter(_.key != key))
 }

@@ -1,20 +1,20 @@
 package mco.ui
 
 import mco.core.state.{ContentState, ModState, RepoState}
-import mco.data.Key
 import mco.ui.UiState.PendingAdds
-import java.net.URL
 
+import java.net.URL
 import scalaz.std.string._
 
-import monocle.{Optional, POptional}
+import mco.data.paths.RelPath
+import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.{some => someL}
 
 @Lenses case class UiState(
   repoState: RepoState = RepoState(),
   pendingAdds: Option[PendingAdds] = None,
-  currentModKey: Option[Key] = None,
+  currentModKey: Option[RelPath] = None,
   thumbnailUrl: Option[URL] = None,
   error: Option[Throwable] = None
 ) {
@@ -25,7 +25,7 @@ import monocle.std.option.{some => someL}
 
   def currentContent: Vector[(String, ContentState)] =
     currentMod
-      .map(_.contents.mapKeys(_.unwrap).toList.toVector)
+      .map(_.contents.mapKeys(_.toString).toList.toVector)
       .getOrElse(Vector())
 }
 

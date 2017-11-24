@@ -10,13 +10,13 @@ import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
 import mco.data._
-import mco.data.paths.Path
+import mco.data.paths.{Path, RelPath}
 import mco.util.instances.mapRightMonoid
 
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
   extends Mod[F]
 {
-  type DataM = Map[Key, (Path, Keyed[Content])]
+  type DataM = Map[RelPath, (Path, Keyed[Content])]
 
   override val label: String = self.name.toString
 
@@ -33,7 +33,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     for {
       isDir   <- isDirectory(path) |> toWriter
       inner   <- scanDeepRec(isDir ?? childrenOf(path))
-      key     =  Key(path relStringTo self)
+      key     =  path fromToP self
       kind    =  isDir.fold(Container(inner.toVector), Component)
       content =  Keyed(key, kind)
       info    =  Map(key -> ((path, content)))
@@ -50,10 +50,10 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide: TempOp[F, Vector[Key] => Map[Key, Path]] = TempOp {
+  override def provide: TempOp[F, Vector[RelPath] => Map[RelPath, Path]] = TempOp {
     for {
       data <- structureF
-    } yield (_: Vector[Key])
+    } yield (_: Vector[RelPath])
       .collect(data)
       .map { case (path, content) => content.key -> path }
       .toMap

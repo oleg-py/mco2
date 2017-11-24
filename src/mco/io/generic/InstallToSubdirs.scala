@@ -3,10 +3,10 @@ package mco.io.generic
 import mco.core._
 import mco.core.state.ModState
 import mco.data.paths._
-import mco.data.{Key, Keyed}
+import mco.data.Keyed
 
 class InstallToSubdirs(target: Path) extends NameResolver
 {
-  override def apply(index: Int, mod: Keyed[ModState], content: Key): Path =
-    path"$target/${mod.key.unwrap}/${content.unwrap}"
+  override def apply(index: Int, mod: Keyed[ModState], content: RelPath): Path =
+    path"$target/${mod.key}/$content"
 }
