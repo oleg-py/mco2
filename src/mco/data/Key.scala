@@ -10,6 +10,7 @@ import scalaz.std.string._
  * @param unwrap internal string representation
  */
 // TODO: Unwrapping means there's some semantic meaning to keys. Should be removed
+// TODO: replace key with segment
 case class Key(unwrap: String) extends AnyVal
 
 object Key {

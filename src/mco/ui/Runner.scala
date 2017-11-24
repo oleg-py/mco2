@@ -1,7 +1,6 @@
 package mco.ui
 
 import better.files._
-import mco.data.Path
 import mco.util.Capture
 import monix.eval.{Coeval, Task, TaskApp}
 import monix.scalaz._
@@ -11,9 +10,10 @@ import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
 import mco.core.vars.PrintingVar
+import mco.data.paths.Path
 import mco.stubs.{NoImageStore, NoMods}
 import mco.ui.props.PropertyBasedVar
-import mco.util.misc.{macOSIcon, base64url}
+import mco.util.misc.{base64url, macOSIcon}
 import mco.variant.generic._
 import pureconfig.loadConfig
 

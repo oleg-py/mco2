@@ -13,6 +13,7 @@ import mco.data._
 import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
+import mco.data.paths.Path
 import mco.io.state.initMod
 import monocle.function.Index.index
 
@@ -120,7 +121,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       _ <- copy(p, target).liftM[OptionT]
       mod <- OptionT(tryAsMod(target))
       state <- initMod(mod).liftM[OptionT]
-      key = Key(p.name)
+      key = Key(p.name.toString)
       keyed = Keyed(key, state)
       _ <- (repoState ~= { _ add (keyed, mod.label) }).liftM[OptionT]
       _ <- (mods ~= { _ updated (key, (target, mod))}).liftM[OptionT]

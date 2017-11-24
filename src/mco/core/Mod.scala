@@ -3,6 +3,7 @@ package mco.core
 import scalaz._
 
 import mco.data._
+import mco.data.paths.Path
 import mco.util.syntax.fp._
 
 trait Mod[F[_]] {

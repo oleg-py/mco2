@@ -13,7 +13,7 @@ import scalaz.std.vector._
 import scalaz.std.option._
 
 import better.files.File
-import mco.data.Path
+import mco.data.paths.Path
 import mco.ui.props._
 import mco.ui.components.ImageViewPane
 import mco.util.syntax.fp._
@@ -85,7 +85,7 @@ class BulkAssoc(state: Prop[UiState.PendingAdds])(implicit cmd: Commands) extend
       }
     )
 
-    private def lastPathSegment(s: String) = Path(s).name
+    private def lastPathSegment(s: String) = Path(s).name.toString
 
     private val pathToString = toStringConverter[Option[String]](_.fold("<none>")(lastPathSegment))
   }

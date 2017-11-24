@@ -3,6 +3,7 @@ package mco.data
 import scalaz._
 import syntax.bind._
 
+import mco.data.paths.Path
 import mco.io.generic.Filesystem
 
 

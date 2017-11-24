@@ -4,7 +4,8 @@ import scalaz.Id._
 
 import mco.Tests
 import mco.core.Content
-import mco.data.{Key, Keyed, Path}
+import mco.data.paths.Path
+import mco.data.{Key, Keyed}
 import mco.stubs.Cell._
 
 

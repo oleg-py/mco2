@@ -2,18 +2,17 @@ package mco.util
 
 import java.io.{ByteArrayInputStream, InputStream}
 import java.net.{URL, URLConnection, URLStreamHandler}
-
 import scalaz._
 import std.anyVal._
 import std.tuple._
 
-import mco.data.Path
+import mco.data.paths.Path
 import mco.io.generic.Filesystem
 import net.openhft.hashing.LongHashFunction
 import mco.util.syntax.fp._
+
 import java.util.{Base64, UUID}
 import javax.swing.ImageIcon
-
 import monix.eval.Coeval
 
 

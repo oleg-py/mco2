@@ -6,7 +6,7 @@ import scalaz._
 
 import better.files.File
 import mco.Tests
-import mco.data.Path
+import mco.data.paths._
 import mco.io.generic.Filesystem._
 import mco.util.Capture
 import mco.util.syntax.any._
@@ -26,10 +26,10 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
     val chs = childrenOf(dirs.src).toSet
 
     chs.map(_.name) should contain only (
-      "test_folder",
-      "test_archive.7z",
-      "test_archive.rar",
-      "test_archive.zip"
+      seg"test_folder",
+      seg"test_archive.7z",
+      seg"test_archive.rar",
+      seg"test_archive.zip"
     )
   }
 
@@ -41,7 +41,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail with error for a file" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      childrenOf(dirs.src / "test_archive.7z")
+      childrenOf(dirs.src / seg"test_archive.7z")
     }
   }
 
@@ -50,19 +50,19 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#getBytes"
 
   it should "read file contents as bytes" in { dirs =>
-    val b = getBytes(dirs.src / "test_folder" / "file1")
+    val b = getBytes(dirs.src / seg"test_folder" / seg"file1")
     b.toArray shouldEqual "Hello".getBytes
   }
 
   it should "fail with error for directory" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      getBytes(dirs.src / "test_folder")
+      getBytes(dirs.src / seg"test_folder")
     }
   }
 
   it should "fail with error for non-existent file" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      getBytes(dirs.src / "nonexistent.file")
+      getBytes(dirs.src / seg"nonexistent.file")
     }
   }
 
@@ -72,7 +72,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "overwrite existing file" in { dirs =>
     val testData = Random.alphanumeric.take(Random.nextInt(50)).mkString("")
-    val path = dirs.src / "test_folder" / "file1"
+    val path = dirs.src / seg"test_folder" / seg"file1"
     path.asFile.isRegularFile shouldBe true
 
     setBytes(path, ImmutableArray.fromArray(testData.getBytes))
@@ -81,7 +81,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "create a new file with parent directories as needed" in { dirs =>
     val data = ImmutableArray.fromArray("O".getBytes)
-    val path = dirs.target / "non" / "existent" / "file.txt"
+    val path = dirs.target / seg"non" / seg"existent" / seg"file.txt"
     path shouldNot exist
 
     setBytes(path, data)
@@ -99,7 +99,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#mkDir"
 
   it should "create a directory with all parents if not exists" in { dirs =>
-    val path = dirs.target / "non" / "existent" / "directory"
+    val path = dirs.target / seg"non" / seg"existent" / seg"directory"
     path shouldNot exist
 
     mkDir(path)
@@ -107,7 +107,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   }
 
   it should "fail if a directory already exists" in { dirs =>
-    val path = dirs.target / "non" / "existent" / "directory"
+    val path = dirs.target / seg"non" / seg"existent" / seg"directory"
     path.asFile.createDirectories()
 
     an [Exception] shouldBe thrownBy {
@@ -116,7 +116,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   }
 
   it should "fail if a file is at the given path" in { dirs =>
-    val path = dirs.src / "test_folder" / "file1"
+    val path = dirs.src / seg"test_folder" / seg"file1"
     path.asFile.isRegularFile shouldBe true
 
     an [Exception] shouldBe thrownBy {
@@ -129,8 +129,8 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#copy on a file"
 
   it should "make a copy available at destination" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
-    val to = dirs.target / "out"
+    val from = dirs.src / seg"test_folder" / seg"file2"
+    val to = dirs.target / seg"out"
     copy(from, to)
     all (Seq(from, to).map(_.asFile)) should exist
 
@@ -139,8 +139,8 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   }
 
   it should "overwrite destination file if it exists" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
-    val to = dirs.src / "test_folder" / "file1"
+    val from = dirs.src / seg"test_folder" / seg"file2"
+    val to = dirs.src / seg"test_folder" / seg"file1"
     all (Seq(from, to)) should exist
 
     copy(from, to)
@@ -150,12 +150,12 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail if a directory exists at given path" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      copy(dirs.src / "test_folder" / "file2", dirs.target)
+      copy(dirs.src / seg"test_folder" / seg"file2", dirs.target)
     }
   }
 
   it should "fail trying to copy file into itself, without destroying" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
+    val from = dirs.src / seg"test_folder" / seg"file2"
     val origContent = from.asFile.byteArray
     an [Exception] shouldBe thrownBy {
       copy(from, from)
@@ -169,13 +169,13 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#copy on a directory"
 
   it should "copy its contents to a new location" in { dirs =>
-    val from = dirs.src / "test_folder"
+    val from = dirs.src / seg"test_folder"
     val to = dirs.target
 
     copy(from, to)
 
     from should exist
-    (to / "file1").asFile.contentAsString shouldEqual "Hello"
+    (to / seg"file1").asFile.contentAsString shouldEqual "Hello"
   }
 
   it should "merge its contents with contents at given path" in { dirs =>
@@ -191,7 +191,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail if a file exists at given path" in { dirs =>
     val from = dirs.src
-    val to = dirs.target / "foo.txt"
+    val to = dirs.target / seg"foo.txt"
     val text = "I'm a file!"
     to.asFile.touch().write(text)
     an [Exception] shouldBe thrownBy {
@@ -202,11 +202,11 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail if copying into a path inside itself" in { dirs =>
     val from = dirs.src
-    val to = dirs.src / "test_folder"
+    val to = dirs.src / seg"test_folder"
     an [Exception] shouldBe thrownBy {
       copy(from, to)
     }
-    val files = Seq(to, to / "file2")
+    val files = Seq(to, to / seg"file2")
     all (files) should exist
   }
 
@@ -215,8 +215,8 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#move"
 
   it should "remove original element" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
-    val to = dirs.target / "foo"
+    val from = dirs.src / seg"test_folder" / seg"file2"
+    val to = dirs.target / seg"foo"
 
     move(from, to)
 
@@ -228,17 +228,17 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#move on a file"
 
   it should "make a file available at destination" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
-    val to = dirs.target / "foo"
+    val from = dirs.src / seg"test_folder" / seg"file2"
+    val to = dirs.target / seg"foo"
 
     move(from, to)
     to should exist
   }
 
   it should "overwrite destination file if it exists" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
+    val from = dirs.src / seg"test_folder" / seg"file2"
     val contents = from.asFile.byteArray
-    val to = dirs.target / "foo"
+    val to = dirs.target / seg"foo"
 
     to.asFile.touch().write("Garbalx")
 
@@ -248,8 +248,8 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   }
 
   it should "fail if a directory exists at given path" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
-    val to = dirs.target / "foo" / "bar"
+    val from = dirs.src / seg"test_folder" / seg"file2"
+    val to = dirs.target / seg"foo" / seg"bar"
 
     to.asFile.createDirectories()
 
@@ -262,7 +262,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   }
 
   it should "fail trying to copy file into itself, without destroying" in { dirs =>
-    val from = dirs.src / "test_folder" / "file2"
+    val from = dirs.src / seg"test_folder" / seg"file2"
     val contents = from.asFile.byteArray
 
     an [Exception] shouldBe thrownBy {
@@ -277,13 +277,13 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#move on a folder"
 
   it should "move its contents to a new location" in { dirs =>
-    val from = dirs.src / "test_folder"
+    val from = dirs.src / seg"test_folder"
     val to = dirs.target
 
     move(from, to)
 
     from shouldNot exist
-    (to / "file1").asFile.contentAsString shouldEqual "Hello"
+    (to / seg"file1").asFile.contentAsString shouldEqual "Hello"
   }
 
   it should "merge its contents with contents at given path" in { dirs =>
@@ -299,7 +299,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail if a file exists at given path" in { dirs =>
     val from = dirs.src
-    val to = dirs.target / "foo.txt"
+    val to = dirs.target / seg"foo.txt"
     val text = "I'm a file!"
     to.asFile.touch().write(text)
     an [Exception] shouldBe thrownBy {
@@ -310,11 +310,11 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail if moving into a path inside itself" in { dirs =>
     val from = dirs.src
-    val to = dirs.src / "test_folder"
+    val to = dirs.src / seg"test_folder"
     an [Exception] shouldBe thrownBy {
       move(from, to)
     }
-    val files = Seq(to, to / "file2")
+    val files = Seq(to, to / seg"file2")
     all (files) should exist
   }
 
@@ -323,21 +323,21 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#rmTree"
 
   it should "remove a file, given a path to it" in { dirs =>
-    val p = dirs.src / "test_archive.zip"
+    val p = dirs.src / seg"test_archive.zip"
     p.asFile.isRegularFile shouldBe true
     rmTree(p)
     p shouldNot exist
   }
 
   it should "remove a directory with children, given a path to it" in { dirs =>
-    val p = dirs.src / "test_folder"
+    val p = dirs.src / seg"test_folder"
     p.asFile.isDirectory shouldBe true
     rmTree(p)
     p shouldNot exist
   }
 
   it should "fail, given a path to non-existent object" in { dirs =>
-    val p = dirs.src / "does" / "not" / "exist"
+    val p = dirs.src / rel"does/not/exist"
     p shouldNot exist
     an [Exception] shouldBe thrownBy {
       rmTree(p)
@@ -349,11 +349,11 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#hashAt on a file"
 
   it should "hash it contents" in { dirs =>
-    hashAt(dirs.src / "test_folder/file1") shouldEqual helloHash
+    hashAt(dirs.src / rel"test_folder/file1") shouldEqual helloHash
   }
 
   it should "hash independently of file location" in { dirs =>
-    val target = dirs.src / "test_file"
+    val target = dirs.src / seg"test_file"
     target.asFile.write("Hello")
     hashAt(target) shouldEqual helloHash
   }

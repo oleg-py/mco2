@@ -6,7 +6,8 @@ import std.vector._
 import mco.core.{ImageStore, Mods}
 import mco.core.state.RepoState
 import mco.core.vars._
-import mco.data.{Key, Keyed, Path}
+import mco.data.paths._
+import mco.data.{Key, Keyed}
 import mco.io.generic._
 import mco.io.generic.Filesystem._
 import mco.io.state.initMod
@@ -18,7 +19,7 @@ import mco.util.syntax.fp._
 
 //noinspection ConvertibleToMethodValue
 object PrototypeImplementation {
-  private val toKey = (p: Path) => Key(p.name)
+  private val toKey = (p: Path) => Key(p.name.toString)
   type MThrow[F[_]] = MonadError[F, Throwable]
 
   private def filesystem[F[_]: Capture: MThrow](
@@ -29,15 +30,15 @@ object PrototypeImplementation {
 
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
-        val file = subpath.drop("varfs!".length)
+        val file = RelPath(subpath.drop("varfs!".length))
         val backend = CacheVar(Cell.Dir().point[F])(
           new JavaSerializableVar(cwd / file)(??, ??, localFS),
           new MutableVar(_).point[F].widen
         ).map(new VarFilesystem(_): Filesystem[F])
         backend.strengthL(Path.root)
       } else {
-        localFS.ensureDir(cwd / subpath).as(
-          (cwd / subpath, localFS: Filesystem[F])
+        localFS.ensureDir(cwd / RelPath(subpath)).as(
+          (cwd / RelPath(subpath), localFS: Filesystem[F])
         )
       }
 
@@ -46,10 +47,10 @@ object PrototypeImplementation {
       .map { case Vector(source, images, target) =>
         new LoggingFilesystem(new VirtualizedFilesystem[F](
           Map(
-            ("-source", source),
-            ("-target", target),
-            ("-images", images),
-            ("-os", (Path.root, localFS))
+            (seg"-source", source),
+            (seg"-target", target),
+            (seg"-images", images),
+            (seg"-os", (Path.root, localFS))
           ),
           localFS
         )(??, Equal.equalRef))
@@ -58,7 +59,7 @@ object PrototypeImplementation {
   }
 
   private def images[F[_]: Filesystem: Capture: MThrow]: F[ImageStore[F]] = {
-    CacheVar(IMap.empty[Key, String].point[F])(
+    CacheVar(IMap.empty[Key, RelPath].point[F])(
       new JavaSerializableVar(Path("-target/.imgdb")),
       new MutableVar(_).point[F].widen
     )

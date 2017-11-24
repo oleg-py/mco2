@@ -6,7 +6,7 @@ import std.anyVal._
 import std.tuple._
 
 import com.olegpy.forwarders
-import mco.data.Path
+import mco.data.paths.Path
 import mco.util.syntax.fp._
 
 import java.net.URL

@@ -6,13 +6,13 @@ import std.option._
 import syntax.id._
 import syntax.std.map._
 
-import mco.data.Path
 import mco.io.generic.Filesystem
 import mco.stubs.Cell._
 import mco.util.syntax.fp._
 
 import java.nio.file.attribute.BasicFileAttributes
 import mco.core.vars.Var
+import mco.data.paths.{Path, Segment}
 
 import java.net.URL
 import java.util.Base64
@@ -28,17 +28,17 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
   def deepGet(path: Path): F[Option[Cell]] =
     for (root <- rootVar()) yield
       path.segments.foldLeft(some[Cell](root)) {
-        case (Some(Dir(cc)), key) => cc.get(key)
+        case (Some(Dir(cc)), key) => cc.get(key.toString)
         case _ => None
       }
 
   def deepSet(path: Path)(obj: Option[Cell]): F[Unit] = {
-    def recurse(segments: List[String])(parent: Dir): Dir = {
+    def recurse(segments: List[Segment])(parent: Dir): Dir = {
       val cs = parent.contents
       segments match {
         case Nil       => complainAbout(path)
-        case s :: Nil  => obj.cata(cs.updated(s, _), cs - s) |> Dir
-        case s :: more => cs.alter(s) {
+        case Segment(s) :: Nil  => obj.cata(cs.updated(s, _), cs - s) |> Dir
+        case Segment(s) :: more => cs.alter(s) {
           case Some(_: File) => complainAbout(path)
           case Some(d: Dir)  => recurse(more)(d).some
           case None          => recurse(more)(Dir()).some
@@ -60,7 +60,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Dir])
 
   override def childrenOf(path: Path): F[Stream[Path]] =
     deepGet(path) map {
-      case Some(Dir(cc)) => cc.keys.map(path / _).toStream
+      case Some(Dir(cc)) => cc.keys.map(Segment(_)).map(path / _).toStream
       case _ => complainAbout(path)
     }
 

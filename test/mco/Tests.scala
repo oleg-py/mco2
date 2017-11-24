@@ -3,7 +3,8 @@ package mco
 import scalaz._
 import Id._
 
-import mco.data.{Key, Path}
+import mco.data.Key
+import mco.data.paths._
 import mco.stubs.{Cell, ImmutableVar, VarFilesystem}
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.{arbitrary => arb}
@@ -24,8 +25,11 @@ object Tests {
 
   trait Prop extends PropSpec with Matchers with GeneratorDrivenPropertyChecks {
 
+    implicit val arbitrarySegment: Arbitrary[Segment] =
+      Arbitrary(arb[String].map(Segment.apply))
+
     implicit val arbitraryPath: Arbitrary[Path] =
-      Arbitrary(arb[List[String]].map(Path.of))
+      Arbitrary(arb[Vector[Segment]].map(Path.of))
 
     implicit def arbitraryIMap[A: Order, B](
       implicit amap: Arbitrary[Map[A, B]]
@@ -43,7 +47,7 @@ object Tests {
     implicit val mcoPathEmptiness: Emptiness[Path] = _.asFile.isEmpty
 
     implicit class McoPathToBetterFiles(p: Path) {
-      def asFile = File(p.asString)
+      def asFile = File(p.toString)
     }
 
     implicit class BetterFileToMcoPath(f: File) {

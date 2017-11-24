@@ -6,10 +6,11 @@ import std.list._
 
 import mco.core.ImageStore
 import mco.core.vars.Var
-import mco.data.{Key, Path}
+import mco.data.Key
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 import Filesystem._
+import mco.data.paths._
 
 import java.net.URL
 
@@ -25,10 +26,10 @@ import java.net.URL
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
   root: Path,
-  store: Var[F, IMap[Key, String]]
+  store: Var[F, IMap[Key, RelPath]]
 ) extends ImageStore[F] {
   private def getTarget(key: Key)(path: Path) =
-    Path.segment(key.unwrap) ++ path.extension
+    rel"${key.unwrap}${path.extension}"
 
   private val noop = unit.point[F]
 

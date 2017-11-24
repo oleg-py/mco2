@@ -4,7 +4,8 @@ import scalaz._
 import syntax.foldable._
 import syntax.std.option._
 
-import mco.data.{Key, Path}
+import mco.data.Key
+import mco.data.paths.Path
 import monocle.macros.Lenses
 
 

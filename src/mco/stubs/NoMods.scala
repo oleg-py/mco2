@@ -6,7 +6,8 @@ import scalaz.syntax.applicative._
 
 import mco.core.state.{Deltas, ModState, RepoState}
 import mco.core.Mods
-import mco.data.{Key, Path}
+import mco.data.Key
+import mco.data.paths.Path
 
 
 class NoMods[F[_]: Applicative] extends Mods[F] {

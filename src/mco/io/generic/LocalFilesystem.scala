@@ -6,7 +6,7 @@ import scalaz.syntax.bind._
 
 import better.files._
 import com.sun.javafx.PlatformUtil
-import mco.data.Path
+import mco.data.paths.Path
 import mco.util.Capture
 import mco.util.syntax.any._
 import net.openhft.hashing.LongHashFunction
@@ -24,7 +24,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   final def childrenOf(path: Path) = Capture {
     val src =
       if (path == Path.root && PlatformUtil.isWindows) File.roots
-      else File(path.asString).children
+      else File(path.toString).children
 
     src
       .map(f => Path(f.pathAsString))
@@ -32,11 +32,11 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   }
 
   final def getBytes(path: Path) = Capture {
-    ImmutableArray.fromArray(File(path.asString).byteArray)
+    ImmutableArray.fromArray(File(path.toString).byteArray)
   }
 
   final def setBytes(path: Path, cnt: ImmutableArray[Byte]) = Capture {
-    File(path.asString)
+    File(path.toString)
       .tap(_.parent.createDirectories())
       .touch()
       .writeByteArray(cnt.toArray)
@@ -44,9 +44,9 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   }
 
   final def mkDir(path: Path) = Capture {
-    File(path.asString)
+    File(path.toString)
       .tap { f =>
-        if (f.exists) throw new FileAlreadyExistsException(path.asString)
+        if (f.exists) throw new FileAlreadyExistsException(path.toString)
       }
       .createDirectories()
     ()
@@ -55,7 +55,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   private def noCollision(source: Path, dest: Path, op: (File, File) => Any) = Capture {
     noWinRoot(source)
     noWinRoot(dest)
-    val (from, to) = (File(source.asString), File(dest.asString))
+    val (from, to) = (File(source.toString), File(dest.toString))
     if (to.exists && from.isSameFileAs(to)) throw new IOException(
       s"Could not copy $source to $dest: files are the same"
     )
@@ -81,13 +81,13 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
 
   final def rmTree(path: Path) = Capture {
     noWinRoot(path)
-    File(path.asString).delete()
+    File(path.toString).delete()
     ()
   }
 
   final def stat(path: Path) = Capture {
     noWinRoot(path)
-    Try(File(path.asString).attributes).toOption
+    Try(File(path.toString).attributes).toOption
   }
 
   final def runTmp[A](f: Path => F[A]) = Capture {
@@ -97,7 +97,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   }.join
 
   final protected[mco] def hashFile(p: Path) = Capture {
-    val file = File(p.asString)
+    val file = File(p.toString)
     for (ch <- file.fileChannel) yield {
       val mm = ch.toMappedByteBuffer
       val hi = LongHashFunction.xx(0L).hashBytes(mm)
@@ -107,6 +107,6 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   }
 
   final def fileToUrl(p: Path) = Capture {
-    File(p.asString).url
+    File(p.toString).url
   }
 }

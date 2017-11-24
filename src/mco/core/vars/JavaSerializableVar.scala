@@ -1,11 +1,10 @@
 package mco.core.vars
 
 import java.io._
-
 import scalaz._
 import syntax.monad._
 
-import mco.data.Path
+import mco.data.paths.Path
 import mco.io.generic.Filesystem
 import mco.io.generic.Filesystem._
 import mco.util.Capture

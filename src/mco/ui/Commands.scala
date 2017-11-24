@@ -7,7 +7,8 @@ import std.vector._
 
 import mco.core.{ImageStore, Mods}
 import mco.core.state.{Deltas, RepoState}
-import mco.data.{Key, Path}
+import mco.data.Key
+import mco.data.paths._
 import mco.util.Capture
 import mco.util.syntax.fp._
 import mco.core.vars.Var
@@ -44,7 +45,7 @@ abstract class Commands {
 
   def setThumbnail(path: String): Unit = {
     val op = state().currentModKey.traverse(key =>
-      ImageStore.putImage(key, Some(Path("-os") / path))
+      ImageStore.putImage(key, Some(Path("-os") / RelPath(path)))
         >> ImageStore.getImage(key)
     )
     syncChanges(op) { (url, _, us) => us.copy(thumbnailUrl = url.flatten) }
@@ -72,7 +73,7 @@ abstract class Commands {
     val assocs = UiState.assocL.getOption(state()).getOrElse(Map())
 
     val op = assocs.keys.toVector.traverse_ { str =>
-      Mods.liftFile(Path("-os") / str).void
+      Mods.liftFile(Path("-os") / RelPath(str)).void
     }
 
     syncChanges(op) { (_, rs, us) => us.copy(pendingAdds = None) }

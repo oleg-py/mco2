@@ -1,6 +1,6 @@
 package mco.core.state
 
-import mco.data.Path
+import mco.data.paths.Path
 import monocle.macros.Lenses
 
 

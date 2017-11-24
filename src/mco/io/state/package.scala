@@ -5,7 +5,8 @@ import std.vector._
 
 import mco.core._
 import mco.core.state._
-import mco.data.{Path, TempOp}
+import mco.data.TempOp
+import mco.data.paths.Path
 import mco.io.generic.Filesystem
 import mco.util.syntax.any._
 import mco.util.syntax.fp._

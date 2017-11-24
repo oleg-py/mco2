@@ -1,11 +1,12 @@
 package mco.io.generic
 
 import mco.Tests
-import mco.data.Path
 import mco.stubs.Cell._
 import mco.stubs.{ImmutableVar, VarFilesystem}
 import scalaz.Id._
 import scalaz.syntax.id._
+
+import mco.data.paths.Path
 
 class SimpleModTypesTest extends Tests.Sync {
   behavior of "SimpleModTypes"

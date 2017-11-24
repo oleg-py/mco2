@@ -5,13 +5,14 @@ import syntax.applicative._
 
 import mco.core._
 import mco.data._
+import mco.data.paths.Path
 
 
 final class FileMod[F[_]: Filesystem: Applicative](path: Path)
   extends Mod[F]
 {
-  private val key = Key(path.name)
-  val label = path.name
+  val label = path.name.toString
+  private val key = Key(label)
 
   def list: F[Vector[Keyed[Content]]] =
     Vector(Content.Component(key)).point[F].widen

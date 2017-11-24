@@ -1,27 +1,26 @@
 package mco.io.generic
 
 import java.nio.file.attribute.BasicFileAttributes
-
 import scalaz._
 import std.stream._
 import syntax.equal._
 
+import mco.data.paths._
 import mco.util.syntax.fp._
-import mco.data.Path
 
 
 class VirtualizedFilesystem[F[_]: Monad](
-  roots: Map[String, (Path, Filesystem[F])],
+  roots: Map[Segment, (Path, Filesystem[F])],
   runTmpFs: Filesystem[F]
 )(
   implicit val fsEq: Equal[Filesystem[F]]
 ) extends Filesystem[F] {
-  private def retranslate(path: Path): (Path, Filesystem[F], String) = {
+  private def retranslate(path: Path): (Path, Filesystem[F], Segment) = {
     path.segments match {
-      case Vector() => (Path.root, this, "")
+      case Vector() => (Path.root, this, Segment.empty)
       case head +: rest =>
         val (root, fs) = roots(head)
-        (root / rest, fs, head)
+        (root / RelPath(rest), fs, head)
     }
   }
 
@@ -33,10 +32,10 @@ class VirtualizedFilesystem[F[_]: Monad](
   override def childrenOf(path: Path): F[Stream[Path]] = {
     val (p, fs, head) = retranslate(path)
     if (fs === this) {
-      roots.keys.toStream.map(Path(_)).point[F]
+      roots.keys.toStream.map(Path.root / _).point[F]
     } else {
       fs.childrenOf(p)
-        .map { paths => paths.map(Path(head) / _.relStringTo(p)) }
+        .map { paths => paths.map(Path.root / head / _.fromToP(p)) }
     }
   }
 
@@ -54,7 +53,7 @@ class VirtualizedFilesystem[F[_]: Monad](
     def folderCopy = for {
       children <- childrenOf(from)
       _ <- children.traverse_ { path =>
-        slowCopy(path, to / path.relTo(from))
+        slowCopy(path, to / path.fromToP(from))
       }
     } yield ()
 

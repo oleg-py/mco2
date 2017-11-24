@@ -10,6 +10,7 @@ import mco.util.syntax.fp._
 import mco.util.syntax.any._
 import Filesystem._
 import mco.data._
+import mco.data.paths.Path
 import mco.util.instances.mapRightMonoid
 
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
@@ -17,7 +18,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
 {
   type DataM = Map[Key, (Path, Keyed[Content])]
 
-  override val label: String = self.name
+  override val label: String = self.name.toString
 
   private def toWriter[A](fa: F[A]): WriterT[F, DataM, A] =
     WriterT.put(fa)(mzero[DataM])

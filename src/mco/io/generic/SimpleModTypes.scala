@@ -4,9 +4,9 @@ import scalaz._
 import std.stream._
 
 import mco.core.Mod
-import mco.data.Path
 import mco.util.syntax.fp._
 import Filesystem._
+import mco.data.paths.Path
 
 class SimpleModTypes[F[_]: Filesystem: Monad] extends (Path => F[Option[Mod[F]]]) {
   override def apply(v1: Path) =

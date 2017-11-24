@@ -4,7 +4,8 @@ import scalaz.\/
 
 import com.olegpy.forwarders
 import mco.core.state.{Deltas, ModState, RepoState}
-import mco.data.{Key, Keyed, Path}
+import mco.data.paths.Path
+import mco.data.{Key, Keyed}
 
 
 @forwarders trait Mods[F[_]] {

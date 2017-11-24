@@ -2,51 +2,51 @@ package mco.stubs
 
 import scalaz.{ImmutableArray, Monad}
 
-import mco.data.Path
+import mco.data.paths.Path
 import mco.io.generic.Filesystem
 
 //noinspection TypeAnnotation
 class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F] {
   override def childrenOf(path: Path) = {
-    pprint.log(path.asString)
+    pprint.log(path.toString)
     inner.childrenOf(path)
   }
 
   override def getBytes(path: Path) = {
-    pprint.log(path.asString)
+    pprint.log(path.toString)
     inner.getBytes(path)
   }
 
   override def setBytes(path: Path, cnt: ImmutableArray[Byte]) = {
-    pprint.log(path.asString)
+    pprint.log(path.toString)
     pprint.log(s"bytes len: ${cnt.length}")
     inner.setBytes(path, cnt)
   }
 
   override def mkDir(path: Path) = {
-    pprint.log(path.asString)
+    pprint.log(path.toString)
     inner.mkDir(path)
   }
 
   override def copy(source: Path, dest: Path) = {
-    pprint.log(source.asString, "from")
-    pprint.log(dest.asString, "to")
+    pprint.log(source.toString, "from")
+    pprint.log(dest.toString, "to")
     inner.copy(source, dest)
   }
 
   override def move(source: Path, dest: Path) = {
-    pprint.log(source.asString, "from")
-    pprint.log(dest.asString, "to")
+    pprint.log(source.toString, "from")
+    pprint.log(dest.toString, "to")
     inner.move(source, dest)
   }
 
   override def rmTree(path: Path) = {
-    pprint.log(path.asString)
+    pprint.log(path.toString)
     inner.rmTree(path)
   }
 
   override def stat(path: Path) = {
-    pprint.log(path.asString)
+    pprint.log(path.toString)
     inner.stat(path)
   }
 
@@ -56,12 +56,12 @@ class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F]
   }
 
   override protected[mco] def hashFile(p: Path) = {
-    pprint.log(p.asString)
+    pprint.log(p.toString)
     inner.hashFile(p)
   }
 
   override def fileToUrl(p: Path) = {
-    pprint.log(p.asString)
+    pprint.log(p.toString)
     inner.fileToUrl(p)
   }
 }

@@ -1,37 +1,38 @@
 package mco.data
 
 import mco.Tests
+import mco.data.paths._
 
 class PathProperties extends Tests.Prop {
   property("self inverse") {
     forAll { (p: Path) =>
-      p.relTo(p) should be (Vector())
+      p.fromTo(p) should be (Vector())
     }
   }
 
   property("relTo -> `/` inversion") {
     forAll { (p1: Path, p2: Path) =>
-      p1 / (p2 relTo p1) should be (p2)
+      p1 / (p2 fromToP p1) should be (p2)
     }
   }
 
-  property("`/` -> relTo normalized inversion") {
-    forAll { (p: Path, ss: Seq[String]) =>
-      (p / ss).relTo(p) should be (Path.normalize(ss))
-    }
-  }
+//  property("`/` -> relTo normalized inversion") {
+//    forAll { (p: Path, ss: Vector[Segment]) =>
+//      (p / RelPath(ss)).relToS(p) should be (Path.normalize(ss))
+//    }
+//  }
 
   property("`/s/..` identity for valid segments") {
-    forAll { (p: Path, s: String) =>
-      whenever(!s.contains("..") && Path.normalize(Seq(s)).length == 1) {
-        (p / s / "..") should be (p)
+    forAll { (p: Path, s: Segment) =>
+      whenever(s != Segment.`..`) {
+        (p / s / Segment.`..`) should be (p)
       }
     }
   }
 
   property("`/../name` identity") {
     forAll { (p: Path) =>
-      (p / ".." / p.name) should be (p)
+      (p / Segment.`..` / p.name) should be (p)
     }
   }
 
@@ -41,9 +42,9 @@ class PathProperties extends Tests.Prop {
     }
   }
 
-  property("normalized asString <-> segments equiv") {
+  property("toString identity") {
     forAll { (p: Path) =>
-      Path.normalize(Seq(p.asString)) should be (p.segments)
+      Path(p.toString) should be (p)
     }
   }
 

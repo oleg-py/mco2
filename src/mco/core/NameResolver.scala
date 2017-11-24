@@ -5,7 +5,8 @@ import std.vector._
 
 import mco.util.syntax.fp._
 import mco.core.state.ModState
-import mco.data.{Key, Keyed, Path}
+import mco.data.paths.Path
+import mco.data.{Key, Keyed}
 
 
 trait NameResolver {
