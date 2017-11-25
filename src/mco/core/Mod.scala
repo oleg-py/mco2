@@ -24,7 +24,7 @@ trait Mod[F[_]] {
 
   }
 
-  final def provideChildren(c: Content.Plain)(
+  final def provideChildren(c: Content)(
     implicit F: Monad[F]
   ): TempOp[F, Vector[Keyed[Path]]] = filterProvide(_.get == c)
 }

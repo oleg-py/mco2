@@ -24,7 +24,7 @@ class PathProperties extends Tests.Prop {
 
   property("`/s/..` identity for valid segments") {
     forAll { (p: Path, s: Segment) =>
-      whenever(s != Segment.`..`) {
+      whenever(s != Segment.`..` && s != Segment.empty) {
         (p / s / Segment.`..`) should be (p)
       }
     }
