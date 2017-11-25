@@ -16,34 +16,34 @@ import mco.util.instances.mapRightMonoid
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
   extends Mod[F]
 {
-  type DataM = Map[RelPath, (Path, Keyed[Content])]
+  private type DataM = Map[RelPath, (Path, Keyed[Content])]
 
   override val label: String = self.name.toString
 
-  private def toWriter[A](fa: F[A]): WriterT[F, DataM, A] =
-    WriterT.put(fa)(mzero[DataM])
+  private def toState[A](fa: F[A]): StateT[F, DataM, A] =
+    StateT(s => fa.strengthL(s))
 
   private def scanDeepRec(fa: F[Stream[Path]]) =
-    toWriter(fa).flatMap(_ traverse scanDeep)
+    toState(fa).flatMap(_ traverse scanDeep)
 
-  private def scanDeep(path: Path): WriterT[F, DataM, Keyed[Content]] = {
-    import Content.{Component, Container}
+  private def scanDeep(path: Path): StateT[F, DataM, Keyed[Content]] = {
+    import Content.Component
     import mco.util.instances.monoidForApplicative
+    val MS = MonadState[StateT[F, DataM, ?], DataM]
 
     for {
-      isDir   <- isDirectory(path) |> toWriter
-      inner   <- scanDeepRec(isDir ?? childrenOf(path))
+      isDir   <- isDirectory(path) |> toState
+      _       <- scanDeepRec(isDir ?? childrenOf(path))
       key     =  path relTo self
-      kind    =  isDir.fold(Container(inner.toVector), Component)
-      content =  Keyed(key, kind)
-      info    =  Map(key -> ((path, content)))
-      _       <- WriterT.put(unit.point[F])(info)
-    } yield content
+      content =  Component(key)
+      _       <- if (isDir) MS.point(unit)
+                 else MS.modify(_.updated(key, (path, content)))
+    } yield content.widen[Content]
   }
 
   /*_*/
   private val structureF: F[DataM] =
-    scanDeepRec(childrenOf(self)).written
+    scanDeepRec(childrenOf(self)).exec(Map())
   /*_*/
 
   override def list: F[Vector[Keyed[Content]]] = structureF.map { data =>

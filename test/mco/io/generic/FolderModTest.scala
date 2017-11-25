@@ -33,12 +33,7 @@ class FolderModTest extends Tests.Sync {
     (fm.list: Vector[Keyed[Content]]) should contain theSameElementsAs Vector(
       Content.Component(rel"innerFile"),
       Content.Component(rel"nonEmptySubdir/nestedFile"),
-      Content.Component(rel"nonEmptySubdir/nestedFile2"),
-      Keyed(rel"emptySubdir", Content.Container(Vector())),
-      Keyed(rel"nonEmptySubdir", Content.Container(Vector(
-        Content.Component(rel"nonEmptySubdir/nestedFile"),
-        Content.Component(rel"nonEmptySubdir/nestedFile2")
-      )))
+      Content.Component(rel"nonEmptySubdir/nestedFile2")
     )
   }
 
@@ -54,8 +49,8 @@ class FolderModTest extends Tests.Sync {
     )
 
     val oks = Vector("innerFile", "emptySubdir", "nonEmptySubdir")
-    func(oks.map(s => rel"$s")) shouldBe oks
-      .map(s => rel"$s" -> path"mods/folderMod/$s")
-      .toMap
+    func(oks.map(s => rel"$s")) shouldBe Map(
+      rel"innerFile" -> path"mods/folderMod/innerFile"
+    )
   }
 }
