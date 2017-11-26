@@ -14,8 +14,8 @@ object GenericConfig {
   case class Files(
     images: Regex
   ) {
-    private val matchImg = images.findFirstMatchIn(_: String).nonEmpty
-    def isImage: Segment => Boolean = seg => matchImg(seg.toString)
+    val isImageS = images.findFirstMatchIn(_: String).nonEmpty
+    def isImage: Segment => Boolean = seg => isImageS(seg.toString)
   }
 
   case class Repo(

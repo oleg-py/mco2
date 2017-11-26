@@ -6,10 +6,14 @@ import scalafx.scene.input.{DragEvent, TransferMode}
 
 
 trait DropFilesReceiver { this: Node =>
-  def onFilesReceived(paths: Vector[String]): Unit
+  def canAcceptFiles(path: Vector[String]): Boolean
+  def acceptFiles(paths: Vector[String]): Unit
+
+  private def filesIn(ev: DragEvent) =
+    ev.dragboard.files.map(_.getAbsolutePath).toVector
 
   onDragOver = (ev: DragEvent) => {
-    if (ev.dragboard.hasFiles) {
+    if (ev.dragboard.hasFiles && canAcceptFiles(filesIn(ev))) {
       ev.acceptTransferModes(TransferMode.Copy)
     } else {
       ev.consume()
@@ -18,10 +22,12 @@ trait DropFilesReceiver { this: Node =>
 
   onDragDropped = (ev: DragEvent) => {
     val hadFiles = ev.dragboard.hasFiles
-    if (hadFiles) {
-      onFilesReceived(ev.dragboard.files.map(_.getAbsolutePath).toVector)
+    val files = filesIn(ev)
+    val canAccept = hadFiles && canAcceptFiles(files)
+    if (canAccept) {
+      acceptFiles(files)
     }
-    ev.setDropCompleted(hadFiles)
+    ev.setDropCompleted(canAccept)
     ev.consume()
   }
 }

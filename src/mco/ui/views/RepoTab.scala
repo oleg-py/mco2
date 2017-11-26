@@ -26,7 +26,7 @@ class RepoTab(state: Prop[UiState])(implicit cmd: Commands) extends Tab {
 
             orientation = Orientation.Vertical
             items ++= Seq(
-              new PackageThumbnail(state.map(_.thumbnailUrl)),
+              new PackageThumbnail(state.map(_.thumbnailUrl), state.map(_.isImage)),
               new PackageContentTable(state.map(_.currentContent)),
             )
           },

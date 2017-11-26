@@ -34,7 +34,9 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   columnResizePolicy = TableView.ConstrainedResizePolicy
   rowFactory = _ => new PackageRow
 
-  override def onFilesReceived(paths: Vector[String]): Unit =
+  override def canAcceptFiles(path: Vector[String]): Boolean = true
+
+  override def acceptFiles(paths: Vector[String]): Unit =
     cmd.addPending(paths)
 
   class PackageRow extends TableRow[Triple] {

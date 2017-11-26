@@ -13,6 +13,7 @@ import monocle.std.option.{some => someL}
 
 @Lenses case class UiState(
   repoState: RepoState = RepoState(),
+  isImage: String => Boolean = _ => false,
   pendingAdds: Option[PendingAdds] = None,
   currentModKey: Option[RelPath] = None,
   thumbnailUrl: Option[URL] = None,
@@ -44,6 +45,6 @@ object UiState {
   def startupError(throwable: Throwable) =
     UiState(error = Some(throwable))
 
-  def initial(repoState: RepoState) =
-    UiState(repoState)
+  def initial(repoState: RepoState, isImage: String => Boolean) =
+    UiState(repoState, isImage)
 }

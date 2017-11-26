@@ -33,7 +33,7 @@ object Runner extends TaskApp {
     } yield {
       implicit val mods: Mods[Coeval] = algebras._1
       implicit val images: ImageStore[Coeval] = algebras._2
-      val initialState = UiState.initial(state)
+      val initialState = UiState.initial(state, config.files.isImageS)
       val mkCommands = Commands[Coeval](coeval => coeval()) _
       (initialState, mkCommands)
     }
