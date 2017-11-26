@@ -19,6 +19,8 @@ libraryDependencies ++= Seq(
   "org.scalafx" %% "scalafx" % "8.0.144-R12",
   "com.lihaoyi" %% "pprint" % "0.5.3",
   "com.github.pureconfig" %% "pureconfig" % "0.8.0",
+  "net.sf.sevenzipjbinding" % "sevenzipjbinding" % "9.20-2.00beta",
+  "net.sf.sevenzipjbinding" % "sevenzipjbinding-all-platforms" % "9.20-2.00beta",
   "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.7" % Test,
   "org.scalatest" %% "scalatest" % "3.0.1" % Test,
   "org.scalacheck" %% "scalacheck" % "1.13.4" % Test
