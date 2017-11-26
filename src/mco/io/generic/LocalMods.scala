@@ -53,15 +53,15 @@ class LocalMods[F[_]: Monad: Filesystem](
   private def prepareFiles(
     filter: RelPath => Boolean)(
     index: Int,
-    mState: Keyed[ModState]) = {
-    for (dict <- mods())
-      yield dict(mState.key)._2
+    mState: Keyed[ModState]) =
+    for {
+      dict <- mods()
+      provided <- dict(mState.key)._2
         .filterProvide {
           case Keyed(key, Content.Component) if filter(key) => true
           case _ => false
         }
-        .map(resolver.bulk(index, mState))
-    }
+    } yield provided.map(resolver.bulk(index, mState))
 
   private def filter2[A](f: A => Boolean)(xs: Vector[Keyed[(A, A)]]) =
     xs.filter { case Keyed(_, (_, to)) => f(to) }

@@ -5,7 +5,7 @@ import mco.data.Keyed
 
 
 sealed trait Content extends Product with Serializable {
-  final def apply(key: RelPath): Keyed[this.type] = Keyed(key, this)
+  final def apply(key: RelPath): Keyed[Content] = Keyed(key, this)
 }
 
 object Content {

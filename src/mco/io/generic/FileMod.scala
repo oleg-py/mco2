@@ -16,13 +16,12 @@ final class FileMod[F[_]: Filesystem: Applicative](
   val label = file.name.toString
 
   def list: F[Vector[Keyed[Content]]] =
-    Vector(Content.Component(rel"${file.name}")).point[F].widen
+    Vector(Content.Component(rel"${file.name}")).point[F]
 
-  def provide = TempOp {
-    val fn = (c: Vector[RelPath]) =>
-      if (c contains rel"${file.name}") Map(rel"${file.name}" -> file)
+  def provide(content: Vector[RelPath]) = TempOp {
+    val result =
+      if (content contains rel"${file.name}") Map(rel"${file.name}" -> file)
       else Map.empty[RelPath, Path]
-
-    fn.point[F]
+    result.point[F]
   }
 }

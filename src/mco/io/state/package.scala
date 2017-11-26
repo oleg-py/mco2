@@ -23,7 +23,8 @@ package object state {
 
   def initMod[F[_]: Filesystem: Monad](mod: Mod[F]): F[ModState] =
     for {
-      data <- mod.filterProvide(_.get == Content.Component).runFS
+      provided <- mod.filterProvide(_.get == Content.Component)
+      data <- provided.runFS
       inner <- data
         .map(la => (la.key, la.get))
         .pipe(IMap.fromFoldable(_))

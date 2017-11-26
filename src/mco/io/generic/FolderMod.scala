@@ -38,7 +38,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
       content =  Component(key)
       _       <- if (isDir) MS.point(unit)
                  else MS.modify(_.updated(key, (path, content)))
-    } yield content.widen[Content]
+    } yield content
   }
 
   /*_*/
@@ -50,12 +50,12 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide: TempOp[F, Vector[RelPath] => Map[RelPath, Path]] = TempOp {
+  override def provide(content: Vector[RelPath]): TempOp[F, Map[RelPath, Path]] = TempOp {
     for {
       data <- structureF
-    } yield (_: Vector[RelPath])
+    } yield content
       .collect(data)
-      .map { case (path, content) => content.key -> path }
+      .map { case (path, Keyed(key, _)) => key -> path }
       .toMap
   }
 }
