@@ -25,7 +25,8 @@ import java.net.URL
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
   root: Path,
-  store: Var[F, IMap[RelPath, RelPath]]
+  store: Var[F, IMap[RelPath, RelPath]],
+  isImage: Segment => Boolean
 ) extends ImageStore[F] {
   private def getTarget(key: RelPath)(path: Path) =
     rel"${key.name}${path.extension}"
@@ -40,8 +41,8 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       url <- path.filter(_ => exists).traverse(fileToUrl(_))
     } yield url
 
-  override def putImage(key: RelPath, path: Option[Path]): F[Unit] =
-    for {
+  override def putImage(key: RelPath, path: Option[Path]): F[Unit] = {
+    def copyFile = for {
       dict <- store()
       newName = path.map(getTarget(key))
       named = path.tuple(newName.map(root / _))
@@ -49,6 +50,10 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       _ <- named.cata(Function.tupled(copy(_, _)), noop)
       _ <- store ~= { _.alter(key, _ => newName) }
     } yield ()
+
+    if (path.forall(p => isImage(p.name))) copyFile
+    else noop
+  }
 
   override def stripImages(keys: Vector[RelPath]): F[Unit] =
     for {

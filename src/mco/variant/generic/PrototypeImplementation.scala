@@ -42,7 +42,7 @@ object PrototypeImplementation {
         )
       }
 
-    config.paths
+    config.repo.paths
       .traverse(determineFS)
       .map { case Vector(source, images, target) =>
         new LoggingFilesystem(new VirtualizedFilesystem[F](
@@ -58,12 +58,14 @@ object PrototypeImplementation {
       .widen
   }
 
-  private def images[F[_]: Filesystem: Capture: MThrow]: F[ImageStore[F]] = {
+  private def images[F[_]: Filesystem: Capture: MThrow](
+    isImage: Segment => Boolean
+  ): F[ImageStore[F]] = {
     CacheVar(IMap.empty[RelPath, RelPath].point[F])(
       new JavaSerializableVar(Path("-target/.imgdb")),
       new MutableVar(_).point[F].widen
     )
-      .map(new LocalImageStore(Path("-images"), _))
+      .map(new LocalImageStore(Path("-images"), _, isImage))
       .widen
   }
 
@@ -92,5 +94,7 @@ object PrototypeImplementation {
     config: GenericConfig,
     cwd: Path
   ): F[(Mods[F], ImageStore[F])] =
-    filesystem(config, cwd) >>= { implicit fs => mods tuple images }
+    filesystem(config, cwd) >>= { implicit fs =>
+      mods tuple images(config.files.isImage)
+    }
 }
