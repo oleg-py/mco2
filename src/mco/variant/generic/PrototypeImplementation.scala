@@ -26,20 +26,19 @@ object PrototypeImplementation {
     config: GenericConfig,
     cwd: Path
   ): F[Filesystem[F]] = {
-    val localFS = new LocalFilesystem[F]
+    val localFS:  Filesystem[F] = new LocalFilesystem[F]
 
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
-        val file = RelPath(subpath.drop("varfs!".length))
+        val file = rel"${subpath.drop("varfs!".length)}"
         val backend = CacheVar(dir().point[F])(
           new JavaSerializableVar(cwd / file)(??, ??, localFS),
           new MutableVar(_).point[F].widen
         ).map(new VarFilesystem(_): Filesystem[F])
         backend.strengthL(Path.root)
       } else {
-        localFS.ensureDir(cwd / RelPath(subpath)).as(
-          (cwd / RelPath(subpath), localFS: Filesystem[F])
-        )
+        val target = path"$cwd/$subpath"
+        localFS.ensureDir(target).as((target, localFS))
       }
 
     config.repo.paths
@@ -62,18 +61,18 @@ object PrototypeImplementation {
     isImage: Segment => Boolean
   ): F[ImageStore[F]] = {
     CacheVar(IMap.empty[RelPath, RelPath].point[F])(
-      new JavaSerializableVar(Path("-target/.imgdb")),
+      new JavaSerializableVar(path"-target/.imgdb"),
       new MutableVar(_).point[F].widen
     )
-      .map(new LocalImageStore(Path("-images"), _, isImage))
+      .map(new LocalImageStore(path"-images", _, isImage))
       .widen
   }
 
   private def mods[F[_]: Filesystem: Capture: MThrow]: F[Mods[F]] = {
     for {
-      _ <- ensureDir(Path("-target"))
+      _ <- ensureDir(path"-target")
       typer = new SimpleModTypes
-      mods <- typer.allIn(Path("-source"))
+      mods <- typer.allIn(path"-source")
       orderedMods <- mods.traverse { case (path, mod) =>
         initMod[F](mod).map(Keyed(toKey(path), _))
       }
@@ -81,12 +80,12 @@ object PrototypeImplementation {
       labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
       repoVar = new MutableVar(RepoState(orderedMods, labels))
     } yield new LocalMods(
-      Path("-source"),
+      path"-source",
       repoVar,
       new MutableVar(modMap),
       typer,
       toKey,
-      new MangleNames(Path("-target"))
+      new MangleNames(path"-target")
     )
   }.widen
 
