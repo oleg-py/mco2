@@ -25,7 +25,7 @@ object PrototypeImplementation {
   private def filesystem[F[_]: Capture: MThrow](
     config: GenericConfig,
     cwd: Path
-  ): F[Filesystem[F]] = {
+  ): F[(Filesystem[F], Archiving[F])] = {
     val localFS:  Filesystem[F] = new LocalFilesystem[F]
 
     def determineFS(subpath: String) =
@@ -51,9 +51,11 @@ object PrototypeImplementation {
             (seg"-images", images),
             (seg"-os", (Path.root, localFS))
           ),
+          seg"-os",
           localFS
         )(??, Equal.equalRef))
       }
+      .fproduct(_.archiving)
       .widen
   }
 
@@ -68,7 +70,7 @@ object PrototypeImplementation {
       .widen
   }
 
-  private def mods[F[_]: Filesystem: Capture: MThrow]: F[Mods[F]] = {
+  private def mods[F[_]: Filesystem: Capture: Archiving: MThrow]: F[Mods[F]] = {
     for {
       _ <- ensureDir(path"-target")
       typer = new SimpleModTypes
@@ -83,7 +85,7 @@ object PrototypeImplementation {
       path"-source",
       repoVar,
       new MutableVar(modMap),
-      typer,
+      typer(_),
       toKey,
       new MangleNames(path"-target")
     )
@@ -93,7 +95,9 @@ object PrototypeImplementation {
     config: GenericConfig,
     cwd: Path
   ): F[(Mods[F], ImageStore[F])] =
-    filesystem(config, cwd) >>= { implicit fs =>
+    filesystem(config, cwd) >>= { case (fs, arch) =>
+      implicit val filesystem: Filesystem[F] = fs
+      implicit val archiving: Archiving[F] = arch
       mods tuple images(config.files.isImage)
     }
 }

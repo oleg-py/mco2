@@ -2,20 +2,25 @@ package mco.stubs
 
 import scalaz._
 
+import mco.core.Capture
 import mco.core.vars.Var
 import mco.data.paths.Path
-import mco.io.generic.Filesystem
+import mco.io.generic.{Archiving, Filesystem, SlowArchiving}
 import mco.stubs.cells._
 import mco.util.syntax.fp._
+import mco.util.syntax.??
 
 import java.net.URL
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.Base64
 
 
-class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Cell])
+class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
   extends Filesystem[F]
 {
+
+  override def archiving: Archiving[F] = new SlowArchiving[F]()(this, ??, ??)
+
   private def complainAbout(path: Path) = sys.error(s"Assertion failure at $path")
 
   def deepGet(path: Path): F[Option[Cell]] =

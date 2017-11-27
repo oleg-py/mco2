@@ -3,6 +3,7 @@ package mco
 import scalaz._
 
 import mco.data.paths._
+import mco.core.Capture.yolo._
 import mco.stubs.{ImmutableVar, VarFilesystem}
 import mco.stubs.cells._
 import org.scalacheck.Arbitrary

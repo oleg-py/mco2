@@ -35,6 +35,7 @@ import java.nio.file.attribute.BasicFileAttributes
   def stat(path: Path): F[Option[BasicFileAttributes]]
 
   // --- Special operations for concrete use cases ---
+  def archiving: Archiving[F]
   def runTmp[A](f: Path => F[A]): F[A]
   def fileToUrl(p: Path): F[URL]
   protected[mco] def hashFile(p: Path): F[(Long, Long)]

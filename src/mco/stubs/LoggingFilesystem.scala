@@ -3,10 +3,12 @@ package mco.stubs
 import scalaz.{ImmutableArray, Monad}
 
 import mco.data.paths.Path
-import mco.io.generic.Filesystem
+import mco.io.generic.{Archiving, Filesystem}
 
 //noinspection TypeAnnotation
 class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F] {
+  override def archiving: Archiving[F] = inner.archiving
+
   override def childrenOf(path: Path) = {
     pprint.log(path.toString)
     inner.childrenOf(path)

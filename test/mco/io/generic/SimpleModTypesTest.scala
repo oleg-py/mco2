@@ -1,6 +1,7 @@
 package mco.io.generic
 
 import mco.Tests
+import mco.core.Capture.yolo._
 import mco.stubs.cells._
 import mco.data.paths._
 import scalaz.Id._
@@ -14,6 +15,8 @@ class SimpleModTypesTest extends Tests.Sync {
     seg"folder" -> dir(),
     seg"file" -> file()
   )
+  implicit val archiving = new SlowArchiving[Id]
+
   val simpleModTypes = new SimpleModTypes[Id]
 
   it should "create mod for file" in {

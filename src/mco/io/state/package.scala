@@ -24,11 +24,12 @@ package object state {
   def initMod[F[_]: Filesystem: Monad](mod: Mod[F]): F[ModState] =
     for {
       provided <- mod.filterProvide(_.get == Content.Component)
-      data <- provided.runFS
-      inner <- data
-        .map(la => (la.key, la.get))
-        .pipe(IMap.fromFoldable(_))
-        .traverse(initContent[F](Content.Component))
+      inner <- provided
+        .andThen { vec =>
+          IMap.fromFoldable(vec.map(la => (la.key, la.get)))
+            .traverse(initContent[F](Content.Component))
+        }
+        .runFS
     } yield ModState(inner.foldMap(_.stamp).copy(
       enabled = false,
       installed = false

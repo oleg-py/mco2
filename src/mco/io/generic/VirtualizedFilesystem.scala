@@ -11,10 +11,24 @@ import mco.util.syntax.fp._
 
 class VirtualizedFilesystem[F[_]: Monad](
   roots: Map[Segment, (Path, Filesystem[F])],
+  runTmpRoot: Segment,
   runTmpFs: Filesystem[F]
 )(
   implicit val fsEq: Equal[Filesystem[F]]
-) extends Filesystem[F] {
+) extends Filesystem[F] with Archiving[F] {
+
+  override def archiving: Archiving[F] = this
+
+  override def entries(archive: Path): F[Vector[RelPath]] =
+    unaryOp(archive)(_.archiving.entries(_))
+
+  override def extract(archive: Path, targets: Map[RelPath, Path]): F[Unit] = {
+    val translatedTargets = targets.map {
+      case (relPath, path) => relPath -> retranslate(path)._1
+    }
+    unaryOp(archive)(_.archiving.extract(_, translatedTargets))
+  }
+
   private def retranslate(path: Path): (Path, Filesystem[F], Segment) = {
     path.segments match {
       case Vector() => (Path.root, this, Segment.empty)
@@ -81,7 +95,7 @@ class VirtualizedFilesystem[F[_]: Monad](
     unaryOp(path) { _ stat _ }
 
   override def runTmp[A](f: Path => F[A]): F[A] =
-    runTmpFs.runTmp(f)
+    runTmpFs.runTmp(path => f(path"/$runTmpRoot/$path"))
 
   override protected[mco] def hashFile(path: Path): F[(Long, Long)] =
     unaryOp(path) { _ hashFile _ }

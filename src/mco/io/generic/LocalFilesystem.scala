@@ -15,6 +15,8 @@ import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
 
 class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
+  override val archiving: Archiving[F] = new LocalArchiving[F]
+
   private def noWinRoot(path: Path): Unit = {
     if (PlatformUtil.isWindows && path == Path.root) {
       throw new IOException("Unsupported operation at (virtual) root path")
@@ -91,8 +93,9 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   }
 
   final def runTmp[A](f: Path => F[A]) = Capture {
-    for (file <- File.temporaryDirectory()) yield {
-      f(Path(file.pathAsString))
+    val tmpDir = File.newTemporaryDirectory("mco-")
+    f(Path(tmpDir.pathAsString)) <* Capture {
+      tmpDir.delete(swallowIOExceptions = true)
     }
   }.join
 
