@@ -38,9 +38,7 @@ class FolderModTest extends Tests.Sync {
   }
 
   "FolderMod#provide" should "provide all requested children" in {
-    /*_*/
-    val func: (Vector[RelPath] => Map[RelPath, Path]) = fm.provide.runFS
-    /*_*/
+    val func = fm.provide(_: Vector[RelPath]).runFS
 
     func(Vector()) shouldBe Map()
     val nested2 = "nonEmptySubdir/nestedFile2"

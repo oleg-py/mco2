@@ -28,7 +28,7 @@ class FileModTest extends Tests.Sync {
 
   /*_*/
   "FileMod#provide" should "provide only own file" in {
-    val fun = fm.provide.runFS
+    val fun = fm.provide(_: Vector[RelPath]).runFS
     fun(Vector(rel"fileMod.dat")) shouldBe Map(
       rel"fileMod.dat" -> path"mods/fileMod.dat"
     )
