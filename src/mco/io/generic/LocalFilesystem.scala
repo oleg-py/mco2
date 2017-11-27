@@ -68,6 +68,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
     if (to.isParentOf(from) || from.isParentOf(to)) throw new IOException(
       s"Could not copy $to and $from"
     )
+    to.parent.createDirectories()
     op(from, to)
     ()
   }

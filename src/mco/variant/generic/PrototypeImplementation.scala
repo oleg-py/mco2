@@ -3,7 +3,7 @@ package mco.variant.generic
 import scalaz._
 import std.vector._
 
-import mco.core.{Capture, ImageStore, Mods}
+import mco.core._
 import mco.core.state.RepoState
 import mco.core.vars._
 import mco.data.paths._
@@ -87,7 +87,7 @@ object PrototypeImplementation {
       new MutableVar(modMap),
       typer(_),
       toKey,
-      new MangleNames(path"-target")
+      NameResolver.subdirs(path"-target")
     )
   }.widen
 

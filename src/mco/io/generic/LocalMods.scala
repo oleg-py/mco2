@@ -100,7 +100,7 @@ class LocalMods[F[_]: Monad: Filesystem](
         .toVector
         .traverse_ { case (j, keys) =>
           prepareFiles(keys)(j, newState.orderedMods(j))
-            .map(_.andThen(copyFiles).runFS)
+            .flatMap(_.andThen(copyFiles).runFS)
             .void
         }
     } yield ()

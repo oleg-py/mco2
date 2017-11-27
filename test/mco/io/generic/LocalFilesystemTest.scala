@@ -164,6 +164,17 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
     from.asFile.byteArray shouldEqual origContent
   }
 
+  it should "correctly create parents of target" in { dirs =>
+    val from = dirs.src / rel"test_folder/file2"
+    val origContent = from.asFile.byteArray
+    val to = dirs.target / rel"deeply/nested/nonexistent/dir"
+    noException shouldBe thrownBy {
+      copy(from, to)
+    }
+    to should exist
+    to.asFile.byteArray shouldEqual origContent
+  }
+
   // --------------------------------------------------------------------------
 
   behavior of "LocalFilesystem#copy on a directory"
