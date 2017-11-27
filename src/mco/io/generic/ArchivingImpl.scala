@@ -5,38 +5,35 @@ import scala.collection.breakOut
 import scala.collection.mutable
 import scala.collection.immutable.SortedMap
 import scala.util.Try
-import scalaz._
-import syntax.functor._
 
-import better.files.File.RandomAccessMode
 import better.files._
 import mco.core.Capture
 import mco.data.paths._
 import mco.util.syntax.any._
+import monix.eval.Coeval
 import net.sf.sevenzipjbinding._
-import net.sf.sevenzipjbinding.impl.{RandomAccessFileInStream, RandomAccessFileOutStream}
 
 import java.io.Closeable
 
 
-class ArchivingImpl[F[_]: Capture] private (
-  getInStream: Path => IInStream,
-  getOutStream: Path => IOutStream with Closeable
-) extends Archiving[F] {
+abstract class ArchivingImpl[F[_]: Capture] extends Archiving[F] {
+  protected def getInStream(path: Path): IInStream
+  protected def getOutStream(path: Path): IOutStream with Closeable
+
   override def entries(archive: Path): F[Vector[RelPath]] = Capture {
-    val inArchive = SevenZip.openInArchive(null, getInStream(archive))
-    val result = inArchive.getSimpleInterface.getArchiveItems
-      .collect {
-        case entry if !entry.isFolder => rel"${entry.getPath}"
-      }
-      .toVector
-
-    inArchive.close()
-
-    result
+    ArchivingImpl.initLibraryOnce()
+    for (inArchive <- SevenZip.openInArchive(null, getInStream(archive)).autoClosed)
+      yield inArchive
+        .getSimpleInterface
+        .getArchiveItems
+        .collect {
+          case entry if !entry.isFolder => rel"${entry.getPath}"
+        }
+        .toVector
   }
 
   override def extract(archive: Path, targets: Map[RelPath, Path]): F[Unit] = Capture {
+    ArchivingImpl.initLibraryOnce()
     val inArchive = SevenZip.openInArchive(null, getInStream(archive))
 
     val entries: SortedMap[Int, Path] = inArchive.getSimpleInterface
@@ -69,11 +66,7 @@ class ArchivingImpl[F[_]: Capture] private (
 }
 
 object ArchivingImpl {
-  private lazy val initLibraryOnce: Unit = SevenZip.initSevenZipFromPlatformJAR()
-
-  def apply[F[_]: Capture: Functor] (
-    getInStream: Path => IInStream,
-    getOutStream: Path => IOutStream with Closeable
-  ): F[Archiving[F]] = Capture(initLibraryOnce)
-    .as(new ArchivingImpl[F](getInStream, getOutStream))
+  private val initLibraryOnce: Coeval[Unit] = Coeval {
+    SevenZip.initSevenZipFromPlatformJAR()
+  }.memoizeOnSuccess
 }

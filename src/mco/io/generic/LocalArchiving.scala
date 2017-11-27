@@ -11,19 +11,16 @@ import net.sf.sevenzipjbinding.impl.{RandomAccessFileInStream, RandomAccessFileO
 
 import java.io.Closeable
 
-object LocalArchiving {
-  def apply[F[_]: Capture: Functor]: F[Archiving[F]] = {
-    def getInStream(out: Path): IInStream =
-      File(out.toString)
+class LocalArchiving[F[_]: Capture] extends ArchivingImpl {
+  override protected def getInStream(path: Path): IInStream =
+    File(path.toString)
       .newRandomAccess()
       .pipe(new RandomAccessFileInStream(_))
 
-    def getOutStream(out: Path): IOutStream with Closeable =
-      File(out.toString)
-        .touch()
-        .newRandomAccess(File.RandomAccessMode.readWrite)
-        .pipe(new RandomAccessFileOutStream(_) with Closeable)
-
-    ArchivingImpl(getInStream, getOutStream)
-  }
+  override protected def getOutStream(path: Path): IOutStream with Closeable =
+    File(path.toString)
+      .touch()
+      .newRandomAccess(File.RandomAccessMode.readWrite)
+      .pipe(new RandomAccessFileOutStream(_) with Closeable)
 }
+
