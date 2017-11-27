@@ -9,7 +9,7 @@ import mco.data.{Keyed, TempOp}
 import mco.data.paths.{Path, RelPath}
 
 
-class ArchiveMod[F[_]: Archiving: Monad](archive: Path) extends Mod[F] {
+class ArchiveMod[F[_]: Archiving: Functor](archive: Path) extends Mod[F] {
   override val label: String = archive.name.toString
   override def list: F[Vector[Keyed[Content]]] =
     for {
