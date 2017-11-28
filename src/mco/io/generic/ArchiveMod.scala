@@ -1,20 +1,18 @@
 package mco.io.generic
 
 import scalaz._
-import std.vector._
-import mco.util.syntax.fp._
+import scalaz.std.vector._
 
-import mco.core.{Content, Mod}
-import mco.data.{Keyed, TempOp}
+import mco.core.Mod
+import mco.data.TempOp
 import mco.data.paths.{Path, RelPath}
+import mco.util.syntax.fp._
 
 
 class ArchiveMod[F[_]: Archiving: Functor](archive: Path) extends Mod[F] {
   override val label: String = archive.name.toString
-  override def list: F[Vector[Keyed[Content]]] =
-    for {
-      entries <- Archiving.entries(archive)
-    } yield entries.map(Content.Component(_))
+  override def list: F[Vector[RelPath]] =
+    Archiving.entries(archive)
 
   override def provide(paths: Vector[RelPath]): TempOp[F, Map[RelPath, Path]] =
     TempOp.WithTemp { tempDir =>

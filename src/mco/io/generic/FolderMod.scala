@@ -16,7 +16,7 @@ import mco.util.instances.mapRightMonoid
 class FolderMod[F[_]: Filesystem: Monad](self: Path)
   extends Mod[F]
 {
-  private type DataM = Map[RelPath, (Path, Keyed[Content])]
+  private type DataM = Map[RelPath, (Path, RelPath)]
 
   override val label: String = self.name.toString
 
@@ -24,10 +24,9 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     StateT(s => fa.strengthL(s))
 
   private def scanDeepRec(fa: F[Stream[Path]]) =
-    toState(fa).flatMap(_ traverse scanDeep)
+    toState(fa).flatMap(_ traverse_ scanDeep)
 
-  private def scanDeep(path: Path): StateT[F, DataM, Keyed[Content]] = {
-    import Content.Component
+  private def scanDeep(path: Path): StateT[F, DataM, Unit] = {
     import mco.util.instances.monoidForApplicative
     val MS = MonadState[StateT[F, DataM, ?], DataM]
 
@@ -35,10 +34,9 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
       isDir   <- isDirectory(path) |> toState
       _       <- scanDeepRec(isDir ?? childrenOf(path))
       key     =  path relTo self
-      content =  Component(key)
       _       <- if (isDir) MS.point(unit)
-                 else MS.modify(_.updated(key, (path, content)))
-    } yield content
+                 else MS.modify(_.updated(key, (path, key)))
+    } yield ()
   }
 
   /*_*/
@@ -46,7 +44,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     scanDeepRec(childrenOf(self)).exec(Map())
   /*_*/
 
-  override def list: F[Vector[Keyed[Content]]] = structureF.map { data =>
+  override def list: F[Vector[RelPath]] = structureF.map { data =>
     data.map { case (_, (_, c)) => c } .toVector
   }
 
@@ -55,7 +53,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
       data <- structureF
     } yield content
       .collect(data)
-      .map { case (path, Keyed(key, _)) => key -> path }
+      .map(_.swap)
       .toMap
   }
 }

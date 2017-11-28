@@ -55,11 +55,7 @@ class LocalMods[F[_]: Monad: Filesystem](
     mState: Keyed[ModState]) =
     for {
       dict <- mods()
-      provided <- dict(mState.key)._2
-        .filterProvide {
-          case Keyed(key, Content.Component) if filter(key) => true
-          case _ => false
-        }
+      provided <- dict(mState.key)._2.filterProvide(filter)
     } yield provided.map(resolver.bulk(index, mState))
 
   private def filter2[A](f: A => Boolean)(xs: Vector[Keyed[(A, A)]]) =

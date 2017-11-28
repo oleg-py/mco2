@@ -15,8 +15,8 @@ final class FileMod[F[_]: Filesystem: Applicative](
 {
   val label = file.name.toString
 
-  def list: F[Vector[Keyed[Content]]] =
-    Vector(Content.Component(rel"${file.name}")).point[F]
+  def list: F[Vector[RelPath]] =
+    Vector(rel"${file.name}").point[F]
 
   def provide(content: Vector[RelPath]) = TempOp {
     val result =

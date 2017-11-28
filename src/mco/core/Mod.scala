@@ -8,15 +8,15 @@ import mco.util.syntax.fp._
 
 trait Mod[F[_]] {
   val label: String
-  def list: F[Vector[Keyed[Content]]]
+  def list: F[Vector[RelPath]]
   def provide(content: Vector[RelPath]): TempOp[F, Map[RelPath, Path]]
 
-  final def filterProvide(f: Keyed[Content] => Boolean)(
-    implicit F: Monad[F]
+  final def filterProvide(f: RelPath => Boolean)(
+    implicit F: Functor[F]
   ): F[TempOp[F, Vector[Keyed[Path]]]] =
     for {
       children <- list
-      vec = children.filter(f).map(_.key)
+      vec = children.filter(f)
     } yield provide(vec)
       .map(pathMap => vec.map(lc => Keyed(lc, pathMap(lc))))
 }

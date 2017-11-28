@@ -23,7 +23,7 @@ package object state {
 
   def initMod[F[_]: Filesystem: Monad](mod: Mod[F]): F[ModState] =
     for {
-      provided <- mod.filterProvide(_.get == Content.Component)
+      provided <- mod.filterProvide(_ => true)
       inner <- provided
         .andThen { vec =>
           IMap.fromFoldable(vec.map(la => (la.key, la.get)))

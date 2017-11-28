@@ -9,6 +9,12 @@ import mco.io.generic.Filesystem
 
 sealed trait TempOp[F[_], A] extends Product with Serializable {
   import TempOp._
+  // primarily to make IDEA happier
+  def map[B](f: A => B)(implicit F: Functor[F]): TempOp[F, B] = this match {
+    case NoTemp(fa) => NoTemp(fa map f)
+    case WithTemp(ffa) => WithTemp(ffa andThen F.lift(f))
+  }
+
   def runFS(implicit F: Filesystem[F]): F[A] = this match {
     case NoTemp(fa) => fa
     case WithTemp(func) => F.runTmp(func)
