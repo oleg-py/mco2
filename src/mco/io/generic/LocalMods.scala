@@ -24,7 +24,6 @@ class LocalMods[F[_]: Monad: Filesystem](
   repoState: Var[F, RepoState],
   mods: Var[F, Map[RelPath, (Path, Mod[F])]],
   tryAsMod: Path => F[Option[Mod[F]]],
-  toKey: Path => RelPath,
   resolver: NameResolver
 ) extends Mods[F] {
   override def state: F[RepoState] = repoState()

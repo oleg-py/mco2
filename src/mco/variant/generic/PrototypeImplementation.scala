@@ -86,7 +86,6 @@ object PrototypeImplementation {
       repoVar,
       new MutableVar(modMap),
       typer(_),
-      toKey,
       NameResolver.subdirs(path"-target")
     )
   }.widen
