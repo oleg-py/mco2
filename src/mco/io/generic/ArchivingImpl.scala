@@ -16,10 +16,10 @@ import net.sf.sevenzipjbinding._
 import java.io.Closeable
 
 
-abstract class ArchivingImpl[F[_]: Capture] extends Archiving[F] {
-  protected def getInStream(path: Path): IInStream
-  protected def getOutStream(path: Path): IOutStream with Closeable
-
+class ArchivingImpl[F[_]: Capture](
+  getInStream: Path => IInStream,
+  getOutStream: Path => IOutStream with Closeable
+) extends Archiving[F] {
   override def entries(archive: Path): F[Vector[RelPath]] = Capture {
     ArchivingImpl.initLibraryOnce()
     for (inArchive <- SevenZip.openInArchive(null, getInStream(archive)).autoClosed)
