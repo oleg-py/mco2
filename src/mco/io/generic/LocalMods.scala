@@ -51,12 +51,11 @@ class LocalMods[F[_]: Monad: Filesystem](
 
   private def prepareFiles(
     filter: RelPath => Boolean)(
-    index: Int,
     mState: Keyed[ModState]) =
     for {
       dict <- mods()
       provided <- dict(mState.key)._2.filterProvide(filter)
-    } yield provided.map(resolver.bulk(index, mState))
+    } yield provided.map(resolver.bulk(mState))
 
   private def filter2[A](f: A => Boolean)(xs: Vector[Keyed[(A, A)]]) =
     xs.filter { case Keyed(_, (_, to)) => f(to) }
@@ -72,7 +71,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, mState) = rState.at(key)
       conflicts = !rState.hasConflicts(_: Path, i)
-      prepared <- prepareFiles(mState.get.contentEnabled)(i, mState)
+      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
       changes <- prepared
         .andThen(copyFiles compose filter2(conflicts))
         .runFS
@@ -84,7 +83,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       rState <- state
       (i, mState) = rState.at(key)
       targets = rState.recoveryIndex(_: Path, i)
-      prepared <- prepareFiles(mState.get.contentEnabled)(i, mState)
+      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
       changes <- prepared.andThen(rmFiles).runFS
       _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = false))
       newState <- state
@@ -94,7 +93,7 @@ class LocalMods[F[_]: Monad: Filesystem](
         }
         .toVector
         .traverse_ { case (j, keys) =>
-          prepareFiles(keys)(j, newState.orderedMods(j))
+          prepareFiles(keys)(newState.orderedMods(j))
             .flatMap(_.andThen(copyFiles).runFS)
             .void
         }

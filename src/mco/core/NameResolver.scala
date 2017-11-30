@@ -14,15 +14,14 @@ import mco.util.syntax.fp._
 
 
 trait NameResolver {
-  def apply(index: Int, mod: Keyed[ModState], content: RelPath): Path
+  def apply(mod: Keyed[ModState], content: RelPath): Path
 
   final def bulk(
-    index: Int,
     modInfo: Keyed[ModState]
   )(targets: Vector[Keyed[Path]]
   ): Vector[Keyed[(Path, Path)]] =
     targets map { case Keyed(key, from) =>
-      Keyed(key, from -> this(index, modInfo, key))
+      Keyed(key, from -> this(modInfo, key))
     }
 }
 
@@ -31,13 +30,13 @@ object NameResolver {
   private def indexToId(i: Int) =
     new Random(i).nextInt().toHexString
 
-  def mangle(target: Path): NameResolver = (index, mod, content) => {
+  def mangle(target: Path): NameResolver = (mod, content) => {
     val ext = content.extension
-    val id = indexToId(index)
+    val id = indexToId(mod.key.##)
     val hashes = mod.get.contents.lookup(content).foldMap(_.stamp.hash)
     path"$target/$id-${uuidName(hashes)}$ext"
   }
 
-  def subdirs(target: Path): NameResolver = (_, mod, content) =>
+  def subdirs(target: Path): NameResolver = (mod, content) =>
     path"$target/${mod.key}/$content"
 }
