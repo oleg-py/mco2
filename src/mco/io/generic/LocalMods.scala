@@ -33,71 +33,32 @@ class LocalMods[F[_]: Monad: Filesystem](
     for {
       rState <- state
       (i, Keyed(_, modState)) = rState.at(key)
-      _ <- if (modState.stamp.enabled) uninstall(key) else noop
+      _ <- if (modState.stamp.enabled) uninstall(i, modState) else noop
       modState2 <- state.map(_.at(key)._2.get)
       updated = diff.patch(modState2)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
           Keyed(key, updated))
-      _ <- if (updated.stamp.enabled) install(key) else noop
+      _ <- if (updated.stamp.enabled) install(i, modState) else noop
     } yield ()
   }
 
-  private def modAt(i: Int) =
-    RepoState.orderedMods composeOptional
-    index(i) composeLens
-    Keyed.lens
+  def modMap = mods().map(_.mapValues(_._2))
 
-  private def prepareFiles(
-    filter: RelPath => Boolean)(
-    mState: Keyed[ModState]) =
-    for {
-      dict <- mods()
-      provided <- dict(mState.key)._2.filterProvide(filter)
-    } yield provided.map(resolver.bulk(mState))
+  def install(i: Int, modState: ModState) = {
+    val content = modState.contents.keySet
+    modMap.flatMap {
+      new InstallFocus[F](repoState, _, resolver, i).install(content)
+    }
+  }
 
-  private def filter2[A](f: A => Boolean)(xs: Vector[Keyed[(A, A)]]) =
-    xs.filter { case Keyed(_, (_, to)) => f(to) }
-
-  private def runOp[A](op: (A, A) => F[Unit])(xs: Vector[Keyed[(A, A)]]) =
-    xs.foldMapM { case Keyed(k, (from, to)) => op(from, to) as Vector(k -> to) }
-
-  private val copyFiles = runOp[Path](copy(_, _)) _
-  private val rmFiles = runOp[Path]((_, to) => rmTree(to)) _
-
-  private def install(key: RelPath) =
-    for {
-      rState <- state
-      (i, mState) = rState.at(key)
-      conflicts = !rState.hasConflicts(_: Path, i)
-      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
-      changes <- prepared
-        .andThen(copyFiles compose filter2(conflicts))
-        .runFS
-      _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = true))
-    } yield ()
-
-  private def uninstall(key: RelPath) =
-    for {
-      rState <- state
-      (i, mState) = rState.at(key)
-      targets = rState.recoveryIndex(_: Path, i)
-      prepared <- prepareFiles(mState.get.contentEnabled)(mState)
-      changes <- prepared.andThen(rmFiles).runFS
-      _ <- repoState ~= modAt(i).modify(_.onResolve(changes, installed = false))
-      newState <- state
-      _ <- changes
-        .foldMap { case (k, to) =>
-          targets(to).foldMap(j => Map(j -> Set(k)))
-        }
-        .toVector
-        .traverse_ { case (j, keys) =>
-          prepareFiles(keys)(newState.orderedMods(j))
-            .flatMap(_.andThen(copyFiles).runFS)
-            .void
-        }
-    } yield ()
+  def uninstall(i: Int, modState: ModState) = {
+    val content = modState.contents.keySet
+    modMap.flatMap {
+      new InstallFocus[F](repoState, _, resolver, i).remove(content)
+    }
+  }
 
   override def remove(key: RelPath): F[Unit] = for {
     _ <- update(key, Deltas.OfMod(enabled = Some(false)))

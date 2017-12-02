@@ -86,7 +86,7 @@ object PrototypeImplementation {
       repoVar,
       new MutableVar(modMap),
       typer(_),
-      NameResolver.subdirs(path"-target")
+      NameResolver.overrides(path"-target")
     )
   }.widen
 

@@ -22,8 +22,8 @@ class FileModTest extends Tests.Sync {
   }
 
   "FileMod#list" should "provide file itself as a single component" in {
-    (fm.list: Vector[Keyed[Content]])
-      .loneElement shouldBe Keyed(rel"fileMod.dat", Content.Component)
+    (fm.list: Vector[RelPath])
+      .loneElement shouldBe rel"fileMod.dat"
   }
 
   /*_*/

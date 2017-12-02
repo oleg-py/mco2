@@ -30,10 +30,10 @@ class FolderModTest extends Tests.Sync {
   }
 
   "FolderMod#list" should "list all nested subfiles and subfolders" in {
-    (fm.list: Vector[Keyed[Content]]) should contain theSameElementsAs Vector(
-      Content.Component(rel"innerFile"),
-      Content.Component(rel"nonEmptySubdir/nestedFile"),
-      Content.Component(rel"nonEmptySubdir/nestedFile2")
+    (fm.list: Vector[RelPath]) should contain theSameElementsAs Vector(
+      rel"innerFile",
+      rel"nonEmptySubdir/nestedFile",
+      rel"nonEmptySubdir/nestedFile2"
     )
   }
 

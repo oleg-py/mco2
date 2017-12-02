@@ -39,4 +39,7 @@ object NameResolver {
 
   def subdirs(target: Path): NameResolver = (mod, content) =>
     path"$target/${mod.key}/$content"
+
+  def overrides(target: Path): NameResolver = (_, content) =>
+    path"$target/$content"
 }
