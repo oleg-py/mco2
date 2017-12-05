@@ -17,7 +17,7 @@ class LocalArchiving[F[_]: Capture] extends ArchivingImpl(
   },
   (path) => {
     File(path.toString)
-      .touch()
+      .createIfNotExists(createParents = true)
       .newRandomAccess(File.RandomAccessMode.readWrite)
       .pipe(new RandomAccessFileOutStream(_) with Closeable)
   }
