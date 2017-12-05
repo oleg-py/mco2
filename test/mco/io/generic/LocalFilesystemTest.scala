@@ -7,6 +7,7 @@ import scalaz._
 import better.files.File
 import mco.Tests
 import mco.core.Capture
+import mco.data.TempOp
 import mco.data.paths._
 import mco.io.generic.Filesystem._
 import mco.util.syntax.any._
@@ -375,6 +376,17 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "generate meaningful hash" in { dirs =>
     hashAt(dirs.src) shouldEqual testDirHash
+  }
+
+  // --------------------------------------------------------------------------
+
+  behavior of "LocalFilesystem#runTmp on a directory"
+
+  it should "provide the dir until nested op finish" in { _ =>
+    val op: TempOp[Id, Path] = TempOp.WithTemp(p => p: Id[Path])
+    val nested = (1 to 50).foldLeft(op)((op2, _) => op2.andThen(p => p: Id[Path]))
+    //noinspection ConvertibleToMethodValue
+    op.andThen(exists(_)).runFS shouldBe true
   }
 
   // --------------------------------------------------------------------------
