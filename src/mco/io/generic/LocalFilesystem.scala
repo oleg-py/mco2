@@ -94,9 +94,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
 
   final def runTmp[A](f: Path => F[A]) = Capture {
     val tmpDir = File.newTemporaryDirectory("mco-")
-    println(s"TmpDir created: ${tmpDir.pathAsString}")
     f(Path(tmpDir.pathAsString)) <* Capture {
-      println("In runTmp cleanup")
       tmpDir.delete(swallowIOExceptions = true)
     }
   }.join

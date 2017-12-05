@@ -27,10 +27,7 @@ sealed trait TempOp[F[_], A] extends Product with Serializable {
 
   def andThen[B](f: A => F[B])(implicit F: Bind[F]): TempOp[F, B] = this match {
     case NoTemp(fa) => NoTemp(fa >>= f)
-    case WithTemp(func) => WithTemp(path => {
-      println("In withTemp andThen")
-      func(path) >>= f
-    })
+    case WithTemp(func) => WithTemp(func(_) >>= f)
   }
 }
 
