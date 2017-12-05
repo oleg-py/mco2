@@ -15,7 +15,7 @@ object ReplTesting {
 
   implicit val yolo = Capture.yolo.captureOfId
   val osRoot = Path("-os")
-  val (mods, images) = {
+  val data = {
     implicit val yoloMonadError = new MonadError[Id, Throwable] {
       override def raiseError[A](e: Throwable): A = throw e
       override def handleError[A](fa: Scalaz.Id[A])(f: Throwable => Scalaz.Id[A]): A  =
@@ -28,6 +28,6 @@ object ReplTesting {
 
     PrototypeImplementation.algebras[Id](loadConfig[GenericConfig].right.get, Path(
       file".".pathAsString
-    )): (Mods[Id], ImageStore[Id])
+    ))
   }
 }

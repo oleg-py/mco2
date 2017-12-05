@@ -9,8 +9,12 @@ import mco.ui._
 import mco.ui.props._
 import mco.util.syntax.fp._
 
-class RepoTab(state: Prop[UiState])(implicit cmd: Commands) extends Tab {
-  text = "Stub Repo Tab"
+class RepoTab(state: Prop[UiState.Tab], isImage: Prop[String => Boolean])(
+  implicit cmd: Commands)
+  extends Tab
+{
+  text <== state.map(_.label)
+
   closable = false
   content = new SplitPane { contentRoot =>
     padding = Insets(4)
@@ -26,7 +30,7 @@ class RepoTab(state: Prop[UiState])(implicit cmd: Commands) extends Tab {
 
             orientation = Orientation.Vertical
             items ++= Seq(
-              new PackageThumbnail(state.map(_.thumbnailUrl), state.map(_.isImage)),
+              new PackageThumbnail(state.map(_.thumbnailUrl), isImage),
               new PackageContentTable(state.map(_.currentContent)),
             )
           },

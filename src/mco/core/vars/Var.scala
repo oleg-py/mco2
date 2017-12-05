@@ -23,6 +23,12 @@ trait Var[F[_], A] { outer =>
   def ~=(f: A => A)(implicit F: Bind[F]): F[Unit] =
     this().map(f) >>= { this := _ }
 
+  final def zoom[B](lens: monocle.Lens[A, B])(implicit F: Bind[F]): Var[F, B] =
+    new Var[F, B] {
+      override def apply(): F[B] = outer().map(lens.get)
+      override def :=(b: B): F[Unit] = outer ~= lens.set(b)
+    }
+
   final def xmapF[B](to: A => F[B], from: B => F[A])(implicit F: Bind[F]): Var[F, B] =
     new Var[F, B] {
       override def apply(): F[B] = outer() >>= to

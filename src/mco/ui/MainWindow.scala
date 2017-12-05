@@ -26,7 +26,19 @@ class MainWindow(state: Prop[UiState])(implicit cmd: Commands) extends JFXApp {
     title = "Mod Collection Organizer"
     scene = new Scene {
       stylesheets += "/mco.ui/main.css"
-      root = new TabPane { tabs = Seq(new RepoTab(state)) }
+      root = new TabPane {
+        // TODO
+        tabs = state().tabs.indices.map { i =>
+          val tabState = state.map(_.tabs(i))
+          val isImage = state.map(_.isImage)
+          new RepoTab(tabState, isImage)
+        }
+
+        selectionModel().selectedIndexProperty() onChange {
+          val index = selectionModel().getSelectedIndex
+          cmd.setActiveTab(index)
+        }
+      }
     }
   }
 

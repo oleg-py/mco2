@@ -7,7 +7,7 @@ import mco.data.paths.Segment
 
 case class GenericConfig(
   files: GenericConfig.Files,
-  repo: GenericConfig.Repo
+  repos: Map[String, GenericConfig.Repo]
 )
 
 object GenericConfig {
@@ -19,6 +19,7 @@ object GenericConfig {
   }
 
   case class Repo(
+    title: String,
     mods: String,
     images: String,
     target: String

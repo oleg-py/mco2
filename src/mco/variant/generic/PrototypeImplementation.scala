@@ -2,6 +2,7 @@ package mco.variant.generic
 
 import scalaz._
 import std.vector._
+import std.map._
 
 import mco.core._
 import mco.core.state.RepoState
@@ -23,7 +24,7 @@ object PrototypeImplementation {
   type MThrow[F[_]] = MonadError[F, Throwable]
 
   private def filesystem[F[_]: Capture: MThrow](
-    config: GenericConfig,
+    config: GenericConfig.Repo,
     cwd: Path
   ): F[(Filesystem[F], Archiving[F])] = {
     val localFS:  Filesystem[F] = new LocalFilesystem[F]
@@ -41,7 +42,7 @@ object PrototypeImplementation {
         localFS.ensureDir(target).as((target, localFS))
       }
 
-    config.repo.paths
+    config.paths
       .traverse(determineFS)
       .map { case Vector(source, images, target) =>
         new LoggingFilesystem(new VirtualizedFilesystem[F](
@@ -93,10 +94,15 @@ object PrototypeImplementation {
   def algebras[F[_]: Capture: MThrow](
     config: GenericConfig,
     cwd: Path
-  ): F[(Mods[F], ImageStore[F])] =
-    filesystem(config, cwd) >>= { case (fs, arch) =>
-      implicit val filesystem: Filesystem[F] = fs
-      implicit val archiving: Archiving[F] = arch
-      mods tuple images(config.files.isImage)
+  ): F[Vector[(String, Mods[F], ImageStore[F])]] =
+    config.repos.toVector.traverse { case (_, repo) =>
+      filesystem(repo, cwd) >>= { case (fs, arch) =>
+        implicit val filesystem: Filesystem[F] = fs
+        implicit val archiving: Archiving[F] = arch
+
+        (mods |@| images(config.files.isImage)) { (m, i) =>
+          (repo.title, m, i)
+        }
+      }
     }
 }

@@ -10,6 +10,7 @@ import mco.core.state.{Deltas, RepoState}
 import mco.data.paths._
 import mco.util.syntax.fp._
 import mco.core.vars.Var
+import mco.variant.generic.RepoMap
 
 /*_*/
 abstract class Commands {
@@ -17,36 +18,55 @@ abstract class Commands {
   protected val runLater: F[Unit] => Unit
   protected val state: Var[F, UiState]
   implicit val ev1: Monad[F]
-  implicit val ev3: Mods[F]
-  implicit val ev4: ImageStore[F]
+  protected val repoMap: RepoMap[F]
 
-  private def syncChanges[A](fa: F[A])(f: (A, RepoState, UiState) => UiState): Unit =
+  private lazy val tabState = state.zoom(UiState.currentTabL)
+
+  private def syncChangesMods[A](ffa: Mods[F] => F[A]) =
+    syncChanges(repoMap.mods >>= ffa) _
+
+  private def syncChangesImageStore[A](ffa: ImageStore[F] => F[A]) =
+    syncChanges(repoMap.imageStore >>= ffa) _
+
+  private def syncChanges[A](fa: F[A])(
+    f: (A, RepoState, UiState.Tab) => UiState.Tab): Unit =
     runLater {
       for {
         a         <- fa
-        rState    <- Mods.state
-        nextState <- state().map(st => f(a, rState, st.copy(rState)))
-        _         <- state := nextState
+        mods      <- repoMap.mods
+        rState    <- mods.state
+        nextState <- tabState().map(st => f(a, rState, st.copy(repoState = rState)))
+        _         <- tabState := nextState
       } yield ()
     }
 
+  def setActiveTab(i: Int): Unit = {
+    runLater(state ~= UiState.currentTab.set(i))
+  }
+
   def update(key: RelPath, diff: Deltas.OfMod): Unit =
-    syncChanges(Mods.update(key, diff)) { (_, _, us) => us }
+    syncChangesMods(_.update(key, diff)) { (_, _, us) => us }
 
   def remove(key: RelPath): Unit =
-    syncChanges(Mods.remove(key)) { (_, _, us) => us }
+    syncChangesMods(_.remove(key)) { (_, _, us) => us }
 
   def setThumbnail(path: String): Unit = {
-    val op = state().flatMap(_.currentModKey.traverse(key =>
-      ImageStore.putImage(key, Some(Path("-os") / RelPath(path)))
-        >> ImageStore.getImage(key)
-    ))
-    syncChanges(op) { (url, _, us) => us.copy(thumbnailUrl = url.flatten) }
+    val op = for {
+      st <- tabState()
+      keyOpt = st.currentModKey
+      imageStore <- repoMap.imageStore
+      url <- keyOpt.traverse { key =>
+        imageStore.putImage(key, Some(Path("-os") / RelPath(path))) >>
+          imageStore.getImage(key)
+      }
+    } yield url.flatten
+
+    syncChanges(op) { (url, _, us) => us.copy(thumbnailUrl = url  ) }
   }
 
 
   def setActivePackage(key: RelPath): Unit = {
-    syncChanges(ImageStore.getImage(key)) { (img, _, us) =>
+    syncChangesImageStore(_.getImage(key)) { (img, _, us) =>
       us.copy(
         currentModKey = Some(key),
         thumbnailUrl = img
@@ -56,19 +76,20 @@ abstract class Commands {
 
   def addPending(paths: Vector[String]): Unit = {
     val assoc = paths.strengthR(none[String]).toMap
-    val mod = UiState.pendingAdds.set(Some(
+    val mod = UiState.Tab.pendingAdds.set(Some(
       UiState.PendingAdds(packages = paths, assoc = assoc)
     ))
 
-    runLater { state ~= mod }
+    runLater { tabState ~= mod }
   }
 
   def applyPendingAdds(): Unit =  {
     val op = for {
-      st <- state()
-      assocs = UiState.assocL.getOption(st).getOrElse(Map())
+      st <- tabState()
+      mods <- repoMap.mods
+      assocs = UiState.Tab.assocL.getOption(st).getOrElse(Map())
       _ <- assocs.keys.toVector.traverse_ { str =>
-        Mods.liftFile(Path("-os") / RelPath(str)).void
+        mods.liftFile(Path("-os") / RelPath(str)).void
       }
     } yield ()
 
@@ -77,15 +98,17 @@ abstract class Commands {
 
   final def installActive(): Unit = syncChanges {
     for {
-      st <- state()
-      _ <- st.currentModKey.traverse_(Mods.update(_, Deltas.OfMod(enabled = Some(true))))
+      st <- tabState()
+      mods <- repoMap.mods
+      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(enabled = Some(true))))
     } yield ()
   } { (_, _, us) => us }
 
   final def uninstallActive(): Unit = syncChanges {
     for {
-      st <- state()
-      _ <- st.currentModKey.traverse_(Mods.update(_, Deltas.OfMod(enabled = Some(false))))
+      st <- tabState()
+      mods <- repoMap.mods
+      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(enabled = Some(false))))
     } yield ()
   } { (_, _, us) => us }
 
@@ -105,20 +128,19 @@ abstract class Commands {
     runLater { state ~= UiState.error.set(None) }
 
   final def associatePending(k: String, v: Option[String]): Unit =
-    runLater { state ~= UiState.assocL.modify(_.updated(k, v)) }
+    runLater { tabState ~= UiState.Tab.assocL.modify(_.updated(k, v)) }
 
   final def cancelPendingAdds(): Unit =
-    runLater { state ~= UiState.pendingAdds.set(None) }
+    runLater { tabState ~= UiState.Tab.pendingAdds.set(None) }
 }
 
 object Commands {
-  def apply[F0[_]: Monad: Mods: ImageStore](runLater0: F0[Unit] => Unit)(state0: Var[F0, UiState]):
+  def apply[F0[_]: Monad](map: RepoMap[F0], runLater0: F0[Unit] => Unit)(state0: Var[F0, UiState]):
     Commands = new Commands {
       override type F[A] = F0[A]
       override protected val runLater: F[Unit] => Unit = runLater0
       override protected val state: Var[F, UiState] = state0
       override val ev1: Monad[F] = implicitly
-      override val ev3: Mods[F] = implicitly
-      override val ev4: ImageStore[F] = implicitly
+      override protected val repoMap: RepoMap[F] = map
   }
 }
