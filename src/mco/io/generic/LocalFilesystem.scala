@@ -39,8 +39,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
 
   final def setBytes(path: Path, cnt: ImmutableArray[Byte]) = Capture {
     File(path.toString)
-      .tap(_.parent.createDirectories())
-      .touch()
+      .createIfNotExists(createParents = true)
       .writeByteArray(cnt.toArray)
     ()
   }
