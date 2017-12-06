@@ -7,7 +7,7 @@ import net.sf.sevenzipjbinding.impl.{RandomAccessFileInStream, RandomAccessFileO
 
 import java.io.Closeable
 
-class LocalArchiving[F[_]: Capture] extends ArchivingImpl(
+class LocalArchiving[F[_]: Capture] extends SevenZipArchiving(
   (path) => {
     File(path.toString)
       .newRandomAccess()

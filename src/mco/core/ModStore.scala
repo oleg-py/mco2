@@ -9,7 +9,7 @@ import mco.stubs.{NoImageStore, NoMods}
 import mco.util.syntax.fp._
 
 
-trait RepoMap[F[_]] {
+trait ModStore[F[_]] {
   def labels: Vector[String]
   def length: Int
 
@@ -19,11 +19,11 @@ trait RepoMap[F[_]] {
   def focus(i: Int): F[Unit]
 }
 
-object RepoMap {
+object ModStore {
   class ByVar[F[_]: Applicative](
     algebras: Vector[(String, Mods[F], ImageStore[F])],
     selection: Var[F, Int]
-  ) extends RepoMap[F] {
+  ) extends ModStore[F] {
     private[this] def tuple = selection().map(algebras(_))
 
     override val labels: Vector[String]       = algebras.map(_._1)
@@ -37,7 +37,7 @@ object RepoMap {
     override def focus(i: Int): F[Unit]       = selection := i
   }
 
-  class Empty[F[_]: Applicative] extends RepoMap[F] {
+  class Empty[F[_]: Applicative] extends ModStore[F] {
     override def labels: Vector[String] = Vector.empty
     override def length: Int = 0
 

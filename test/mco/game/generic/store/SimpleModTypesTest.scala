@@ -5,7 +5,7 @@ import scalaz.Id._
 import mco.Tests
 import mco.core.Capture.yolo._
 import mco.core.paths._
-import mco.io.impls.SlowArchiving
+import mco.io.impls.InMemoryArchiving
 import mco.stubs.cells._
 
 class SimpleModTypesTest extends Tests.Sync {
@@ -15,7 +15,7 @@ class SimpleModTypesTest extends Tests.Sync {
     seg"folder" -> dir(),
     seg"file" -> file()
   )
-  implicit val archiving = new SlowArchiving[Id]
+  implicit val archiving = new InMemoryArchiving[Id]
 
   val simpleModTypes = new SimpleModTypes[Id]
 

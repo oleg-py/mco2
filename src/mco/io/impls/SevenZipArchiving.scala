@@ -17,12 +17,12 @@ import net.sf.sevenzipjbinding._
 import java.io.Closeable
 
 
-class ArchivingImpl[F[_]: Capture](
+class SevenZipArchiving[F[_]: Capture](
   getInStream: Path => IInStream,
   getOutStream: Path => IOutStream with Closeable
 ) extends Archiving[F] {
   override def entries(archive: Path): F[Vector[RelPath]] = Capture {
-    ArchivingImpl.initLibraryOnce()
+    SevenZipArchiving.initLibraryOnce()
     for (inArchive <- SevenZip.openInArchive(null, getInStream(archive)).autoClosed)
       yield inArchive
         .getSimpleInterface
@@ -34,7 +34,7 @@ class ArchivingImpl[F[_]: Capture](
   }
 
   override def extract(archive: Path, targets: Map[RelPath, Path]): F[Unit] = Capture {
-    ArchivingImpl.initLibraryOnce()
+    SevenZipArchiving.initLibraryOnce()
     val inArchive = SevenZip.openInArchive(null, getInStream(archive))
 
     val entries: SortedMap[Int, Path] = inArchive.getSimpleInterface
@@ -66,7 +66,7 @@ class ArchivingImpl[F[_]: Capture](
   }
 }
 
-object ArchivingImpl {
+object SevenZipArchiving {
   private val initLibraryOnce: Coeval[Unit] = Coeval {
     SevenZip.initSevenZipFromPlatformJAR()
   }.memoizeOnSuccess

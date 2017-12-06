@@ -8,7 +8,7 @@ import better.files.File
 import mco.Tests
 import mco.core.Capture
 import mco.core.paths._
-import mco.io.{Filesystem, TempOp}, Filesystem._
+import mco.io.{Filesystem, InTemp}, Filesystem._
 import mco.util.syntax.any._
 
 
@@ -382,7 +382,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
   behavior of "LocalFilesystem#runTmp on a directory"
 
   it should "provide the dir until nested op finish" in { _ =>
-    val op: TempOp[Id, Path] = TempOp.WithTemp(p => p: Id[Path])
+    val op: InTemp[Id, Path] = InTemp.WithTemp(p => p: Id[Path])
     val nested = (1 to 50).foldLeft(op)((op2, _) => op2.andThen(p => p: Id[Path]))
     //noinspection ConvertibleToMethodValue
     op.andThen(exists(_)).runFS shouldBe true

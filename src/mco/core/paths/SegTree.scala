@@ -33,19 +33,19 @@ sealed trait SegTree[+A] {
     p.segments.toIList.toNel.cata(recurse(this), next)
   }
 
-  final def children: Stream[Keyed[A]] = this match {
-    case SegLeaf(a) => Stream(Keyed(rel"", a))
+  final def children: Stream[Pointed[A]] = this match {
+    case SegLeaf(a) => Stream(Pointed(rel"", a))
     case SegRoot(map) => map.iterator
       .flatMap { case (k, v) =>
-        for (Keyed(p, a) <- v.children) yield Keyed(rel"$k/$p", a)
+        for (Pointed(p, a) <- v.children) yield Pointed(rel"$k/$p", a)
       }
       .toStream
   }
 }
 
 object SegTree {
-  def fromFoldable[F[_]: Foldable, A](f: F[Keyed[A]]): SegTree[A] =
-    f.foldLeftM(root[A]()) { case (b, Keyed(p, a)) => b.update(p, Some(leaf(a))) }
+  def fromFoldable[F[_]: Foldable, A](f: F[Pointed[A]]): SegTree[A] =
+    f.foldLeftM(root[A]()) { case (b, Pointed(p, a)) => b.update(p, Some(leaf(a))) }
       .getOrElse(root[A]())
 
   case class SegLeaf[A](value: A) extends SegTree[A]

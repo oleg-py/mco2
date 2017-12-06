@@ -19,12 +19,12 @@ import mco.util.syntax.fp._
 
 
 //noinspection ConvertibleToMethodValue
-object PrototypeImplementation {
+object implementation {
   private val toKey = (p: Path) => RelPath(p.name.toString)
   type MThrow[F[_]] = MonadError[F, Throwable]
 
   private def filesystem[F[_]: Capture: MThrow](
-    config: GenericConfig.Repo,
+    config: StoreConfig.Repo,
     cwd: Path
   ): F[(Filesystem[F], Archiving[F])] = {
     val localFS:  Filesystem[F] = new LocalFilesystem[F]
@@ -45,7 +45,7 @@ object PrototypeImplementation {
     config.paths
       .traverse(determineFS)
       .map { case Vector(source, images, target) =>
-        new LoggingFilesystem(new VirtualizedFilesystem[F](
+        new LoggingFilesystem(new VirtualRootsFilesystem[F](
           Map(
             (seg"-source", source),
             (seg"-target", target),
@@ -77,7 +77,7 @@ object PrototypeImplementation {
       typer = new SimpleModTypes
       mods <- typer.allIn(path"-source")
       orderedMods <- mods.traverse { case (path, mod) =>
-        initMod[F](mod).map(Keyed(toKey(path), _))
+        initMod[F](mod).map(Pointed(toKey(path), _))
       }
       modMap = mods.map { case t @ (path, _) => toKey(path) -> t }.toMap
       labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
@@ -92,7 +92,7 @@ object PrototypeImplementation {
   }.widen
 
   def algebras[F[_]: Capture: MThrow](
-    config: GenericConfig,
+    config: StoreConfig,
     cwd: Path
   ): F[Vector[(String, Mods[F], ImageStore[F])]] =
     config.repos.toVector.traverse { case (_, repo) =>

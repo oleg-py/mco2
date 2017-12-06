@@ -13,14 +13,14 @@ import mco.util.syntax.fp._
 
 
 trait NameResolver {
-  def apply(mod: Keyed[ModState], content: RelPath): Path
+  def apply(mod: Pointed[ModState], content: RelPath): Path
 
   final def bulk(
-    modInfo: Keyed[ModState]
-  )(targets: Vector[Keyed[Path]]
-  ): Vector[Keyed[(Path, Path)]] =
-    targets map { case Keyed(key, from) =>
-      Keyed(key, from -> this(modInfo, key))
+    modInfo: Pointed[ModState]
+  )(targets: Vector[Pointed[Path]]
+  ): Vector[Pointed[(Path, Path)]] =
+    targets map { case Pointed(key, from) =>
+      Pointed(key, from -> this(modInfo, key))
     }
 }
 

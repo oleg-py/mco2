@@ -6,7 +6,7 @@ import mco.core.Capture
 import mco.core.paths.Path
 import mco.core.vars.Var
 import mco.io.{Archiving, Filesystem}
-import mco.io.impls.SlowArchiving
+import mco.io.impls.InMemoryArchiving
 import mco.stubs.cells._
 import mco.util.syntax.fp._
 import mco.util.syntax.??
@@ -20,7 +20,7 @@ class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
   extends Filesystem[F]
 {
 
-  override def archiving: Archiving[F] = new SlowArchiving[F]()(this, ??, ??)
+  override def archiving: Archiving[F] = new InMemoryArchiving[F]()(this, ??, ??)
 
   private def complainAbout(path: Path) = sys.error(s"Assertion failure at $path")
 

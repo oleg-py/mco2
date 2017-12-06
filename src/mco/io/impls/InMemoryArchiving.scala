@@ -13,14 +13,14 @@ import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 import java.io.Closeable
 
 
-class SlowArchiving[F[_]: Filesystem: Monad: Capture] extends Archiving[F] {
+class InMemoryArchiving[F[_]: Filesystem: Monad: Capture] extends Archiving[F] {
   private val MaxStreamSize = 32 * 1024 * 1024 // bytes
 
   override def entries(archive: Path): F[Vector[RelPath]] =
     for {
       data   <- Filesystem.getBytes(archive)
       in     =  new ByteArrayStream(data.toArray, false)
-      result <- new ArchivingImpl[F](_ => in, Map()).entries(archive)
+      result <- new SevenZipArchiving[F](_ => in, Map()).entries(archive)
     } yield result
 
   private def writeOutputs(outStreams: Map[Path, ByteArrayStream]) =
@@ -33,7 +33,7 @@ class SlowArchiving[F[_]: Filesystem: Monad: Capture] extends Archiving[F] {
       data <- Filesystem.getBytes(archive)
       in   =  new ByteArrayStream(data.toArray, false)
       outs =  targets.map { case (_, to) => to -> new ByteArrayStream(MaxStreamSize) }
-      _    <- new ArchivingImpl(_ => in, outs).extract(archive, targets)
+      _    <- new SevenZipArchiving(_ => in, outs).extract(archive, targets)
       _    <- writeOutputs(outs)
     } yield ()
 }

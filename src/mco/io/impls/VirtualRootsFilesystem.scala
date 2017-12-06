@@ -10,7 +10,7 @@ import mco.io.{Archiving, Filesystem}
 import mco.util.syntax.fp._
 
 
-class VirtualizedFilesystem[F[_]: Monad](
+class VirtualRootsFilesystem[F[_]: Monad](
   roots: Map[Segment, (Path, Filesystem[F])],
   runTmpRoot: Segment,
   runTmpFs: Filesystem[F]

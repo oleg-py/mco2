@@ -5,12 +5,12 @@ import scala.util.matching.Regex
 import mco.core.paths.Segment
 
 
-case class GenericConfig(
-  files: GenericConfig.Files,
-  repos: Map[String, GenericConfig.Repo]
+case class StoreConfig(
+  files: StoreConfig.Files,
+  repos: Map[String, StoreConfig.Repo]
 )
 
-object GenericConfig {
+object StoreConfig {
   case class Files(
     images: Regex
   ) {

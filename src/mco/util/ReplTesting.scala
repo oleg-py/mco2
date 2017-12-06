@@ -5,7 +5,7 @@ import scalaz.Scalaz._
 
 import better.files._
 import mco.core._
-import mco.game.generic.{GenericConfig, PrototypeImplementation}
+import mco.game.generic.{StoreConfig, implementation}
 import pureconfig.loadConfig
 
 //noinspection TypeAnnotation
@@ -26,7 +26,7 @@ object ReplTesting {
       override def point[A](a: => A) = a
     }
 
-    PrototypeImplementation.algebras[Id](loadConfig[GenericConfig].right.get, Path(
+    implementation.algebras[Id](loadConfig[StoreConfig].right.get, Path(
       file".".pathAsString
     ))
   }

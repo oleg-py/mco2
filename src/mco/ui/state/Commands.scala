@@ -17,7 +17,7 @@ abstract class Commands {
   protected val runLater: F[Unit] => Unit
   protected val state: Var[F, UiState]
   implicit val ev1: Monad[F]
-  protected val repoMap: RepoMap[F]
+  protected val repoMap: ModStore[F]
 
   private lazy val tabState = state.zoom(UiState.currentTabL)
 
@@ -134,12 +134,12 @@ abstract class Commands {
 }
 
 object Commands {
-  def apply[F0[_]: Monad](map: RepoMap[F0], runLater0: F0[Unit] => Unit)(state0: Var[F0, UiState]):
+  def apply[F0[_]: Monad](map: ModStore[F0], runLater0: F0[Unit] => Unit)(state0: Var[F0, UiState]):
     Commands = new Commands {
       override type F[A] = F0[A]
       override protected val runLater: F[Unit] => Unit = runLater0
       override protected val state: Var[F, UiState] = state0
       override val ev1: Monad[F] = implicitly
-      override protected val repoMap: RepoMap[F] = map
+      override protected val repoMap: ModStore[F] = map
   }
 }

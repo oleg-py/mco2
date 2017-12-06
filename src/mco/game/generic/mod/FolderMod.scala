@@ -7,7 +7,7 @@ import syntax.std.boolean._
 
 import mco.core._
 import mco.core.paths._
-import mco.io.{Filesystem, TempOp}, Filesystem._
+import mco.io.{Filesystem, InTemp}, Filesystem._
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 
@@ -46,7 +46,7 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide(content: Vector[RelPath]): TempOp[F, Map[RelPath, Path]] = TempOp {
+  override def provide(content: Vector[RelPath]): InTemp[F, Map[RelPath, Path]] = InTemp {
     for {
       data <- structureF
     } yield content

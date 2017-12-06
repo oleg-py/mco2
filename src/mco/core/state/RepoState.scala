@@ -13,11 +13,11 @@ import monocle.macros.Lenses
 
 
 @Lenses case class RepoState (
-  orderedMods: Vector[Keyed[ModState]] = Vector(),
+  orderedMods: Vector[Pointed[ModState]] = Vector(),
   labels: Map[RelPath, String] = Map()
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
-    orderedMods.indexed.foldMap { case (i, Keyed(_, mod)) =>
+    orderedMods.indexed.foldMap { case (i, Pointed(_, mod)) =>
       mod.stamp.enabled ?? mod.contents.foldMap { cState =>
         cState.stamp.enabled ?? cState.target.strengthR(ISet.singleton(i)).toMap
       }
@@ -33,11 +33,11 @@ import monocle.macros.Lenses
   def hasConflicts(path: Path, idx: Int): Boolean =
     overrideIndex(path, idx).cata(idx < _, false)
 
-  def at(key: RelPath): (Int, Keyed[ModState]) =
+  def at(key: RelPath): (Int, Pointed[ModState]) =
     orderedMods.indexed.find(_._2.key == key)
       .err(s"Invariant violation at $key")
 
-  def add(mod: Keyed[ModState], label: String): RepoState =
+  def add(mod: Pointed[ModState], label: String): RepoState =
     copy(orderedMods :+ mod, labels.updated(mod.key, label))
 
   def remove(key: RelPath): RepoState =

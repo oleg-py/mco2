@@ -4,12 +4,12 @@ import scalaz._
 import std.vector._
 import syntax.std.boolean._
 
-import mco.core.paths.{Keyed, Path, RelPath}
+import mco.core.paths.{Pointed, Path, RelPath}
 import mco.core.state._
 import mco.core.vars.Var
 import mco.core.{Mod, NameResolver}
 import mco.core.paths._
-import mco.io.{Filesystem, TempOp}
+import mco.io.{Filesystem, InTemp}
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 
@@ -22,7 +22,7 @@ class InstallFocus[F[_]: Monad: Filesystem](
 ) {
   def refocus(i: Int) = new InstallFocus(repoState, mods, resolver, i)
 
-  private val currentModState = repoState.xmapF[Keyed[ModState]](
+  private val currentModState = repoState.xmapF[Pointed[ModState]](
     rs => rs.orderedMods(modFocus).point[F],
     kms => for {
       rs  <- repoState()
@@ -69,14 +69,14 @@ class InstallFocus[F[_]: Monad: Filesystem](
       } yield ()
   }
 
-  private def copyOrRemoveFiles(copy: Boolean)(op: TempOp[F, Vector[Keyed[Path]]]) =
-    op.andThen(_.traverse_ { case Keyed(key, from) =>
+  private def copyOrRemoveFiles(copy: Boolean)(op: InTemp[F, Vector[Pointed[Path]]]) =
+    op.andThen(_.traverse_ { case Pointed(key, from) =>
         new ContentOp(key, from).run(copy)
     }).runFS
 
   private def copyFiles = copyOrRemoveFiles(copy = true) _
   private def removeFiles(p: Vector[RelPath]) =
-    copyOrRemoveFiles(copy = false)(TempOp(p.map(Keyed(_, path"")).point[F]))
+    copyOrRemoveFiles(copy = false)(InTemp(p.map(Pointed(_, path"")).point[F]))
 
   private def runOp(copy: Boolean)(only: ISet[RelPath]): F[Unit] =
     for {

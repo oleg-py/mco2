@@ -28,14 +28,14 @@ class LocalMods[F[_]: Monad: Filesystem](
     val noop = ().point[F]
     for {
       rState <- state
-      (i, Keyed(_, modState)) = rState.at(key)
+      (i, Pointed(_, modState)) = rState.at(key)
       _ <- if (modState.stamp.enabled) uninstall(i, modState) else noop
       modState2 <- state.map(_.at(key)._2.get)
       updated = diff.patch(modState2)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
-          Keyed(key, updated))
+          Pointed(key, updated))
       _ <- if (updated.stamp.enabled) install(i, modState) else noop
     } yield ()
   }
@@ -73,7 +73,7 @@ class LocalMods[F[_]: Monad: Filesystem](
       mod <- OptionT(tryAsMod(target))
       state <- initMod(mod).liftM[OptionT]
       key = RelPath(p.name.toString)
-      keyed = Keyed(key, state)
+      keyed = Pointed(key, state)
       _ <- (repoState ~= { _ add (keyed, mod.label) }).liftM[OptionT]
       _ <- (mods ~= { _ updated (key, (target, mod))}).liftM[OptionT]
     } yield state

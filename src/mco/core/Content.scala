@@ -4,7 +4,7 @@ import mco.core.paths._
 
 
 sealed trait Content extends Product with Serializable {
-  final def apply(key: RelPath): Keyed[Content] = paths.Keyed(key, this)
+  final def apply(key: RelPath): Pointed[Content] = paths.Pointed(key, this)
 }
 
 object Content {
