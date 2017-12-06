@@ -42,7 +42,7 @@ abstract class Commands {
   def setActiveTab(i: Int): Unit = {
     runLater {
       repoMap.focus(i) >>
-        state ~= UiState.currentTab.set(i)
+        (state ~= UiState.currentTab.set(i))\
     }
   }
 
