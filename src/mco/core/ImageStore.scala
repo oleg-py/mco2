@@ -1,7 +1,7 @@
 package mco.core
 
 import com.olegpy.forwarders
-import mco.data.paths.{Path, RelPath}
+import mco.core.paths._
 
 import java.net.URL
 

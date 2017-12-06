@@ -1,6 +1,6 @@
 package mco.stubs
 
-import mco.data.paths.{SegTree, Segment}
+import mco.core.paths._
 
 
 // TODO - remove / inline / define better utils

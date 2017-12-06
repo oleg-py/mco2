@@ -1,6 +1,6 @@
 package mco.core.state
 
-import mco.data.paths.RelPath
+import mco.core.paths.RelPath
 import monocle.function.Index.index
 
 

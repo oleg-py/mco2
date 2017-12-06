@@ -5,7 +5,7 @@ import std.option._
 import syntax.applicative._
 
 import mco.core.ImageStore
-import mco.data.paths.{Path, RelPath}
+import mco.core.paths._
 import mco.util.syntax.any._
 
 import java.net.URL

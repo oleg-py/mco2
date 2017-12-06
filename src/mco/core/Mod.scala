@@ -2,8 +2,8 @@ package mco.core
 
 import scalaz._
 
-import mco.data._
-import mco.data.paths.{Path, RelPath}
+import mco.core.paths._
+import mco.io.TempOp
 import mco.util.syntax.fp._
 
 trait Mod[F[_]] {
@@ -13,7 +13,7 @@ trait Mod[F[_]] {
   final def provideVec(content: Vector[RelPath])(
     implicit F: Functor[F]
   ): TempOp[F, Vector[Keyed[Path]]] =
-    provide(content).map(pathMap => content.map(lc => Keyed(lc, pathMap(lc))))
+    provide(content).map(pathMap => content.map(lc => paths.Keyed(lc, pathMap(lc))))
 
   // TODO: deprecate
   final def filterProvide(f: RelPath => Boolean)(

@@ -3,7 +3,7 @@ package mco.core.state
 import scalaz._
 import syntax.std.option._
 
-import mco.data.paths._
+import mco.core.paths._
 import monocle.macros.Lenses
 
 

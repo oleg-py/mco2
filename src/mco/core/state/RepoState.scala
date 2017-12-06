@@ -7,8 +7,7 @@ import std.anyVal._
 import std.map._
 import syntax.std.boolean._
 
-import mco.data.paths._
-import mco.data.Keyed
+import mco.core.paths._
 import mco.util.syntax.fp._
 import monocle.macros.Lenses
 

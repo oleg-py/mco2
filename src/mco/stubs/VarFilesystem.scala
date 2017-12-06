@@ -3,9 +3,10 @@ package mco.stubs
 import scalaz._
 
 import mco.core.Capture
+import mco.core.paths.Path
 import mco.core.vars.Var
-import mco.data.paths.Path
-import mco.io.generic.{Archiving, Filesystem, SlowArchiving}
+import mco.io.{Archiving, Filesystem}
+import mco.io.impls.SlowArchiving
 import mco.stubs.cells._
 import mco.util.syntax.fp._
 import mco.util.syntax.??

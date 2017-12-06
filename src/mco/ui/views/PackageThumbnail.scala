@@ -4,9 +4,9 @@ package mco.ui.views
 import scalafx.geometry.Insets
 import scalaz.syntax.functor._
 
-import mco.ui.Commands
 import mco.ui.components.{DropFilesReceiver, ImageViewPane}
 import mco.ui.props._
+import mco.ui.state.Commands
 
 import java.net.URL
 import javafx.scene.image.Image

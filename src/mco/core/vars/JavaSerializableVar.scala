@@ -5,9 +5,8 @@ import scalaz._
 import syntax.monad._
 
 import mco.core.Capture
-import mco.data.paths.Path
-import mco.io.generic.Filesystem
-import mco.io.generic.Filesystem._
+import mco.core.paths.Path
+import mco.io.Filesystem, Filesystem._
 
 
 class JavaSerializableVar[F[_]: Monad: Capture: Filesystem, A](

@@ -1,6 +1,6 @@
 package mco.stubs
 
-import mco.data.paths.{Path, SegTree}
+import mco.core.paths._
 import mco.stubs.cells._
 
 import java.nio.file.attribute.{BasicFileAttributes, FileTime}

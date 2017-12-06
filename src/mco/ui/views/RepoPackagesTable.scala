@@ -8,12 +8,11 @@ import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
 import scalafx.scene.control.{TableColumn, TableRow, TableView}
 import scalafx.scene.layout.Priority
 
+import mco.core.paths._
 import mco.core.state.{ModState, RepoState}
-import mco.data.Keyed
-import mco.data.paths.RelPath
-import mco.ui.Commands
 import mco.ui.components.DropFilesReceiver
 import mco.ui.props._
+import mco.ui.state.Commands
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 

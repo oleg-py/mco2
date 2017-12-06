@@ -7,8 +7,8 @@ import std.anyVal._
 import std.tuple._
 
 import mco.core.Capture
-import mco.data.paths.Path
-import mco.io.generic.Filesystem
+import mco.core.paths.Path
+import mco.io.Filesystem
 import net.openhft.hashing.LongHashFunction
 import mco.util.syntax.fp._
 

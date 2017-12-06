@@ -1,8 +1,8 @@
 package mco.core
 
 import com.olegpy.forwarders
+import mco.core.paths._
 import mco.core.state.{Deltas, ModState, RepoState}
-import mco.data.paths.{Path, RelPath}
 
 
 @forwarders trait Mods[F[_]] {

@@ -6,8 +6,8 @@ import scalafx.scene.control.Button
 import scalafx.scene.layout.{HBox, Priority, Region}
 
 import mco.core.state.ModState
-import mco.ui.Commands
 import mco.ui.props._
+import mco.ui.state.Commands
 import mco.util.syntax.fp._
 
 class PackageActionButtons(state: Prop[Option[ModState]])(implicit cmd: Commands) extends HBox {

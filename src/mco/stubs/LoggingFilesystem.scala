@@ -2,8 +2,8 @@ package mco.stubs
 
 import scalaz.{ImmutableArray, Monad}
 
-import mco.data.paths.Path
-import mco.io.generic.{Archiving, Filesystem}
+import mco.core.paths.Path
+import mco.io.{Archiving, Filesystem}
 
 //noinspection TypeAnnotation
 class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F] {

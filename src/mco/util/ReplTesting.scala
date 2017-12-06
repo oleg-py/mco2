@@ -4,13 +4,13 @@ import scalaz._
 import scalaz.Scalaz._
 
 import better.files._
-import mco.core.{ImageStore, Mods, Capture}
-import mco.variant.generic.{GenericConfig, PrototypeImplementation}
+import mco.core._
+import mco.game.generic.{GenericConfig, PrototypeImplementation}
 import pureconfig.loadConfig
 
 //noinspection TypeAnnotation
 object ReplTesting {
-  val Path = mco.data.paths.Path
+  val Path = paths.Path
   val Deltas = mco.core.state.Deltas
 
   implicit val yolo = Capture.yolo.captureOfId
