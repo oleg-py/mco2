@@ -40,7 +40,10 @@ abstract class Commands {
     }
 
   def setActiveTab(i: Int): Unit = {
-    runLater(state ~= UiState.currentTab.set(i))
+    runLater {
+      repoMap.focus(i) >>
+        state ~= UiState.currentTab.set(i)
+    }
   }
 
   def update(key: RelPath, diff: Deltas.OfMod): Unit =
