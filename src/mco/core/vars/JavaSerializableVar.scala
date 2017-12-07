@@ -1,8 +1,8 @@
 package mco.core.vars
 
 import java.io._
-import scalaz._
-import syntax.monad._
+import cats._
+import cats.syntax.flatMap._
 
 import mco.core.Capture
 import mco.core.paths.Path

@@ -1,6 +1,6 @@
 package mco.core.vars
 
-import scalaz.Bind
+import cats.FlatMap
 
 import mco.core.Capture
 import monix.execution.atomic.{Atomic, AtomicBuilder}
@@ -19,5 +19,5 @@ class MutableVar[F[_]: Capture, A](initial: A)(implicit
   )
   override def apply() = Capture { state() }
   override def :=(a: A) = Capture { state() = a }
-  override def ~=(f: A => A)(implicit F: Bind[F]) = Capture { state.transform(f) }
+  override def ~=(f: A => A)(implicit F: FlatMap[F]) = Capture { state.transform(f) }
 }

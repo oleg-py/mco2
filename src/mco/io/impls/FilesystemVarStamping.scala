@@ -1,12 +1,13 @@
 package mco.io.impls
 
-import scalaz.Monad
+import shims._
+import cats._
+import cats.syntax.all._
 
 import mco.core.paths._
 import mco.core.vars.Var
 import mco.io.{FileStamping, Filesystem}
 import mco.io.impls.FilesystemVarStamping.FileStamp
-import mco.util.syntax.fp._
 
 class FilesystemVarStamping[F[_]: Filesystem: Monad](
   data: Var[F, Map[InnerPath, FileStamp]]
@@ -16,15 +17,15 @@ class FilesystemVarStamping[F[_]: Filesystem: Monad](
   override def likelySame(known: InnerPath, actual: Path, file: Path): F[Boolean] = {
     val expected = data().map(_.get(known))
     val current  = noHashStamp(actual)
-    val existing   = getStamp(file)
+    val existing = getStamp(file)
 
-    val isStale = (expected |@| current) {
+    val isStale = (expected, current).mapN {
       case (None, _) => false
       case (Some(st), Some((size, time))) => st.size != size || st.time != time
       case (Some(_), None) => true
     }
 
-    def compare = (expected |@| existing) { _ == _ }
+    def compare = (expected, existing).mapN(_ == _)
     def invalidate = data ~= (_ - known)
 
     isStale.ifM(invalidate.as(false), compare)
@@ -34,7 +35,7 @@ class FilesystemVarStamping[F[_]: Filesystem: Monad](
     for {
       stampOpt <- getStamp(actual)
       map      <- data()
-      modified =  stampOpt.cata(map.updated(value, _), map - value)
+      modified =  stampOpt.fold(map - value)(map.updated(value, _))
       _        <- data := modified
     } yield ()
 

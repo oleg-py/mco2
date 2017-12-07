@@ -1,7 +1,7 @@
 package mco.game.generic.mod
 
-import scalaz._
-import scalaz.syntax.applicative._
+import cats._
+import cats.syntax.applicative._
 
 import mco.core._
 import mco.core.paths._
@@ -13,7 +13,7 @@ final class FileMod[F[_]: Filesystem: Applicative](
 ) extends Mod[F]
 {
   def list: F[Vector[RelPath]] =
-    Vector(rel"${backingFile.name}").point[F]
+    Vector(rel"${backingFile.name}").pure[F]
 
   def provide(content: Vector[RelPath]) = InTemp {
     val result =
@@ -22,6 +22,6 @@ final class FileMod[F[_]: Filesystem: Applicative](
       } else {
         Map.empty[RelPath, Path]
       }
-    result.point[F]
+    result.pure[F]
   }
 }

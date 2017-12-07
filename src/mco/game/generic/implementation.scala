@@ -1,8 +1,9 @@
 package mco.game.generic
 
-import scalaz._
-import std.vector._
-import std.map._
+import shims._
+import cats._
+import cats.implicits._
+import scalaz.Equal
 
 import mco.core._
 import mco.core.paths._
@@ -16,7 +17,6 @@ import Filesystem._
 import mco.stubs.cells._
 import mco.stubs.{ImmutableVar, LoggingFilesystem, VarFilesystem}
 import mco.util.syntax.??
-import mco.util.syntax.fp._
 
 
 //noinspection ConvertibleToMethodValue
@@ -33,11 +33,11 @@ object implementation {
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
         val file = rel"${subpath.drop("varfs!".length)}"
-        val backend = CacheVar(dir().point[F])(
+        val backend = CacheVar(dir().pure[F])(
           new JavaSerializableVar(cwd / file)(??, ??, localFS),
-          new MutableVar(_).point[F].widen
+          new MutableVar(_).pure[F].widen
         ).map(new VarFilesystem(_): Filesystem[F])
-        backend.strengthL(Path.root)
+        backend.tupleLeft(Path.root)
       } else {
         val target = path"$cwd/$subpath"
         localFS.ensureDir(target).as((target, localFS))
@@ -55,7 +55,7 @@ object implementation {
           ),
           seg"-os",
           localFS
-        )(??, Equal.equalRef))
+        )(??, Eq.fromUniversalEquals))
       }
       .fproduct(_.archiving)
       .widen
@@ -64,9 +64,9 @@ object implementation {
   private def images[F[_]: Filesystem: Capture: MThrow](
     isImage: Segment => Boolean
   ): F[ImageStore[F]] = {
-    CacheVar(Map.empty[RelPath, RelPath].point[F])(
+    CacheVar(Map.empty[RelPath, RelPath].pure[F])(
       new JavaSerializableVar(path"-target/.imgdb"),
-      new MutableVar(_).point[F].widen
+      new MutableVar(_).pure[F].widen
     )
       .map(new LocalImageStore(path"-images", _, isImage))
       .widen
@@ -102,7 +102,7 @@ object implementation {
         implicit val filesystem: Filesystem[F] = fs
         implicit val archiving: Archiving[F] = arch
 
-        (mods |@| images(config.files.isImage)) { (m, i) =>
+        (mods, images(config.files.isImage)).mapN { (m, i) =>
           (repo.title, m, i)
         }
       }

@@ -2,6 +2,7 @@ package mco.core
 
 import scalaz._
 import scalaz.std.vector._
+import shims._
 
 import mco.core.state.RepoState
 import mco.core.vars.Var

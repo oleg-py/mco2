@@ -1,8 +1,9 @@
 package mco.io.impls
 
 import scala.util.Try
-import scalaz.Bind
-import scalaz.syntax.bind._
+import cats._
+import cats.syntax.apply._
+import cats.syntax.flatMap._
 
 import better.files._
 import com.sun.javafx.PlatformUtil
@@ -15,7 +16,7 @@ import net.openhft.hashing.LongHashFunction
 import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
 
-class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
+class LocalFilesystem[F[_]: Capture: FlatMap] extends Filesystem[F] {
   override val archiving: Archiving[F] = new LocalArchiving[F]
 
   private def noWinRoot(path: Path): Unit = {
@@ -98,7 +99,7 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
     f(Path(tmpDir.pathAsString)) <* Capture {
       tmpDir.delete(swallowIOExceptions = true)
     }
-  }.join
+  }.flatten
 
   final protected[mco] def hashFile(p: Path) = Capture {
     val file = File(p.toString)

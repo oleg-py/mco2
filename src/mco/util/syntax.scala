@@ -35,6 +35,9 @@ object syntax {
 
       @inline def mapKeys[C](f: A => C): Map[C, B] =
         map.map { case (k, v) => (f(k), v)}
+
+      @inline def alter(key: A, f: Option[B] => Option[B]): Map[A, B] =
+        f(map.get(key)).fold(map - key)(map.updated(key, _))
     }
   }
 }

@@ -1,6 +1,6 @@
 package mco.stubs
 
-import scalaz.Monad
+import cats._
 
 import mco.core.paths.Path
 import mco.io.{Archiving, Filesystem}

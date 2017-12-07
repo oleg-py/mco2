@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.15",
   "com.codecommit" %% "shims" % "1.0",
   "org.typelevel" %% "cats-core" % "1.0.0-RC1",
+  "org.typelevel" %% "mouse" % "0.12",
   "com.github.julien-truffaut" %% "monocle-core" % "1.5.0-cats-M2",
   "com.github.julien-truffaut" %% "monocle-macro" % "1.5.0-cats-M2",
   "io.monix" %% "monix" % "3.0.0-M2",

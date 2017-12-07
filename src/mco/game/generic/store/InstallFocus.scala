@@ -1,8 +1,10 @@
 package mco.game.generic.store
 
-import scalaz._
-import std.vector._
-import syntax.std.boolean._
+import shims._
+import cats._
+import cats.instances.vector._
+import cats.syntax.all._
+import mouse.boolean._
 
 import mco.core.paths.{Path, Pointed, RelPath}
 import mco.core.state._
@@ -11,7 +13,6 @@ import mco.core.{Mod, NameResolver}
 import mco.core.paths._
 import mco.io.{FileStamping, Filesystem, InTemp}
 import mco.util.syntax.any._
-import mco.util.syntax.fp._
 
 
 class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
@@ -23,7 +24,7 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
   def refocus(i: Int) = new InstallFocus(repoState, mods, resolver, i)
 
   private val currentModState = repoState.xmapF[Pointed[ModState]](
-    rs => rs.orderedMods(modFocus).point[F],
+    rs => rs.orderedMods(modFocus).pure[F],
     kms => for {
       rs  <- repoState()
     } yield rs.copy(orderedMods = rs.orderedMods.updated(modFocus, kms))
@@ -50,14 +51,14 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
 
   private class ContentOp(key: RelPath, from: Path) {
     val currentContent = currentModState.xmapF[ContentState](
-      kms => kms.get.contents.getOrElse(key, ContentState(mzero[Stamp])).point[F],
+      kms => kms.get.contents.getOrElse(key, ContentState(Monoid[Stamp].empty)).pure[F],
       cs => for {
         kms <- currentModState()
         map =  kms.get.contents.updated(key, cs)
       } yield kms.map(_.copy(contents = map))
     )
 
-    def innerPathF: F[InnerPath] = currentMod.map(_.backingFile).strengthR(key)
+    def innerPathF: F[InnerPath] = currentMod.map(_.backingFile).tupleRight(key)
 
     def run(copy: Boolean) =
       for {
@@ -69,9 +70,9 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
         noNeed  <- FileStamping.likelySame(inner, from, path) // when from is empty, noop
         _       <- currentContent ~= ContentState.target.set(copy.option(path))
         _       <- currentContent ~= ContentState.stamp.modify(Stamp.installed.set(copy))
-        _       <- if (conflict || noNeed) unit.point[F]
-                   else if (copy) Filesystem.copy(from, path) >> FileStamping.overwrite(inner, path)
-                   else Filesystem.rmIfExists(path) >> FileStamping.overwrite(inner, path)
+        _       <- if (conflict || noNeed) unit.pure[F]
+                   else if (copy) Filesystem.copy(from, path) *> FileStamping.overwrite(inner, path)
+                   else Filesystem.rmIfExists(path) *> FileStamping.overwrite(inner, path)
       } yield ()
   }
 
@@ -82,7 +83,7 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
 
   private def copyFiles = copyOrRemoveFiles(copy = true) _
   private def removeFiles(p: Vector[RelPath]) =
-    copyOrRemoveFiles(copy = false)(InTemp(p.map(Pointed(_, path"")).point[F]))
+    copyOrRemoveFiles(copy = false)(InTemp(p.map(Pointed(_, path"")).pure[F]))
 
   private def runOp(copy: Boolean)(only: Set[RelPath]): F[Unit] =
     for {

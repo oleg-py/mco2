@@ -1,7 +1,6 @@
 package mco.stubs
 
-import scalaz.Id._
-
+import cats._
 import mco.core.vars.Var
 
 

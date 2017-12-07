@@ -1,15 +1,16 @@
 package mco.game.generic.mod
 
-import scalaz._
-import std.stream._
-import syntax.id._
-import syntax.std.boolean._
+import shims._
+import cats._
+import cats.instances.stream._
+import cats.syntax.all._
+import cats.data.StateT
+import mouse.all._
 
 import mco.core._
 import mco.core.paths._
 import mco.io.{Filesystem, InTemp}, Filesystem._
 import mco.util.syntax.any._
-import mco.util.syntax.fp._
 
 class FolderMod[F[_]: Filesystem: Monad](
   override val backingFile: Path
@@ -18,26 +19,27 @@ class FolderMod[F[_]: Filesystem: Monad](
   private type DataM = Map[RelPath, (Path, RelPath)]
 
   private def toState[A](fa: F[A]): StateT[F, DataM, A] =
-    StateT(s => fa.strengthL(s))
+    StateT(s => fa.tupleLeft(s))
 
   private def scanDeepRec(fa: F[Stream[Path]]) =
     toState(fa).flatMap(_ traverse_ scanDeep)
 
   private def scanDeep(path: Path): StateT[F, DataM, Unit] = {
     import mco.util.instances.monoidForApplicative
-    val MS = MonadState[StateT[F, DataM, ?], DataM]
+//    val MS = MonadState[StateT[F, DataM, ?], DataM]
+
 
     for {
-      isDir   <- isDirectory(path) |> toState
+      isDir   <- isDirectory(path).pipe(toState)
       _       <- scanDeepRec(isDir ?? childrenOf(path))
       key     =  path relTo backingFile
-      _       <- if (isDir) MS.point(unit)
-                 else MS.modify(_.updated(key, (path, key)))
+      _       <- if (isDir) StateT.pure[F, DataM, Unit](unit)
+                 else StateT.modify[F, DataM](_.updated(key, (path, key)))
     } yield ()
   }
 
   private val structureF: F[DataM] =
-    scanDeepRec(childrenOf(backingFile)).exec(Map())
+    scanDeepRec(childrenOf(backingFile)).runS(Map())
 
   override def list: F[Vector[RelPath]] = structureF.map { data =>
     data.map { case (_, (_, c)) => c } .toVector

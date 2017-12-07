@@ -1,17 +1,17 @@
 package mco.game.generic.store
 
-import scalaz._
-import scalaz.std.option._
-
+import shims._
+import cats._
+import cats.syntax.all._
 import mco.core._
 import mco.core.paths._
 import mco.core.state._
 import mco.core.vars.Var
 import mco.io.{FileStamping, Filesystem}
 import Filesystem._
+import cats.data.OptionT
 import mco.io.state.initMod
 import mco.util.syntax.any._
-import mco.util.syntax.fp._
 import monocle.function.Index.index
 
 
@@ -26,7 +26,7 @@ class LocalMods[F[_]: Monad: Filesystem: FileStamping](
   override def state: F[RepoState] = repoState()
 
   override def update(key: RelPath, diff: Deltas.OfMod): F[Unit] = {
-    val noop = ().point[F]
+    val noop = ().pure[F]
     for {
       rState <- state
       (i, Pointed(_, modState)) = rState.at(key)
@@ -69,16 +69,16 @@ class LocalMods[F[_]: Monad: Filesystem: FileStamping](
     val result = for {
       _ <- OptionT(tryAsMod(p))
       target = contentRoot / p.name
-      _ <- OptionT(exists(target).ifM(none[Unit].point[F], some(unit).point[F]))
-      _ <- copy(p, target).liftM[OptionT]
+      _ <- OptionT(exists(target).ifM(none[Unit].pure[F], unit.some.pure[F]))
+      _ <- OptionT.liftF(copy(p, target))
       mod <- OptionT(tryAsMod(target))
-      state <- initMod(mod).liftM[OptionT]
+      state <- OptionT.liftF(initMod(mod))
       key = RelPath(p.name.toString)
       keyed = Pointed(key, state)
-      _ <- (repoState ~= { _ add (keyed, mod.label) }).liftM[OptionT]
-      _ <- (mods ~= { _ updated (key, (target, mod))}).liftM[OptionT]
+      _ <- OptionT.liftF(repoState ~= { _ add (keyed, mod.label) })
+      _ <- OptionT.liftF(mods ~= { _ updated (key, (target, mod))})
     } yield state
 
-    result.run
+    result.value
   }
 }

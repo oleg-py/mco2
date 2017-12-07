@@ -1,13 +1,13 @@
 package mco.io.impls
 
 import java.nio.file.attribute.BasicFileAttributes
-import scalaz._
-import std.stream._
-import syntax.equal._
+import shims._
+import cats._
+import cats.syntax.all._
+import cats.instances.stream._
 
 import mco.core.paths._
 import mco.io.{Archiving, Filesystem}
-import mco.util.syntax.fp._
 
 
 class VirtualRootsFilesystem[F[_]: Monad](
@@ -15,7 +15,7 @@ class VirtualRootsFilesystem[F[_]: Monad](
   runTmpRoot: Segment,
   runTmpFs: Filesystem[F]
 )(
-  implicit val fsEq: Equal[Filesystem[F]]
+  implicit val fsEq: Eq[Filesystem[F]]
 ) extends Filesystem[F] with Archiving[F] {
 
   override def archiving: Archiving[F] = this
@@ -47,7 +47,7 @@ class VirtualRootsFilesystem[F[_]: Monad](
   override def childrenOf(path: Path): F[Stream[Path]] = {
     val (p, fs, head) = retranslate(path)
     if (fs === this) {
-      roots.keys.toStream.map(Path.root / _).point[F]
+      roots.keys.toStream.map(Path.root / _).pure[F]
     } else {
       fs.childrenOf(p)
         .map { paths => paths.map(Path.root / head / _.relTo(p)) }
@@ -86,7 +86,7 @@ class VirtualRootsFilesystem[F[_]: Monad](
     val (p1, fs1, _) = retranslate(source)
     val (p2, fs2, _) = retranslate(dest)
     if (fs1 === fs2) fs1.move(p1, p2)
-    else slowCopy(source, dest) >> rmTree(source)
+    else slowCopy(source, dest) *> rmTree(source)
   }
 
   override def rmTree(path: Path): F[Unit] =

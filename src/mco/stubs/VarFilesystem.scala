@@ -1,6 +1,8 @@
 package mco.stubs
 
-import scalaz._
+import shims._
+import cats._
+import cats.syntax.all._
 
 import mco.core.Capture
 import mco.core.paths.Path
@@ -8,7 +10,6 @@ import mco.core.vars.Var
 import mco.io.{Archiving, Filesystem}
 import mco.io.impls.InMemoryArchiving
 import mco.stubs.cells._
-import mco.util.syntax.fp._
 import mco.util.syntax.??
 
 import java.net.URL
@@ -55,25 +56,25 @@ class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
     }
 
   override def setBytes(path: Path, cnt: Array[Byte]): F[Unit] =
-    notFolder(path) >>
+    notFolder(path) *>
       deepSet(path)(File(cnt).some)
 
   override def mkDir(path: Path): F[Unit] =
-    notFile(path) >>
+    notFile(path) *>
       deepGet(path).map(_ orElse Dir(Map()).some) >>=
       deepSet(path)
 
   override def copy(source: Path, dest: Path): F[Unit] =
-    mustExist(source) >>
+    mustExist(source) *>
       deepGet(source) >>=
       deepSet(dest)
 
   override def move(source: Path, dest: Path): F[Unit] =
-    copy(source, dest) >>
+    copy(source, dest) *>
       rmTree(source)
 
   override def rmTree(path: Path): F[Unit] =
-    mustExist(path) >>
+    mustExist(path) *>
       deepSet(path)(None)
 
   override def stat(path: Path): F[Option[BasicFileAttributes]] =

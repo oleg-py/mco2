@@ -1,16 +1,16 @@
 package mco.game.generic.store
 
-import scalaz._
-import std.option._
-import std.list._
-import syntax.std.map._
+import shims._
+import cats._
+import cats.implicits._
+import mouse.all._
 
 import mco.core.ImageStore
 import mco.core.paths._
 import mco.core.vars.Var
 import mco.io.Filesystem, Filesystem._
 import mco.util.syntax.any._
-import mco.util.syntax.fp._
+import mco.util.syntax.map._
 
 import java.net.URL
 
@@ -32,13 +32,13 @@ class LocalImageStore[F[_]: Filesystem: Monad](
   private def getTarget(key: RelPath)(path: Path) =
     rel"${key.name}${path.extension}"
 
-  private val noop = unit.point[F]
+  private val noop = unit.pure[F]
 
   override def getImage(key: RelPath): F[Option[URL]] =
     for {
       dict <- store()
       path = dict.get(key).map(root / _)
-      exists <- path.traverse(exists(_)).map(_ | false)
+      exists <- path.traverse(exists(_)).map(_ getOrElse false)
       url <- path.filter(_ => exists).traverse(fileToUrl(_))
     } yield url
 
@@ -46,10 +46,10 @@ class LocalImageStore[F[_]: Filesystem: Monad](
     def copyFile = for {
       dict <- store()
       newName = path.map(getTarget(key))
-      named = path.tuple(newName.map(root / _))
+      named = (path, newName.map(root / _)).tupled
       _ <- dict.get(key).cata(name => rmIfExists(root / name), noop)
       _ <- named.cata(Function.tupled(copy(_, _)), noop)
-      _ <- store ~= { _.alter(key)(_ => newName) }
+      _ <- store ~= { _.alter(key, _ => newName) }
     } yield ()
 
     if (path.forall(p => isImage(p.name))) copyFile

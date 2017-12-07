@@ -2,7 +2,7 @@ package mco.core.state
 
 import monocle.macros.Lenses
 
-import scalaz._
+import cats._
 
 @Lenses case class Stamp(
   enabled: Boolean,
@@ -10,8 +10,12 @@ import scalaz._
 )
 
 object Stamp {
-  implicit val stampMonoid: Monoid[Stamp] = Monoid.instance((l, r) => Stamp(
-    l.enabled || r.enabled,
-    l.installed || r.installed
-  ), Stamp(enabled = false))
+  implicit val stampMonoid: Monoid[Stamp] = new Monoid[Stamp] {
+    override def empty: Stamp = Stamp(enabled = false)
+
+    override def combine(x: Stamp, y: Stamp): Stamp = Stamp(
+      x.enabled || y.enabled,
+      x.installed || y.installed
+    )
+  }
 }

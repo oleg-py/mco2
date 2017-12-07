@@ -1,7 +1,7 @@
 package mco.core.vars
 
-import scalaz._
-import syntax.monadError._
+import cats._
+import cats.syntax.all._
 
 class CacheVar[F[_]: Apply, A](base: Var[F, A], reads: Var[F, A])
   extends Var[F, A]
@@ -19,7 +19,7 @@ object CacheVar {
   )(implicit
     F: MonadError[F, E]
   ): F[Var[F, A]] =
-    base().handleError(_ => read)
+    base().handleErrorWith(_ => read)
       .flatMap(mkReads)
       .map(new CacheVar(base, _))
 }

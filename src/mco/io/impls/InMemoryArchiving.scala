@@ -1,12 +1,12 @@
 package mco.io.impls
 
-import scalaz.Monad
-import scalaz.std.list._
+import cats._
+import cats.instances.list._
+import cats.syntax.all._
 
 import mco.core.Capture
 import mco.core.paths._
 import mco.io.{Archiving, Filesystem}
-import mco.util.syntax.fp._
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 
 
