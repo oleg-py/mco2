@@ -1,8 +1,8 @@
 package mco.core.state
 
 import mco.core.paths.RelPath
-import monocle.function.Index.index
-
+import mco.util.syntax.map._
+import monocle.macros.syntax.lens._
 
 object Deltas {
   case class OfContent(
@@ -23,8 +23,7 @@ object Deltas {
         enabled.fold(m)(bool => ModState.stamp.modify(_.copy(enabled = bool))(m))
 
       contents.foldLeft(installedSet) { case (modState, (key, delta)) =>
-        val change = ModState.contents composeOptional index(key) modify (delta patch _)
-        change(modState)
+        modState.lens(_.contents).modify(_.adjust(key, delta.patch))
       }
     }
   }

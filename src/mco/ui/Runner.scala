@@ -1,8 +1,8 @@
 package mco.ui
 
+import shims._
 import better.files._
 import monix.eval.{Coeval, Task, TaskApp}
-import monix.scalaz._
 import mco.core.{Capture, ModStore}
 import Capture.coeval._
 import scala.util.control.NonFatal

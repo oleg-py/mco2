@@ -9,10 +9,11 @@ resolvers += "JitPack" at "https://jitpack.io"
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.15",
-  "com.github.julien-truffaut" %% "monocle-core" % "1.4.0",
-  "com.github.julien-truffaut" %% "monocle-macro" % "1.4.0",
-  "io.monix" %% "monix" % "2.3.0",
-  "io.monix" %% "monix-scalaz-72" % "2.3.0",
+  "com.codecommit" %% "shims" % "1.0",
+  "org.typelevel" %% "cats-core" % "1.0.0-RC1",
+  "com.github.julien-truffaut" %% "monocle-core" % "1.5.0-cats-M2",
+  "com.github.julien-truffaut" %% "monocle-macro" % "1.5.0-cats-M2",
+  "io.monix" %% "monix" % "3.0.0-M2",
   "com.github.oleg-py" % "macro-forwarders" % "0.1.1",
   "com.github.pathikrit" %% "better-files" % "3.1.0",
   "net.openhft" % "zero-allocation-hashing" % "0.8",
