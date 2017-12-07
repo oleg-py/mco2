@@ -1,8 +1,8 @@
 package mco.ui.views
 
 
+import cats.syntax.functor._
 import scalafx.geometry.Insets
-import scalaz.syntax.functor._
 
 import mco.ui.components.{DropFilesReceiver, ImageViewPane}
 import mco.ui.props._

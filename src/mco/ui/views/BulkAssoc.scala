@@ -1,5 +1,7 @@
 package mco.ui.views
 
+import cats.instances.vector._
+import cats.syntax.all._
 import scalafx.Includes._
 import scalafx.beans.property.ObjectProperty
 import scalafx.geometry.{Insets, Pos}
@@ -8,15 +10,12 @@ import scalafx.scene.control.cell.ChoiceBoxTableCell
 import scalafx.scene.control.{Button, TableColumn, TableView}
 import scalafx.scene.layout.{HBox, Priority, VBox}
 import scalafx.util.StringConverter.toStringConverter
-import scalaz.std.option._
-import scalaz.std.vector._
 
 import better.files.File
 import mco.core.paths.Path
 import mco.ui.components.ImageViewPane
 import mco.ui.props._
 import mco.ui.state.{Commands, UiState}
-import mco.util.syntax.fp._
 
 import javafx.scene.control.TableColumn.CellEditEvent
 import javafx.scene.image.Image

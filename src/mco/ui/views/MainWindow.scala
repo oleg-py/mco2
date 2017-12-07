@@ -4,7 +4,7 @@ import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.scene.Scene
 import scalafx.scene.control.TabPane
-import scalaz.syntax.functor._
+import cats.syntax.functor._
 
 import mco.ui.props._
 import mco.ui.state.{Commands, UiState}

@@ -1,14 +1,15 @@
 package mco.ui.state
 
-import scalaz._
-import scalaz.std.option._
-import scalaz.std.vector._
+import shims._
+import cats._
+import cats.syntax.all._
+import cats.instances.option._
+import cats.instances.vector._
 
 import mco.core._
 import mco.core.paths.{Path, RelPath}
 import mco.core.state.{Deltas, RepoState}
 import mco.core.vars.Var
-import mco.util.syntax.fp._
 
 
 /*_*/
@@ -41,7 +42,7 @@ abstract class Commands {
 
   def setActiveTab(i: Int): Unit = {
     runLater {
-      repoMap.focus(i) >>
+      repoMap.focus(i) *>
         (state ~= UiState.currentTab.set(i))
     }
   }
@@ -58,7 +59,7 @@ abstract class Commands {
       keyOpt = st.currentModKey
       imageStore <- repoMap.imageStore
       url <- keyOpt.traverse { key =>
-        imageStore.putImage(key, Some(Path("-os") / RelPath(path))) >>
+        imageStore.putImage(key, Some(Path("-os") / RelPath(path))) *>
           imageStore.getImage(key)
       }
     } yield url.flatten
@@ -77,7 +78,7 @@ abstract class Commands {
   }
 
   def addPending(paths: Vector[String]): Unit = {
-    val assoc = paths.strengthR(none[String]).toMap
+    val assoc = paths.tupleRight(none[String]).toMap
     val mod = UiState.Tab.pendingAdds.set(Some(
       UiState.PendingAdds(packages = paths, assoc = assoc)
     ))

@@ -1,5 +1,6 @@
 package mco.ui.views
 
+import cats.syntax.functor._
 import scalafx.Includes._
 import scalafx.beans.property.{BooleanProperty, ObjectProperty}
 import scalafx.geometry.Insets
@@ -14,7 +15,6 @@ import mco.ui.components.DropFilesReceiver
 import mco.ui.props._
 import mco.ui.state.Commands
 import mco.util.syntax.any._
-import mco.util.syntax.fp._
 
 class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   extends TableView[(RelPath, String, ModState)]

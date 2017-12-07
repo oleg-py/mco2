@@ -1,7 +1,5 @@
 package mco.ui.state
 
-import scalaz.std.string._
-
 import mco.core.paths.RelPath
 import mco.core.state.{ContentState, ModState, RepoState}
 import mco.util.syntax.map._

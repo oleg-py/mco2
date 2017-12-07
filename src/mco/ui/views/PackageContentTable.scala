@@ -3,7 +3,6 @@ package mco.ui.views
 import scalafx.beans.property.ObjectProperty
 import scalafx.geometry.Insets
 import scalafx.scene.control.{TableColumn, TableView}
-import scalafx.scene.layout.Priority
 
 import mco.core.state.ContentState
 import mco.ui.props._

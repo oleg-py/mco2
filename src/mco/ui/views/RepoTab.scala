@@ -8,7 +8,7 @@ import scalafx.scene.layout._
 import mco.ui._
 import mco.ui.props._
 import mco.ui.state.{Commands, UiState}
-import mco.util.syntax.fp._
+import cats.syntax.all._
 
 class RepoTab(state: Prop[UiState.Tab], isImage: Prop[String => Boolean])(
   implicit cmd: Commands)

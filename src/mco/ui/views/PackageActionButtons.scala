@@ -1,5 +1,6 @@
 package mco.ui.views
 
+import cats.syntax.functor._
 import scalafx.Includes._
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Button
@@ -8,7 +9,6 @@ import scalafx.scene.layout.{HBox, Priority, Region}
 import mco.core.state.ModState
 import mco.ui.props._
 import mco.ui.state.Commands
-import mco.util.syntax.fp._
 
 class PackageActionButtons(state: Prop[Option[ModState]])(implicit cmd: Commands) extends HBox {
   hgrow = Priority.Always

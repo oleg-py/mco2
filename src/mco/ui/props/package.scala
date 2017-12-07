@@ -1,65 +1,65 @@
 package mco.ui
 
-import scalafx.beans.binding.Bindings
+import scala.annotation.tailrec
 import scalafx.beans.property.ObjectProperty
-import scalaz._
+
+import cats._
 
 import javafx.beans.{InvalidationListener, Observable}
 
 
 package object props extends PropsImplementation with PropsSyntax {
-  implicit val propInstances: Monad[Prop] with Comonad[Prop] with Foldable1[Prop] =
-    new Monad[Prop] with Comonad[Prop] with Foldable1[Prop] {
-      override def copoint[A](p: Prop[A]) = p.value
+  implicit val propInstances: Monad[Prop] = new Monad[Prop] {
 
-      override def cobind[A, B](fa: Prop[A])(f: Prop[A] => B): Prop[B] =
-        Bindings.createObjectBinding(() => f(fa), fa)
+    override def flatMap[A, B](fa: Prop[A])(f: A => Prop[B]): Prop[B] =
+      flatten(map(fa)(f))
 
-      override def point[A](a: => A) = ObjectProperty(a)
+    // TODO this does not watch
+    @tailrec override def tailRecM[A, B](a: A)(f: A => Prop[Either[A, B]]): Prop[B] =
+      f(a).value match {
+        case Left(l) => tailRecM(l)(f)
+        case Right(r) => pure(r)
+      }
 
-      override def bind[A, B](fa: Prop[A])(f: A => Prop[B]) = join(map(fa)(f))
+    override def pure[A](x: A): Prop[A] = ObjectProperty(x)
 
-      override def foldMapRight1[A, B](fa: Prop[A])(z: A => B)(f: (A, => B) => B): B =
-        z(fa.value)
 
-      override def foldMap1[A, B](fa: Prop[A])(f: A => B)(implicit F: Semigroup[B]) =
-        f(fa.value)
+    override def flatten[A](ffa: Prop[Prop[A]]) = {
+      var fa = ffa.value
+      val property = ObjectProperty(fa.value)
 
-      override def join[A](ffa: Prop[Prop[A]]) = {
-        var fa = ffa.value
-        val property = ObjectProperty(fa.value)
-
-        val watchB = new InvalidationListener {
-          override def invalidated(observable: Observable): Unit = {
-            property.value = fa.value
-          }
-        }
-        fa.addListener(watchB)
-
-        ffa.onChange {
-          fa.removeListener(watchB)
-          fa = ffa.value
-          fa.addListener(watchB)
+      val watchB = new InvalidationListener {
+        override def invalidated(observable: Observable): Unit = {
           property.value = fa.value
         }
-        property
       }
+      fa.addListener(watchB)
 
-      override def map[A, B](fa: Prop[A])(f: A => B) = {
-        val property = ObjectProperty(f(fa()))
-        val watch: InvalidationListener = (_) => { property() = f(fa()) }
-        fa.addListener(watch)
-        property
+      ffa.onChange {
+        fa.removeListener(watchB)
+        fa = ffa.value
+        fa.addListener(watchB)
+        property.value = fa.value
       }
-
-      override def apply2[A, B, C](fa: => Prop[A], fb: => Prop[B])(f: (A, B) => C) = {
-        val sfa = fa
-        val sfb = fb
-        val property = ObjectProperty(f(sfa(), sfb()))
-        val watch: InvalidationListener = (_) => { property() = f(sfa(), sfb()) }
-        sfa.addListener(watch)
-        sfb.addListener(watch)
-        property
-      }
+      property
     }
+
+    override def map[A, B](fa: Prop[A])(f: A => B) = {
+      val property = ObjectProperty(f(fa()))
+      val watch: InvalidationListener = (_) => { property() = f(fa()) }
+      fa.addListener(watch)
+      property
+    }
+
+
+    override def map2[A, B, Z](fa: Prop[A], fb: Prop[B])(f: (A, B) => Z): Prop[Z] = {
+      val sfa = fa
+      val sfb = fb
+      val property = ObjectProperty(f(sfa(), sfb()))
+      val watch: InvalidationListener = (_) => { property() = f(sfa(), sfb()) }
+      sfa.addListener(watch)
+      sfb.addListener(watch)
+      property
+    }
+  }
 }

@@ -1,6 +1,5 @@
 package mco.ui.views
 
-import scala.language.higherKinds
 import scalafx.Includes._
 import scalafx.scene.control._
 
