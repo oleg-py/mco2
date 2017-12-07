@@ -15,7 +15,7 @@ object state {
         case Content.Component | Content.Document => true
         case _ => false
       }
-      ContentState(Stamp(hash, enabled))
+      ContentState(Stamp(enabled))
     }
   }
 
@@ -28,8 +28,5 @@ object state {
             .traverse(initContent[F](Content.Component))
         }
         .runFS
-    } yield ModState(inner.foldMap(_.stamp).copy(
-      enabled = false,
-      installed = false
-    ), inner)
+    } yield ModState(Stamp(enabled = false), inner)
 }
