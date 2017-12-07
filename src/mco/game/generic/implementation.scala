@@ -3,7 +3,6 @@ package mco.game.generic
 import shims._
 import cats._
 import cats.implicits._
-import scalaz.Equal
 
 import mco.core._
 import mco.core.paths._

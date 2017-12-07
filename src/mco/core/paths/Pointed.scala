@@ -1,6 +1,6 @@
 package mco.core.paths
 
-import scalaz.{Applicative, Comonad, Traverse}
+import cats.Comonad
 
 import monocle.Lens
 import monocle.macros.GenLens
@@ -20,15 +20,13 @@ case class Pointed[+A](key: RelPath, get: A) {
 
 object Pointed {
   def lens[A]: Lens[Pointed[A], A] = GenLens[Pointed[A]](_.get)
-  implicit val labelledInstance: Traverse[Pointed] with Comonad[Pointed] =
-    new Traverse[Pointed] with Comonad[Pointed] {
-      override def traverseImpl[G[_], A, B](fa: Pointed[A])
-        (f: (A) => G[B])(implicit G: Applicative[G]) = {
-        G.map(f(fa.get))(el => fa.copy(get = el))
-      }
+  implicit val comonad: Comonad[Pointed] = new Comonad[Pointed] {
+    override def extract[A](x: Pointed[A]): A = x.get
 
-      override def copoint[A](p: Pointed[A]): A = p.get
-      override def cobind[A, B](fa: Pointed[A])(f: Pointed[A] => B): Pointed[B] =
-        fa.coflatMap(f)
-    }
+    override def coflatMap[A, B](fa: Pointed[A])(f: Pointed[A] => B): Pointed[B] =
+      fa.coflatMap(f)
+
+    override def map[A, B](fa: Pointed[A])(f: A => B): Pointed[B] =
+      fa.replace(f(fa.get))
+  }
 }

@@ -1,10 +1,10 @@
 package mco.core
 
-import scalaz._
+import cats._
+import cats.syntax.functor._
 
 import mco.core.paths._
 import mco.io.InTemp
-import mco.util.syntax.fp._
 
 trait Mod[F[_]] {
   val backingFile: Path

@@ -63,16 +63,5 @@ object SegTree {
       }
     }
   }
-  /*_*/
-  implicit def segTreeMonoid[A: Monoid]: Monoid[SegTree[A]] = new Monoid[SegTree[A]] {
-    override def zero: SegTree[A] = leaf(mzero[A])
-    override def append(f1: SegTree[A], f2: => SegTree[A]): SegTree[A] =
-      (f1, f2) match {
-        case (SegLeaf(a), SegLeaf(b)) => leaf(a |+| b)
-        case (a @ SegLeaf(_), SegRoot(bs)) => root(bs.mapValues(append(a, _: SegTree[A])))
-        case (SegRoot(as), b @ SegLeaf(_)) => root(as.mapValues(append(_: SegTree[A], b)))
-        case (SegRoot(as), SegRoot(bs)) => root(as |+| bs)
-      }
-  }
 }
 

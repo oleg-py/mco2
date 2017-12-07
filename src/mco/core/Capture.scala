@@ -1,6 +1,6 @@
 package mco.core
 
-import scalaz.Id._
+import cats._
 
 import monix.eval.Coeval
 

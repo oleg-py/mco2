@@ -1,12 +1,11 @@
 package mco.io
 
-import scalaz._
-import std.vector._
+import cats._
+import cats.implicits._
 
 import mco.core.paths.Path
 import mco.core.{Content, Mod}
 import mco.core.state.{ContentState, ModState, Stamp}
-import mco.util.syntax.fp._
 
 object state {
   def initContent[F[_]: Filesystem: Monad](c: Content)(p: Path): F[ContentState] = {
@@ -24,9 +23,8 @@ object state {
       provided <- mod.filterProvide(_ => true)
       inner <- provided
         .andThen { vec =>
-          IMap.fromFoldable(vec.map(la => (la.key, la.get)))
-            .traverse(initContent[F](Content.Component))
+          vec.traverse { la => initContent(Content.Component)(la.get).tupleLeft(la.key)}
         }
         .runFS
-    } yield ModState(Stamp(enabled = false), Map() ++ inner.toList)
+    } yield ModState(Stamp(enabled = false), inner.toMap)
 }

@@ -1,14 +1,12 @@
 package mco.core.state
 
-import scalaz._
-import std.vector._
-import std.option._
-import std.anyVal._
-import std.map._
-import syntax.std.boolean._
+import shims._
+import scalaz.ISet
+import cats._
+import cats.implicits._
+import mouse.all._
 
 import mco.core.paths._
-import mco.util.syntax.fp._
 import monocle.macros.Lenses
 
 
@@ -17,9 +15,9 @@ import monocle.macros.Lenses
   labels: Map[RelPath, String] = Map()
 ) {
   lazy val conflicts: Map[Path, ISet[Int]] = {
-    orderedMods.indexed.foldMap { case (i, Pointed(_, mod)) =>
-      mod.stamp.enabled ?? mod.contents.foldMap { cState =>
-        cState.stamp.enabled ?? cState.target.strengthR(ISet.singleton(i)).toMap
+    orderedMods.zipWithIndex.foldMap { case (Pointed(_, mod), i) =>
+      mod.stamp.enabled ?? mod.contents.values.toList.foldMap { cState =>
+        cState.stamp.enabled ?? cState.target.tupleRight(ISet.singleton(i)).toMap
       }
     }
   }
@@ -34,8 +32,9 @@ import monocle.macros.Lenses
     overrideIndex(path, idx).cata(idx < _, false)
 
   def at(key: RelPath): (Int, Pointed[ModState]) =
-    orderedMods.indexed.find(_._2.key == key)
-      .err(s"Invariant violation at $key")
+    orderedMods.zipWithIndex.find(_._1.key == key)
+      .getOrElse(sys.error(s"Invariant violation at $key"))
+      .swap
 
   def add(mod: Pointed[ModState], label: String): RepoState =
     copy(orderedMods :+ mod, labels.updated(mod.key, label))

@@ -1,13 +1,14 @@
 package mco.core
 
-import scalaz._
-import scalaz.std.vector._
-import shims._
+import cats._
+import cats.syntax.applicative._
+import cats.syntax.functor._
+import cats.syntax.traverse._
+import cats.instances.vector._
 
 import mco.core.state.RepoState
 import mco.core.vars.Var
 import mco.stubs.{NoImageStore, NoMods}
-import mco.util.syntax.fp._
 
 
 trait ModStore[F[_]] {
@@ -42,11 +43,11 @@ object ModStore {
     override def labels: Vector[String] = Vector.empty
     override def length: Int = 0
 
-    override def mods: F[Mods[F]] = new NoMods[F].point[F].widen
+    override def mods: F[Mods[F]] = new NoMods[F].pure[F].widen
 
-    override def states: F[Vector[RepoState]] = Vector.empty[RepoState].point[F]
+    override def states: F[Vector[RepoState]] = Vector.empty[RepoState].pure[F]
 
-    override def imageStore: F[ImageStore[F]] = new NoImageStore[F].point[F].widen
-    override def focus(i: Int): F[Unit] = ().point[F]
+    override def imageStore: F[ImageStore[F]] = new NoImageStore[F].pure[F].widen
+    override def focus(i: Int): F[Unit] = ().pure[F]
   }
 }

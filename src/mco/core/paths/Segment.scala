@@ -1,8 +1,5 @@
 package mco.core.paths
 
-import scalaz._
-import std.string._
-
 
 sealed abstract case class Segment(override val toString: String) {
   def extension: String = {
@@ -27,5 +24,5 @@ object Segment {
       case (ss, next)              => ss :+ Segment(next)
     }
   }
-  implicit val order: Order[Segment] = Order.orderBy(_.toString)
+  implicit val ordering: Ordering[Segment] = Ordering.by(_.toString)
 }

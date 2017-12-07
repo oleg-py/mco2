@@ -1,7 +1,8 @@
 package mco.io
 
-import scalaz._
-import syntax.bind._
+import cats._
+import syntax.functor._
+import syntax.flatMap._
 
 import mco.core.paths._
 
@@ -24,7 +25,7 @@ sealed trait InTemp[F[_], A] extends Product with Serializable {
     case wt @ WithTemp(_) => wt
   }
 
-  def andThen[B](f: A => F[B])(implicit F: Bind[F]): InTemp[F, B] = this match {
+  def andThen[B](f: A => F[B])(implicit F: FlatMap[F]): InTemp[F, B] = this match {
     case NoTemp(fa) => NoTemp(fa >>= f)
     case WithTemp(func) => WithTemp(func(_) >>= f)
   }
@@ -38,10 +39,10 @@ object InTemp {
 
   implicit def applicative[F[_]: Applicative]: Applicative[InTemp[F, ?]] =
     new Applicative[InTemp[F, ?]] {
-      override def point[A](a: => A) = NoTemp(Applicative[F].point(a))
+      override def pure[A](a: A) = NoTemp(Applicative[F].pure(a))
 
-      override def ap[A, B](fa: => InTemp[F, A])(f: => InTemp[F, A => B]): InTemp[F, B] =
-        (fa, f) match {
+      override def ap[A, B](f: InTemp[F, A => B])(fa: InTemp[F, A]): InTemp[F, B] =
+        (f, fa) match {
           case (NoTemp(l), NoTemp(r)) => NoTemp(Applicative[F].ap(l)(r))
           case (WithTemp(fl), WithTemp(fr)) => WithTemp { path =>
             Applicative[F].ap(fl(path))(fr(path))

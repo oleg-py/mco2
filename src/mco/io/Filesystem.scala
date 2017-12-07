@@ -1,13 +1,10 @@
 package mco.io
 
-import scalaz._
-import std.anyVal._
-import std.stream._
-import std.tuple._
+import cats._
+import cats.implicits._
 
 import com.olegpy.forwarders
 import mco.core.paths.Path
-import mco.util.syntax.fp._
 
 import java.net.URL
 import java.nio.file.attribute.BasicFileAttributes
@@ -44,7 +41,7 @@ import java.nio.file.attribute.BasicFileAttributes
   final def hashAt(p: Path)(implicit M: Monad[F]): F[(Long, Long)] = {
     def dirHash = childrenOf(p) >>= { stream => stream foldMapM hashAt }
     def getHash = isDirectory(p).ifM(dirHash, hashFile(p))
-    exists(p).ifM(getHash, (0L, 0L).point[F])
+    exists(p).ifM(getHash, (0L, 0L).pure[F])
   }
 
   final def exists(path: Path)(implicit F: Functor[F]): F[Boolean] =
@@ -57,10 +54,10 @@ import java.nio.file.attribute.BasicFileAttributes
     stat(path).map(_.fold(false)(_.isDirectory))
 
   final def ensureDir(path: Path)(implicit F: Monad[F]): F[Unit] =
-    isDirectory(path).ifM(F.point(()), mkDir(path))
+    isDirectory(path).ifM(F.pure(()), mkDir(path))
 
   final def rmIfExists(path: Path)(implicit F: Monad[F]): F[Unit] =
-    exists(path).ifM(rmTree(path), F.point(()))
+    exists(path).ifM(rmTree(path), F.pure(()))
 }
 
 
