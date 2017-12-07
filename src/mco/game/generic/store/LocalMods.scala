@@ -7,7 +7,8 @@ import mco.core._
 import mco.core.paths._
 import mco.core.state._
 import mco.core.vars.Var
-import mco.io.Filesystem, Filesystem._
+import mco.io.{FileStamping, Filesystem}
+import Filesystem._
 import mco.io.state.initMod
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
@@ -15,7 +16,7 @@ import monocle.function.Index.index
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: Monad: Filesystem](
+class LocalMods[F[_]: Monad: Filesystem: FileStamping](
   contentRoot: Path,
   repoState: Var[F, RepoState],
   mods: Var[F, Map[RelPath, (Path, Mod[F])]],

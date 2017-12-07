@@ -4,17 +4,17 @@ import scalaz._
 import std.vector._
 import syntax.std.boolean._
 
-import mco.core.paths.{Pointed, Path, RelPath}
+import mco.core.paths.{Path, Pointed, RelPath}
 import mco.core.state._
 import mco.core.vars.Var
 import mco.core.{Mod, NameResolver}
 import mco.core.paths._
-import mco.io.{Filesystem, InTemp}
+import mco.io.{FileStamping, Filesystem, InTemp}
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 
 
-class InstallFocus[F[_]: Monad: Filesystem](
+class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
   repoState: Var[F, RepoState],
   mods: Map[RelPath, Mod[F]],
   resolver: NameResolver,
@@ -61,18 +61,19 @@ class InstallFocus[F[_]: Monad: Filesystem](
         resolve <- getResolveFn
         path    =  resolve(key)
         conflict=  rState.hasConflicts(path, modFocus)
+        noNeed  <- FileStamping.likelySame(path, from) // when from is empty, noop
         _       <- currentContent ~= ContentState.target.set(copy.option(path))
         _       <- currentContent ~= ContentState.stamp.modify(Stamp.installed.set(copy))
-        _       <- if (conflict) unit.point[F]
-                   else if (copy) Filesystem.copy(from, path)
-                   else Filesystem.rmIfExists(path)
+        _       <- if (conflict || noNeed) unit.point[F]
+                   else if (copy) Filesystem.copy(from, path) >> FileStamping.update(path)
+                   else Filesystem.rmIfExists(path) >> FileStamping.update(path)
       } yield ()
   }
 
   private def copyOrRemoveFiles(copy: Boolean)(op: InTemp[F, Vector[Pointed[Path]]]) =
-    op.andThen(_.traverse_ { case Pointed(key, from) =>
-        new ContentOp(key, from).run(copy)
-    }).runFS
+    op
+      .andThen(_.traverse_ { p => new ContentOp(p.key, p.get).run(copy) })
+      .runFS
 
   private def copyFiles = copyOrRemoveFiles(copy = true) _
   private def removeFiles(p: Vector[RelPath]) =
