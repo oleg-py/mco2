@@ -9,14 +9,16 @@ import mco.io.{Archiving, InTemp}
 import mco.util.syntax.fp._
 
 
-class ArchiveMod[F[_]: Archiving: Functor](archive: Path) extends Mod[F] {
-  override val label: String = archive.name.toString
+class ArchiveMod[F[_]: Archiving: Functor](
+  override val backingFile: Path
+) extends Mod[F]
+{
   override def list: F[Vector[RelPath]] =
-    Archiving.entries(archive)
+    Archiving.entries(backingFile)
 
   override def provide(paths: Vector[RelPath]): InTemp[F, Map[RelPath, Path]] =
     InTemp.WithTemp { tempDir =>
       val targets = paths.fproduct(tempDir / _).toMap
-      Archiving.extract(archive, targets) as targets
+      Archiving.extract(backingFile, targets) as targets
     }
 }

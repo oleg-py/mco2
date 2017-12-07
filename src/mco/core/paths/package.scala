@@ -6,4 +6,6 @@ package object paths {
     def rel(cs: Any*) = RelPath(Segment.multi(sc.s(cs: _*)))
     def seg(cs: Any*) = Segment(sc.s(cs: _*))
   }
+
+  type InnerPath = (Path, RelPath)
 }

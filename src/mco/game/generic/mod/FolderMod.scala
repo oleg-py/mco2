@@ -11,12 +11,11 @@ import mco.io.{Filesystem, InTemp}, Filesystem._
 import mco.util.syntax.any._
 import mco.util.syntax.fp._
 
-class FolderMod[F[_]: Filesystem: Monad](self: Path)
-  extends Mod[F]
+class FolderMod[F[_]: Filesystem: Monad](
+  override val backingFile: Path
+) extends Mod[F]
 {
   private type DataM = Map[RelPath, (Path, RelPath)]
-
-  override val label: String = self.name.toString
 
   private def toState[A](fa: F[A]): StateT[F, DataM, A] =
     StateT(s => fa.strengthL(s))
@@ -31,16 +30,14 @@ class FolderMod[F[_]: Filesystem: Monad](self: Path)
     for {
       isDir   <- isDirectory(path) |> toState
       _       <- scanDeepRec(isDir ?? childrenOf(path))
-      key     =  path relTo self
+      key     =  path relTo backingFile
       _       <- if (isDir) MS.point(unit)
                  else MS.modify(_.updated(key, (path, key)))
     } yield ()
   }
 
-  /*_*/
   private val structureF: F[DataM] =
-    scanDeepRec(childrenOf(self)).exec(Map())
-  /*_*/
+    scanDeepRec(childrenOf(backingFile)).exec(Map())
 
   override def list: F[Vector[RelPath]] = structureF.map { data =>
     data.map { case (_, (_, c)) => c } .toVector

@@ -46,6 +46,8 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
   private def overridesOf = getConflicts(_.overrideIndex(_, _)) _
   private def underridesOf = getConflicts(_.recoveryIndex(_, _)) _
 
+  private def currentMod = currentModState().map(s => mods(s.key))
+
   private class ContentOp(key: RelPath, from: Path) {
     val currentContent = currentModState.xmapF[ContentState](
       kms => kms.get.contents.lookup(key).getOrElse(ContentState(mzero[Stamp])).point[F],
@@ -55,18 +57,21 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
       } yield kms.map(_.copy(contents = map))
     )
 
+    def innerPathF: F[InnerPath] = currentMod.map(_.backingFile).strengthR(key)
+
     def run(copy: Boolean) =
       for {
         rState  <- repoState()
         resolve <- getResolveFn
         path    =  resolve(key)
+        inner   <- innerPathF
         conflict=  rState.hasConflicts(path, modFocus)
-        noNeed  <- FileStamping.likelySame(path, from) // when from is empty, noop
+        noNeed  <- FileStamping.likelySame(inner, from, path) // when from is empty, noop
         _       <- currentContent ~= ContentState.target.set(copy.option(path))
         _       <- currentContent ~= ContentState.stamp.modify(Stamp.installed.set(copy))
         _       <- if (conflict || noNeed) unit.point[F]
-                   else if (copy) Filesystem.copy(from, path) >> FileStamping.update(path)
-                   else Filesystem.rmIfExists(path) >> FileStamping.update(path)
+                   else if (copy) Filesystem.copy(from, path) >> FileStamping.overwrite(inner, path)
+                   else Filesystem.rmIfExists(path) >> FileStamping.overwrite(inner, path)
       } yield ()
   }
 
@@ -81,8 +86,7 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
 
   private def runOp(copy: Boolean)(only: ISet[RelPath]): F[Unit] =
     for {
-      state     <- currentModState()
-      mod       =  mods(state.key)
+      mod       <- currentMod
       list      <- mod.list
       filtered  =  list.filter(only.contains)
       _         <- if (copy) copyFiles(mod.provideVec(filtered))

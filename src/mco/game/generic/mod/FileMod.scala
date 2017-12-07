@@ -9,19 +9,19 @@ import mco.io.{InTemp, Filesystem}
 
 
 final class FileMod[F[_]: Filesystem: Applicative](
-  file: Path
-)
-  extends Mod[F]
+  override val backingFile: Path
+) extends Mod[F]
 {
-  val label = file.name.toString
-
   def list: F[Vector[RelPath]] =
-    Vector(rel"${file.name}").point[F]
+    Vector(rel"${backingFile.name}").point[F]
 
   def provide(content: Vector[RelPath]) = InTemp {
     val result =
-      if (content contains rel"${file.name}") Map(rel"${file.name}" -> file)
-      else Map.empty[RelPath, Path]
+      if (content contains rel"${backingFile.name}") {
+        Map(rel"${backingFile.name}" -> backingFile)
+      } else {
+        Map.empty[RelPath, Path]
+      }
     result.point[F]
   }
 }

@@ -7,7 +7,10 @@ import mco.io.InTemp
 import mco.util.syntax.fp._
 
 trait Mod[F[_]] {
-  val label: String
+  val backingFile: Path
+
+  final val label: String = backingFile.name.toString
+
   def list: F[Vector[RelPath]]
   def provide(content: Vector[RelPath]): InTemp[F, Map[RelPath, Path]]
   final def provideVec(content: Vector[RelPath])(

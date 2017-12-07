@@ -11,9 +11,10 @@ import mco.core.vars._
 import mco.game.generic.store.{LocalImageStore, LocalMods, SimpleModTypes}
 import mco.io.impls._
 import mco.io.state.initMod
-import mco.io.{Archiving, Filesystem}, Filesystem._
+import mco.io.{Archiving, Filesystem}
+import Filesystem._
 import mco.stubs.cells._
-import mco.stubs.{LoggingFilesystem, VarFilesystem}
+import mco.stubs.{ImmutableVar, LoggingFilesystem, VarFilesystem}
 import mco.util.syntax.??
 import mco.util.syntax.fp._
 
@@ -82,13 +83,14 @@ object implementation {
       modMap = mods.map { case t @ (path, _) => toKey(path) -> t }.toMap
       labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
       repoVar = new MutableVar(RepoState(orderedMods, labels))
+      stamping = new FilesystemVarStamping[F](new MutableVar(Map()))
     } yield new LocalMods(
       path"-source",
       repoVar,
       new MutableVar(modMap),
       typer(_),
       NameResolver.overrides(path"-target")
-    )
+    )(??, ??, stamping)
   }.widen
 
   def algebras[F[_]: Capture: MThrow](
