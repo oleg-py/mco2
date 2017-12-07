@@ -4,15 +4,16 @@ import scalaz._
 import syntax.std.option._
 
 import mco.core.paths._
+import mco.util.syntax.map._
 import monocle.macros.Lenses
 
 
 @Lenses case class ModState(
   stamp: Stamp,
-  contents: IMap[RelPath, ContentState]
+  contents: Map[RelPath, ContentState]
 ) {
   def contentEnabled(key: RelPath): Boolean =
-    contents.lookup(key).cata(_.stamp.enabled, false)
+    contents.get(key).cata(_.stamp.enabled, false)
 
   def onResolve(targets: Vector[(RelPath, Path)], installed: Boolean): ModState = {
     val newContents = targets.foldLeft(contents) { case (map, (key, path)) =>

@@ -50,10 +50,10 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
 
   private class ContentOp(key: RelPath, from: Path) {
     val currentContent = currentModState.xmapF[ContentState](
-      kms => kms.get.contents.lookup(key).getOrElse(ContentState(mzero[Stamp])).point[F],
+      kms => kms.get.contents.getOrElse(key, ContentState(mzero[Stamp])).point[F],
       cs => for {
         kms <- currentModState()
-        map =  kms.get.contents.insert(key, cs)
+        map =  kms.get.contents.updated(key, cs)
       } yield kms.map(_.copy(contents = map))
     )
 
@@ -84,7 +84,7 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
   private def removeFiles(p: Vector[RelPath]) =
     copyOrRemoveFiles(copy = false)(InTemp(p.map(Pointed(_, path"")).point[F]))
 
-  private def runOp(copy: Boolean)(only: ISet[RelPath]): F[Unit] =
+  private def runOp(copy: Boolean)(only: Set[RelPath]): F[Unit] =
     for {
       mod       <- currentMod
       list      <- mod.list
@@ -95,7 +95,7 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
                    else underridesOf
       conflicts <- func(filtered)
       _         <- conflicts.traverse_ { case (relPath, i) =>
-        refocus(i).runOp(copy = true)(ISet.singleton(relPath))
+        refocus(i).runOp(copy = true)(Set(relPath))
       }
       _         <- currentModState ~= { s =>
         s.map(_.copy(s.get.stamp.copy(installed = copy)))

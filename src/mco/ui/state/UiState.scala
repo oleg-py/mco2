@@ -4,6 +4,7 @@ import scalaz.std.string._
 
 import mco.core.paths.RelPath
 import mco.core.state.{ContentState, ModState, RepoState}
+import mco.util.syntax.map._
 import monocle.macros.Lenses
 import monocle.std.option.{some => someL}
 import monocle.{Lens, Optional}
@@ -36,7 +37,7 @@ object UiState {
 
     def currentContent: Vector[(String, ContentState)] =
       currentMod
-        .map(_.contents.mapKeys(_.toString).toList.toVector)
+        .map(_.contents.mapKeys(_.toString).toVector)
         .getOrElse(Vector())
   }
 

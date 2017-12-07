@@ -28,5 +28,5 @@ object state {
             .traverse(initContent[F](Content.Component))
         }
         .runFS
-    } yield ModState(Stamp(enabled = false), inner)
+    } yield ModState(Stamp(enabled = false), Map() ++ inner.toList)
 }

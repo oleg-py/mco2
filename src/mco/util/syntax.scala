@@ -27,4 +27,14 @@ object syntax {
     with ToComonadOps
 
   @inline def ??[A](implicit a: A): A = a
+
+  object map {
+    implicit class MapMethods[A, B](val map: Map[A, B]) extends AnyVal {
+      @inline def adjust(key: A, f: B => B): Map[A, B] =
+        map.get(key).map(f).fold(map)(map.updated(key, _))
+
+      @inline def mapKeys[C](f: A => C): Map[C, B] =
+        map.map { case (k, v) => (f(k), v)}
+    }
+  }
 }
