@@ -48,15 +48,15 @@ class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
       case _ => complainAbout(path)
     }
 
-  override def getBytes(path: Path): F[ImmutableArray[Byte]] =
+  override def getBytes(path: Path): F[Array[Byte]] =
     deepGet(path) map {
-      case Some(File(arr)) => ImmutableArray.fromArray(arr)
+      case Some(File(arr)) => arr
       case _ => complainAbout(path)
     }
 
-  override def setBytes(path: Path, cnt: ImmutableArray[Byte]): F[Unit] =
+  override def setBytes(path: Path, cnt: Array[Byte]): F[Unit] =
     notFolder(path) >>
-      deepSet(path)(File(cnt.toArray).some)
+      deepSet(path)(File(cnt).some)
 
   override def mkDir(path: Path): F[Unit] =
     notFile(path) >>

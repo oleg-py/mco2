@@ -1,6 +1,6 @@
 package mco.stubs
 
-import scalaz.{ImmutableArray, Monad}
+import scalaz.Monad
 
 import mco.core.paths.Path
 import mco.io.{Archiving, Filesystem}
@@ -19,7 +19,7 @@ class LoggingFilesystem[F[_]: Monad](inner: Filesystem[F]) extends Filesystem[F]
     inner.getBytes(path)
   }
 
-  override def setBytes(path: Path, cnt: ImmutableArray[Byte]) = {
+  override def setBytes(path: Path, cnt: Array[Byte]) = {
     pprint.log(path.toString)
     pprint.log(s"bytes len: ${cnt.length}")
     inner.setBytes(path, cnt)

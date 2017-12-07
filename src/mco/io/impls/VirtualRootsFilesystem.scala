@@ -54,10 +54,10 @@ class VirtualRootsFilesystem[F[_]: Monad](
     }
   }
 
-  override def getBytes(path: Path): F[ImmutableArray[Byte]] =
+  override def getBytes(path: Path): F[Array[Byte]] =
     unaryOp(path) { _ getBytes _ }
 
-  override def setBytes(path: Path, cnt: ImmutableArray[Byte]): F[Unit] =
+  override def setBytes(path: Path, cnt: Array[Byte]): F[Unit] =
     unaryOp(path) { _ setBytes (_, cnt) }
 
   override def mkDir(path: Path): F[Unit] =

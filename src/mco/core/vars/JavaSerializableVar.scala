@@ -15,7 +15,7 @@ class JavaSerializableVar[F[_]: Monad: Capture: Filesystem, A](
   extends Var[F, A] {
 
   override def apply(): F[A] = getBytes(target) >>= (bytes => Capture {
-    val in = new ObjectInputStream(new ByteArrayInputStream(bytes.toArray))
+    val in = new ObjectInputStream(new ByteArrayInputStream(bytes))
     val result = in.readObject().asInstanceOf[A]
     in.close()
     result
@@ -28,6 +28,6 @@ class JavaSerializableVar[F[_]: Monad: Capture: Filesystem, A](
     out.flush()
     val ba = bos.toByteArray
     out.close()
-    ImmutableArray.fromArray(ba)
+    ba
   })
 }

@@ -20,8 +20,8 @@ import java.nio.file.attribute.BasicFileAttributes
  */
 @forwarders trait Filesystem[F[_]] {
   // --- Contents/creation of the file ---
-  def getBytes(path: Path): F[ImmutableArray[Byte]]
-  def setBytes(path: Path, cnt: ImmutableArray[Byte]): F[Unit]
+  def getBytes(path: Path): F[Array[Byte]]
+  def setBytes(path: Path, cnt: Array[Byte]): F[Unit]
 
   // --- Contents/creation of the dir ---
   def childrenOf(path: Path): F[Stream[Path]]

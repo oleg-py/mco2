@@ -1,7 +1,7 @@
 package mco.io.impls
 
 import scala.util.Try
-import scalaz.{Bind, ImmutableArray}
+import scalaz.Bind
 import scalaz.syntax.bind._
 
 import better.files._
@@ -35,13 +35,13 @@ class LocalFilesystem[F[_]: Capture: Bind] extends Filesystem[F] {
   }
 
   final def getBytes(path: Path) = Capture {
-    ImmutableArray.fromArray(File(path.toString).byteArray)
+    File(path.toString).byteArray
   }
 
-  final def setBytes(path: Path, cnt: ImmutableArray[Byte]) = Capture {
+  final def setBytes(path: Path, cnt: Array[Byte]) = Capture {
     File(path.toString)
       .createIfNotExists(createParents = true)
-      .writeByteArray(cnt.toArray)
+      .writeByteArray(cnt)
     ()
   }
 

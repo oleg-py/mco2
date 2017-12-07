@@ -51,7 +51,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "read file contents as bytes" in { dirs =>
     val b = getBytes(dirs.src / seg"test_folder" / seg"file1")
-    b.toArray shouldEqual "Hello".getBytes
+    b shouldEqual "Hello".getBytes
   }
 
   it should "fail with error for directory" in { dirs =>
@@ -75,12 +75,12 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
     val path = dirs.src / seg"test_folder" / seg"file1"
     path.asFile.isRegularFile shouldBe true
 
-    setBytes(path, ImmutableArray.fromArray(testData.getBytes))
+    setBytes(path, testData.getBytes)
     path.asFile.byteArray shouldEqual testData.getBytes
   }
 
   it should "create a new file with parent directories as needed" in { dirs =>
-    val data = ImmutableArray.fromArray("O".getBytes)
+    val data = "O".getBytes
     val path = dirs.target / seg"non" / seg"existent" / seg"file.txt"
     path shouldNot exist
 
@@ -90,7 +90,7 @@ class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelper
 
   it should "fail for a directory" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      setBytes(dirs.src, ImmutableArray.fromArray("0".getBytes))
+      setBytes(dirs.src, "0".getBytes)
     }
   }
 
