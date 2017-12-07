@@ -64,7 +64,7 @@ object implementation {
   private def images[F[_]: Filesystem: Capture: MThrow](
     isImage: Segment => Boolean
   ): F[ImageStore[F]] = {
-    CacheVar(IMap.empty[RelPath, RelPath].point[F])(
+    CacheVar(Map.empty[RelPath, RelPath].point[F])(
       new JavaSerializableVar(path"-target/.imgdb"),
       new MutableVar(_).point[F].widen
     )

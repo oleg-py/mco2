@@ -3,6 +3,7 @@ package mco.game.generic.store
 import scalaz._
 import std.option._
 import std.list._
+import syntax.std.map._
 
 import mco.core.ImageStore
 import mco.core.paths._
@@ -25,7 +26,7 @@ import java.net.URL
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
   root: Path,
-  store: Var[F, IMap[RelPath, RelPath]],
+  store: Var[F, Map[RelPath, RelPath]],
   isImage: Segment => Boolean
 ) extends ImageStore[F] {
   private def getTarget(key: RelPath)(path: Path) =
@@ -36,7 +37,7 @@ class LocalImageStore[F[_]: Filesystem: Monad](
   override def getImage(key: RelPath): F[Option[URL]] =
     for {
       dict <- store()
-      path = dict.lookup(key).map(root / _)
+      path = dict.get(key).map(root / _)
       exists <- path.traverse(exists(_)).map(_ | false)
       url <- path.filter(_ => exists).traverse(fileToUrl(_))
     } yield url
@@ -46,9 +47,9 @@ class LocalImageStore[F[_]: Filesystem: Monad](
       dict <- store()
       newName = path.map(getTarget(key))
       named = path.tuple(newName.map(root / _))
-      _ <- dict.lookup(key).cata(name => rmIfExists(root / name), noop)
+      _ <- dict.get(key).cata(name => rmIfExists(root / name), noop)
       _ <- named.cata(Function.tupled(copy(_, _)), noop)
-      _ <- store ~= { _.alter(key, _ => newName) }
+      _ <- store ~= { _.alter(key)(_ => newName) }
     } yield ()
 
     if (path.forall(p => isImage(p.name))) copyFile
@@ -59,8 +60,8 @@ class LocalImageStore[F[_]: Filesystem: Monad](
     for {
       dict <- store()
       keySet = keys.toSet
-      (oks, dels) = dict.partitionWithKey { case (k, _) => keySet(k) }
+      (oks, dels) = dict.partition { case (k, _) => keySet(k) }
       _ <- store := oks
-      _ <- dels.values.traverse { name => rmIfExists(root / name) }
+      _ <- dels.values.toList.traverse { name => rmIfExists(root / name) }
     } yield ()
 }
