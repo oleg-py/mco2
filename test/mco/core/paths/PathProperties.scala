@@ -3,7 +3,7 @@ package mco.core.paths
 import mco.Tests
 
 
-class PathProperties extends Tests.Prop {
+class PathProperties extends Tests.Props {
   property("self inverse") {
     forAll { (p: Path) =>
       p.relTo(p) shouldBe RelPath("")

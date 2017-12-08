@@ -12,7 +12,7 @@ import mco.util.syntax.any._
 import monix.eval.Coeval
 
 
-class LocalFilesystemTest extends Tests.SyncFixture with Tests.BetterFilesHelpers {
+class LocalFilesystemTest extends Tests.SpecFixture {
   implicit val fs: Filesystem[Coeval] = new LocalFilesystem[Coeval]
 
   // --------------------------------------------------------------------------

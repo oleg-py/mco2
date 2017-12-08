@@ -12,21 +12,35 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
 
 object Tests {
-  trait Sync extends FlatSpec with Matchers {
+  trait Spec extends FlatSpec
+    with Matchers
+    with TestUtils
+
+  trait Props extends PropSpec
+    with Matchers
+    with GeneratorDrivenPropertyChecks
+    with TestUtils
+
+  trait SpecFixture extends fixture.FlatSpec
+    with Matchers
+    with TestUtils
+
+  trait TestUtils extends FsUtils
+    with Arbitraries
+    with BetterFilesHelpers
+
+  trait FsUtils {
     def immutableFs(contents: (Segment, Cell)*) =
       new VarFilesystem[Coeval](new ConstantVar(dir(contents: _*)))
   }
 
-  trait Prop extends PropSpec with Matchers with GeneratorDrivenPropertyChecks {
-
+  trait Arbitraries {
     implicit val arbitrarySegment: Arbitrary[Segment] =
       Arbitrary(arb[String].map(Segment.apply))
 
     implicit val arbitraryPath: Arbitrary[Path] =
       Arbitrary(arb[Vector[Segment]].map(Path.of))
   }
-
-  trait SyncFixture extends fixture.FlatSpec with Matchers
 
   trait BetterFilesHelpers {
     import better.files._

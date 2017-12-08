@@ -7,7 +7,7 @@ import mco.stubs.cells._
 import monix.eval.Coeval
 import org.scalatest.LoneElement._
 
-class FileModTest extends Tests.Sync {
+class FileModTest extends Tests.Spec {
   implicit val filesystem = immutableFs(
     seg"mods" -> dir(
       seg"fileMod.dat" -> file("Hello")

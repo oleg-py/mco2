@@ -7,7 +7,7 @@ import mco.stubs.cells._
 import monix.eval.Coeval
 
 
-class FolderModTest extends Tests.Sync {
+class FolderModTest extends Tests.Spec {
   implicit val filesystem = immutableFs(
     seg"mods" -> dir(
       seg"folderMod" -> dir(

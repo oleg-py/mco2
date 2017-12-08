@@ -3,7 +3,7 @@ package mco.core.state
 import mco.Tests
 import org.scalacheck.ScalacheckShapeless._
 
-class DeltasProperties extends Tests.Prop {
+class DeltasProperties extends Tests.Props {
   property("Empty mod delta patch is noop") {
     forAll { (ms: ModState) =>
       Deltas.OfMod().patch(ms) shouldBe ms

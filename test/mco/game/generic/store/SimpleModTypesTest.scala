@@ -5,7 +5,7 @@ import mco.core.paths._
 import mco.stubs.cells._
 import monix.eval.Coeval
 
-class SimpleModTypesTest extends Tests.Sync {
+class SimpleModTypesTest extends Tests.Spec {
   behavior of "SimpleModTypes"
 
   implicit val fs = immutableFs(
