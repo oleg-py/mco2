@@ -1,6 +1,5 @@
 package mco.game.generic
 
-import shims._
 import cats._
 import cats.implicits._
 

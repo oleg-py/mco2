@@ -1,7 +1,6 @@
 package mco.io.impls
 
 import java.nio.file.attribute.BasicFileAttributes
-import shims._
 import cats._
 import cats.syntax.all._
 import cats.instances.stream._

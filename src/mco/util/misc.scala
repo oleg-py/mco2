@@ -2,30 +2,16 @@ package mco.util
 
 import java.io.{ByteArrayInputStream, InputStream}
 import java.net.{URL, URLConnection, URLStreamHandler}
-import scalaz._
-import std.anyVal._
-import std.tuple._
+import cats._
+import cats.syntax.applicativeError._
 
 import mco.core.Capture
-import mco.core.paths.Path
-import mco.io.Filesystem
-import net.openhft.hashing.LongHashFunction
-import mco.util.syntax.fp._
 
-import java.util.{Base64, UUID}
+import java.util.Base64
 import javax.swing.ImageIcon
-import monix.eval.Coeval
 
 
 object misc {
-  val uuidName = { new UUID(_: Long, _: Long).toString }.tupled
-
-  val strHashes = (str: String) => {
-    val hi = LongHashFunction.xx(0L).hashChars(str)
-    val lo = LongHashFunction.farmNa(0L).hashChars(str)
-    (hi, lo)
-  }
-
   def macOSIcon[F[_]: Capture: MonadError[?[_], Throwable]]: F[Unit] = Capture {
     val cls = Class.forName("com.apple.eawt.Application")
     cls.getMethod("setDockIconImage", classOf[java.awt.Image]).invoke(
@@ -33,7 +19,7 @@ object misc {
       new ImageIcon(getClass.getResource("/app-icon.png")).getImage
     )
     ()
-  }.handleError(_ => Capture { () })
+  }.handleErrorWith(_ => Capture { () })
 
   private val dataUrl = "data:(.*?);(.*?),(.*)".r
   private class DataConnection(u: URL) extends URLConnection(u) {

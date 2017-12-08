@@ -1,6 +1,5 @@
 package mco.game.generic.store
 
-import shims._
 import cats._
 import cats.implicits._
 import mouse.all._

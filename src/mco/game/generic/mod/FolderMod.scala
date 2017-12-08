@@ -1,6 +1,5 @@
 package mco.game.generic.mod
 
-import shims._
 import cats._
 import cats.instances.stream._
 import cats.syntax.all._

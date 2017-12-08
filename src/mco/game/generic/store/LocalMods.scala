@@ -1,6 +1,5 @@
 package mco.game.generic.store
 
-import shims._
 import cats._
 import cats.syntax.all._
 import mco.core._

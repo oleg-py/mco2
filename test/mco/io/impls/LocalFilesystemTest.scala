@@ -1,8 +1,7 @@
 package mco.io.impls
 
 import scala.util.Random
-import scalaz.Id._
-import scalaz._
+import cats._
 
 import better.files.File
 import mco.Tests

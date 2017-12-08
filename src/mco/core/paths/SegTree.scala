@@ -1,18 +1,15 @@
 package mco.core.paths
 
-import scalaz._
-import std.map._
-import std.option._
-import std.vector._
-import syntax.std.map._
-
-import mco.util.syntax.fp._
-
+import cats._
+import cats.data.NonEmptyList
+import cats.implicits._
+import mouse.all._
+import mco.util.syntax.map._
 
 sealed trait SegTree[+A] {
   import SegTree._
   final def lookup(p: RelPath): Option[SegTree[A]] =
-    p.segments.foldLeft(some(this)) {
+    p.segments.foldLeft(this.some) {
       case (Some(SegRoot(cc)), key) => cc.get(key)
       case _ => None
     }
@@ -25,12 +22,12 @@ sealed trait SegTree[+A] {
       d match {
         case s @ SegLeaf(_) => s // Noop if the path leads past "file"
         case SegRoot(map) => p.tail.toNel
-          .cata(subpath => root(map.alter(p.head) { opt =>
+          .cata(subpath => root(map.alter(p.head, { opt =>
             recurse(opt.getOrElse(root()))(subpath) // auto-create new "folders"
-          }), root(map.alter(p.head) { _ => next }))
+          })), root(map.alter(p.head, { _ => next })))
       }
     }
-    p.segments.toIList.toNel.cata(recurse(this), next)
+    p.segments.toList.toNel.cata(recurse(this), next)
   }
 
   final def children: Stream[Pointed[A]] = this match {
@@ -54,14 +51,5 @@ object SegTree {
   def leaf[A](value: A): SegTree[A] = SegLeaf(value)
   def root[A](map: Map[Segment, SegTree[A]]): SegTree[A] = SegRoot(map)
   def root[A](map: (Segment, SegTree[A])*): SegTree[A] = SegRoot(map.toMap)
-
-  implicit val segTreeTraverse: Traverse[SegTree] = new Traverse[SegTree] {
-    override def traverseImpl[G[_], A, B](fa: SegTree[A])(f: A => G[B])(implicit evidence$1: Applicative[G]): G[SegTree[B]] = {
-      fa match {
-        case SegLeaf(a) => f(a).map(leaf)
-        case SegRoot(map) => map.traverse(subtree => traverseImpl(subtree)(f)).map(SegRoot(_))
-      }
-    }
-  }
 }
 

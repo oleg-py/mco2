@@ -1,11 +1,10 @@
 package mco.core.state
 
-import shims._
-import scalaz.ISet
+import scala.collection.immutable.SortedSet
+
 import cats._
 import cats.implicits._
 import mouse.all._
-
 import mco.core.paths._
 import monocle.macros.Lenses
 
@@ -14,19 +13,19 @@ import monocle.macros.Lenses
   orderedMods: Vector[Pointed[ModState]] = Vector(),
   labels: Map[RelPath, String] = Map()
 ) {
-  lazy val conflicts: Map[Path, ISet[Int]] = {
+  lazy val conflicts: Map[Path, SortedSet[Int]] = {
     orderedMods.zipWithIndex.foldMap { case (Pointed(_, mod), i) =>
       mod.stamp.enabled ?? mod.contents.values.toList.foldMap { cState =>
-        cState.stamp.enabled ?? cState.target.tupleRight(ISet.singleton(i)).toMap
+        cState.stamp.enabled ?? cState.target.tupleRight(SortedSet(i)).toMap
       }
     }
   }
 
   def overrideIndex(path: Path, idx: Int): Option[Int] =
-    conflicts.get(path) >>= (_.lookupGT(idx))
+    conflicts.get(path) >>= (_.from(idx).drop(1).lastOption)
 
   def recoveryIndex(path: Path, idx: Int): Option[Int] =
-    conflicts.get(path) >>= (_.lookupLT(idx))
+    conflicts.get(path) >>= (_.until(idx).lastOption)
 
   def hasConflicts(path: Path, idx: Int): Boolean =
     overrideIndex(path, idx).cata(idx < _, false)

@@ -3,7 +3,6 @@ package mco.game.generic.store
 import cats._
 import cats.syntax.all._
 import cats.instances.stream._
-import shims._
 
 import mco.core.Mod
 import mco.core.paths._

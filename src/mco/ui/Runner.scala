@@ -1,6 +1,5 @@
 package mco.ui
 
-import shims._
 import better.files._
 import monix.eval.{Coeval, Task, TaskApp}
 import mco.core.{Capture, ModStore}

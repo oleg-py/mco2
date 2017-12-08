@@ -1,7 +1,5 @@
 package mco
 
-import scalaz._
-
 import mco.core.Capture.yolo._
 import mco.core.paths._
 import mco.stubs.{ImmutableVar, VarFilesystem}
@@ -26,11 +24,6 @@ object Tests {
 
     implicit val arbitraryPath: Arbitrary[Path] =
       Arbitrary(arb[Vector[Segment]].map(Path.of))
-
-    implicit def arbitraryIMap[A: Order, B](
-      implicit amap: Arbitrary[Map[A, B]]
-    ): Arbitrary[IMap[A, B]] =
-      Arbitrary(arb[Map[A, B]].map(_.toList).map(IMap.fromList(_)))
   }
 
   trait SyncFixture extends fixture.FlatSpec with Matchers

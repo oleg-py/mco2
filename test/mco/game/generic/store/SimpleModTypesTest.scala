@@ -1,6 +1,6 @@
 package mco.game.generic.store
 
-import scalaz.Id._
+import cats.Id
 
 import mco.Tests
 import mco.core.Capture.yolo._

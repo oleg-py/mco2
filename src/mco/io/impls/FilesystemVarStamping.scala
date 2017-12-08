@@ -1,6 +1,5 @@
 package mco.io.impls
 
-import shims._
 import cats._
 import cats.syntax.all._
 

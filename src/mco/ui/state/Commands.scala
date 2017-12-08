@@ -1,6 +1,5 @@
 package mco.ui.state
 
-import shims._
 import cats._
 import cats.syntax.all._
 import cats.instances.option._
