@@ -9,13 +9,14 @@ import mco.core.vars.Var
 import mco.io.{FileStamping, Filesystem}
 import Filesystem._
 import cats.data.OptionT
+import cats.effect.Sync
 import mco.io.state.initMod
 import mco.util.syntax.any._
 import monocle.function.Index.index
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: Monad: Filesystem: FileStamping](
+class LocalMods[F[_]: Sync: Filesystem: FileStamping](
   contentRoot: Path,
   repoState: Var[F, RepoState],
   mods: Var[F, Map[RelPath, (Path, Mod[F])]],

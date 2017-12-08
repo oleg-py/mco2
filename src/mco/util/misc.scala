@@ -3,8 +3,8 @@ package mco.util
 import java.io.{ByteArrayInputStream, InputStream}
 import java.net.{URL, URLConnection, URLStreamHandler}
 import cats._
+import cats.effect.Sync
 import cats.syntax.applicativeError._
-
 import mco.core.Capture
 
 import java.util.Base64
@@ -12,7 +12,7 @@ import javax.swing.ImageIcon
 
 
 object misc {
-  def macOSIcon[F[_]: Capture: MonadError[?[_], Throwable]]: F[Unit] = Capture {
+  def macOSIcon[F[_]: Sync]: F[Unit] = Capture {
     val cls = Class.forName("com.apple.eawt.Application")
     cls.getMethod("setDockIconImage", classOf[java.awt.Image]).invoke(
       cls.getMethod("getApplication").invoke(null),
@@ -37,7 +37,7 @@ object misc {
     }
   }
 
-  def base64url[F[_]: Capture] = Capture {
+  def base64url[F[_]: Sync] = Capture {
     val handler: URLStreamHandler = new DataConnection(_)
     URL.setURLStreamHandlerFactory(protocol => if (protocol == "data") handler else null)
   }

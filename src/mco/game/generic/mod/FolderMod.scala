@@ -8,7 +8,7 @@ import mouse.all._
 
 import mco.core._
 import mco.core.paths._
-import mco.io.{Filesystem, InTemp}, Filesystem._
+import mco.io.Filesystem, Filesystem._
 import mco.util.syntax.any._
 
 class FolderMod[F[_]: Filesystem: Monad](
@@ -44,12 +44,19 @@ class FolderMod[F[_]: Filesystem: Monad](
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-  override def provide(content: Vector[RelPath]): InTemp[F, Map[RelPath, Path]] = InTemp {
-    for {
-      data <- structureF
-    } yield content
-      .collect(data)
-      .map(_.swap)
-      .toMap
-  }
+
+//  override def provide(content: Vector[RelPath]): InTemp[F, Map[RelPath, Path]] = InTemp {
+//    for {
+//      data <- structureF
+//    } yield content
+//      .collect(data)
+//      .map(_.swap)
+//      .toMap
+//  }
+  override def provide(content: Vector[RelPath]): fs2.Stream[F, Pointed[Path]] =
+    fs2.Stream.eval(structureF).flatMap {
+      dataM =>
+        val filtered = content.collect(dataM).map { case (p, r) => Pointed(r, p) }
+        fs2.Stream.emits(filtered).covary
+    }
 }

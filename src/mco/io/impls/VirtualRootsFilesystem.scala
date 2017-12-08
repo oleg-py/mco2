@@ -2,33 +2,23 @@ package mco.io.impls
 
 import java.nio.file.attribute.BasicFileAttributes
 import cats._
+import cats.effect.Sync
 import cats.syntax.all._
 import cats.instances.stream._
-
 import mco.core.paths._
-import mco.io.{Archiving, Filesystem}
+import mco.io.Filesystem
+import net.sf.sevenzipjbinding.{IInStream, IOutStream}
+
+import java.nio.ByteBuffer
 
 
-class VirtualRootsFilesystem[F[_]: Monad](
+class VirtualRootsFilesystem[F[_]: Sync](
   roots: Map[Segment, (Path, Filesystem[F])],
   runTmpRoot: Segment,
   runTmpFs: Filesystem[F]
 )(
   implicit val fsEq: Eq[Filesystem[F]]
-) extends Filesystem[F] with Archiving[F] {
-
-  override def archiving: Archiving[F] = this
-
-  override def entries(archive: Path): F[Vector[RelPath]] =
-    unaryOp(archive)(_.archiving.entries(_))
-
-  override def extract(archive: Path, targets: Map[RelPath, Path]): F[Unit] = {
-    val translatedTargets = targets.map {
-      case (relPath, path) => relPath -> retranslate(path)._1
-    }
-    unaryOp(archive)(_.archiving.extract(_, translatedTargets))
-  }
-
+) extends Filesystem[F] {
   private def retranslate(path: Path): (Path, Filesystem[F], Segment) = {
     path.segments match {
       case Vector() => (Path.root, this, Segment.empty)
@@ -43,6 +33,18 @@ class VirtualRootsFilesystem[F[_]: Monad](
     op(fs, p)
   }
 
+  override def readFile(path: Path): fs2.Stream[F, ByteBuffer] =
+    unaryOp(path)(_.readFile(_))
+
+  override def writeFile(path: Path, bb: ByteBuffer): F[Unit] =
+    unaryOp(path)(_.writeFile(_, bb))
+
+  override def mkTemp: fs2.Stream[F, Path] =
+    runTmpFs.mkTemp.map(p => path"$runTmpRoot/$p")
+
+  override def getSfStream(path: Path): fs2.Stream[F, IInStream with IOutStream] =
+    unaryOp(path)(_.getSfStream(_))
+
   override def childrenOf(path: Path): F[Stream[Path]] = {
     val (p, fs, head) = retranslate(path)
     if (fs === this) {
@@ -53,17 +55,11 @@ class VirtualRootsFilesystem[F[_]: Monad](
     }
   }
 
-  override def getBytes(path: Path): F[Array[Byte]] =
-    unaryOp(path) { _ getBytes _ }
-
-  override def setBytes(path: Path, cnt: Array[Byte]): F[Unit] =
-    unaryOp(path) { _ setBytes (_, cnt) }
-
   override def mkDir(path: Path): F[Unit] =
     unaryOp(path) { _ mkDir _ }
 
   private def slowCopy(from: Path, to: Path): F[Unit] = {
-    def fileCopy = getBytes(from) >>= { setBytes(to, _) }
+    def fileCopy = readFile(from).evalMap(writeFile(to, _)).runSync
     def folderCopy = for {
       children <- childrenOf(from)
       _ <- children.traverse_ { path =>
@@ -93,12 +89,6 @@ class VirtualRootsFilesystem[F[_]: Monad](
 
   override def stat(path: Path): F[Option[BasicFileAttributes]] =
     unaryOp(path) { _ stat _ }
-
-  override def runTmp[A](f: Path => F[A]): F[A] =
-    runTmpFs.runTmp(path => f(path"/$runTmpRoot/$path"))
-
-  override protected[mco] def hashFile(path: Path): F[(Long, Long)] =
-    unaryOp(path) { _ hashFile _ }
 
   override def fileToUrl(p: Path) =
     unaryOp(p) { _ fileToUrl _ }

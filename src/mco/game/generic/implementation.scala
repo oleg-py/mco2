@@ -2,7 +2,6 @@ package mco.game.generic
 
 import cats._
 import cats.implicits._
-
 import mco.core._
 import mco.core.paths._
 import mco.core.state.RepoState
@@ -10,10 +9,11 @@ import mco.core.vars._
 import mco.game.generic.store.{LocalImageStore, LocalMods, SimpleModTypes}
 import mco.io.impls._
 import mco.io.state.initMod
-import mco.io.{Archiving, Filesystem}
+import mco.io.Filesystem
 import Filesystem._
+import cats.effect.Sync
 import mco.stubs.cells._
-import mco.stubs.{ImmutableVar, LoggingFilesystem, VarFilesystem}
+import mco.stubs.{LoggingFilesystem, VarFilesystem}
 import mco.util.syntax.??
 
 
@@ -22,17 +22,17 @@ object implementation {
   private val toKey = (p: Path) => RelPath(p.name.toString)
   type MThrow[F[_]] = MonadError[F, Throwable]
 
-  private def filesystem[F[_]: Capture: MThrow](
+  private def filesystem[F[_]: Sync](
     config: StoreConfig.Repo,
     cwd: Path
-  ): F[(Filesystem[F], Archiving[F])] = {
+  ): F[Filesystem[F]] = {
     val localFS:  Filesystem[F] = new LocalFilesystem[F]
 
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
         val file = rel"${subpath.drop("varfs!".length)}"
         val backend = CacheVar(dir().pure[F])(
-          new JavaSerializableVar(cwd / file)(??, ??, localFS),
+          new JavaSerializableVar(cwd / file)(??, localFS),
           new MutableVar(_).pure[F].widen
         ).map(new VarFilesystem(_): Filesystem[F])
         backend.tupleLeft(Path.root)
@@ -55,11 +55,10 @@ object implementation {
           localFS
         )(??, Eq.fromUniversalEquals))
       }
-      .fproduct(_.archiving)
       .widen
   }
 
-  private def images[F[_]: Filesystem: Capture: MThrow](
+  private def images[F[_]: Filesystem: Sync](
     isImage: Segment => Boolean
   ): F[ImageStore[F]] = {
     CacheVar(Map.empty[RelPath, RelPath].pure[F])(
@@ -70,7 +69,7 @@ object implementation {
       .widen
   }
 
-  private def mods[F[_]: Filesystem: Capture: Archiving: MThrow]: F[Mods[F]] = {
+  private def mods[F[_]: Filesystem: Sync]: F[Mods[F]] = {
     for {
       _ <- ensureDir(path"-target")
       typer = new SimpleModTypes
@@ -91,15 +90,12 @@ object implementation {
     )(??, ??, stamping)
   }.widen
 
-  def algebras[F[_]: Capture: MThrow](
+  def algebras[F[_]: Sync](
     config: StoreConfig,
     cwd: Path
   ): F[Vector[(String, Mods[F], ImageStore[F])]] =
     config.repos.toVector.traverse { case (_, repo) =>
-      filesystem(repo, cwd) >>= { case (fs, arch) =>
-        implicit val filesystem: Filesystem[F] = fs
-        implicit val archiving: Archiving[F] = arch
-
+      filesystem(repo, cwd) >>= { implicit fs =>
         (mods, images(config.files.isImage)).mapN { (m, i) =>
           (repo.title, m, i)
         }

@@ -1,26 +1,25 @@
 package mco.stubs
 
 import cats._
+import cats.effect.Sync
 import cats.syntax.all._
-
-import mco.core.Capture
 import mco.core.paths.Path
 import mco.core.vars.Var
-import mco.io.{Archiving, Filesystem}
-import mco.io.impls.InMemoryArchiving
+import mco.io.Filesystem
 import mco.stubs.cells._
 import mco.util.syntax.??
+import net.sf.sevenzipjbinding.util.ByteArrayStream
+import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 
 import java.net.URL
+import java.nio.ByteBuffer
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.Base64
 
 
-class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
+class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Cell])
   extends Filesystem[F]
 {
-
-  override def archiving: Archiving[F] = new InMemoryArchiving[F]()(this, ??, ??)
 
   private def complainAbout(path: Path) = sys.error(s"Assertion failure at $path")
 
@@ -48,13 +47,13 @@ class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
       case _ => complainAbout(path)
     }
 
-  override def getBytes(path: Path): F[Array[Byte]] =
+  private def getBytes(path: Path): F[Array[Byte]] =
     deepGet(path) map {
       case Some(File(arr)) => arr
       case _ => complainAbout(path)
     }
 
-  override def setBytes(path: Path, cnt: Array[Byte]): F[Unit] =
+  private def setBytes(path: Path, cnt: Array[Byte]): F[Unit] =
     notFolder(path) *>
       deepSet(path)(File(cnt).some)
 
@@ -79,19 +78,34 @@ class VarFilesystem[F[_]: Monad: Capture] (rootVar: Var[F, Cell])
   override def stat(path: Path): F[Option[BasicFileAttributes]] =
     deepGet(path) map { _.map(StubAttributes(path, _)) }
 
-  override protected[mco] def hashFile(p: Path): F[(Long, Long)] = for {
-    file <- deepGet(p)
-    Some(File(bs)) = file
-  } yield (bs.length.toLong, bs.map(_.toLong).sum)
-
   val stdTmpDir = Path("/tmp/$buffer")
 
-  override def runTmp[A](f: Path => F[A]): F[A] =
-    for {
-      _ <- ensureDir(stdTmpDir)
-      a <- f(stdTmpDir)
-      _ <- rmTree(stdTmpDir)
-    } yield a
+  override def readFile(path: Path): fs2.Stream[F, ByteBuffer] =
+    fs2.Stream.eval(getBytes(path).map(ByteBuffer.wrap(_)))
+
+  override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = {
+    val arr = Array.ofDim[Byte](bb.remaining())
+    bb.get(arr)
+    setBytes(path, arr)
+  }
+
+  override def mkTemp: fs2.Stream[F, Path] =
+    fs2.Stream.bracket(ensureDir(stdTmpDir))(
+      _ => fs2.Stream(stdTmpDir).covary,
+      _ => rmTree(stdTmpDir)
+    )
+
+  override def getSfStream(path: Path): fs2.Stream[F, IInStream with IOutStream] = {
+    val acquire = notFolder(path).followedBy(deepGet(path)).map {
+      case Some(File(bytes)) => new ByteArrayStream(bytes, false)
+      case _ => new ByteArrayStream(Int.MaxValue)
+    }
+
+    fs2.Stream.bracket(acquire)(
+      r => fs2.Stream(r).covary,
+      bas => deepSet(path)(File(bas.getBytes).some)
+    ).map(x => x: IInStream with IOutStream)
+  }
 
   override def fileToUrl(p: Path) = for {
     file <- deepGet(p)

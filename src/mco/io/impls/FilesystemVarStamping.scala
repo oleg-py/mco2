@@ -1,15 +1,15 @@
 package mco.io.impls
 
 import cats._
+import cats.effect.Sync
 import cats.syntax.all._
-
 import mco.core.paths._
 import mco.core.vars.Var
-import mco.io.{FileStamping, Filesystem}
+import mco.io.{FileHash, FileStamping, Filesystem}
 import mco.io.impls.FilesystemVarStamping.FileStamp
 
-class FilesystemVarStamping[F[_]: Filesystem: Monad](
-  data: Var[F, Map[InnerPath, FileStamp]]
+class FilesystemVarStamping[F[_]: Filesystem: Sync](
+  data: Var[F, Map[InnerPath, FileStamp]],
 )
   extends FileStamping[F]
 {
@@ -19,9 +19,8 @@ class FilesystemVarStamping[F[_]: Filesystem: Monad](
     val existing = getStamp(file)
 
     val isStale = (expected, current).mapN {
-      case (None, _) => false
       case (Some(st), Some((size, time))) => st.size != size || st.time != time
-      case (Some(_), None) => true
+      case _ => true
     }
 
     def compare = (expected, existing).mapN(_ == _)
@@ -46,7 +45,7 @@ class FilesystemVarStamping[F[_]: Filesystem: Monad](
   private def getStamp(file: Path): F[Option[FileStamp]] =
     for {
       statOpt <- noHashStamp(file)
-      hash    <- Filesystem.hashAt(file)
+      hash    <- new FileHash(file).computed
     } yield statOpt.map { case (size, time) =>
       FileStamp(size, time, hash._1, hash._2)
     }

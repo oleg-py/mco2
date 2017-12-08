@@ -5,23 +5,20 @@ import cats.syntax.applicative._
 
 import mco.core._
 import mco.core.paths._
-import mco.io.{InTemp, Filesystem}
+import mco.io.Filesystem
 
 
 final class FileMod[F[_]: Filesystem: Applicative](
   override val backingFile: Path
 ) extends Mod[F]
 {
-  def list: F[Vector[RelPath]] =
-    Vector(rel"${backingFile.name}").pure[F]
+  private val contentPath = rel"${backingFile.name}"
 
-  def provide(content: Vector[RelPath]) = InTemp {
-    val result =
-      if (content contains rel"${backingFile.name}") {
-        Map(rel"${backingFile.name}" -> backingFile)
-      } else {
-        Map.empty[RelPath, Path]
-      }
-    result.pure[F]
+  def list: F[Vector[RelPath]] =
+    Vector(contentPath).pure[F]
+
+  override def provide(content: Vector[RelPath]): fs2.Stream[F, Pointed[Path]] = {
+    val seq = content.filter(_ == contentPath).map(Pointed(_, backingFile))
+    fs2.Stream.emits(seq).covary
   }
 }

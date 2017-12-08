@@ -1,37 +1,40 @@
 package mco.game.generic.store
 
-import cats.Id
-
 import mco.Tests
-import mco.core.Capture.yolo._
 import mco.core.paths._
-import mco.io.impls.InMemoryArchiving
 import mco.stubs.cells._
+import monix.eval.Coeval
 
 class SimpleModTypesTest extends Tests.Sync {
   behavior of "SimpleModTypes"
 
   implicit val fs = immutableFs(
     seg"folder" -> dir(),
-    seg"file" -> file()
+    seg"file" -> file(),
+    seg"archive.7z" -> file()
   )
-  implicit val archiving = new InMemoryArchiving[Id]
 
-  val simpleModTypes = new SimpleModTypes[Id]
+  val simpleModTypes = new SimpleModTypes[Coeval]
 
   it should "create mod for file" in {
-    simpleModTypes(Path("file")) should matchPattern {
+    simpleModTypes(Path("file")).value should matchPattern {
       case Some(_) =>
     }
   }
 
   it should "create mod for folder" in {
-    simpleModTypes(Path("folder")) should matchPattern {
+    simpleModTypes(Path("folder")).value should matchPattern {
+      case Some(_) =>
+    }
+  }
+
+  it should "create mod for archive" in {
+    simpleModTypes(Path("archive.7z")).value should matchPattern {
       case Some(_) =>
     }
   }
 
   it should "not create a mod for invalid name" in {
-    simpleModTypes(Path("non-existing")) shouldBe None
+    simpleModTypes(Path("non-existing")).value shouldBe None
   }
 }

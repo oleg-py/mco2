@@ -2,11 +2,12 @@ package mco.io
 
 import cats._
 import cats.implicits._
-
 import com.olegpy.forwarders
 import mco.core.paths.Path
+import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 
 import java.net.URL
+import java.nio.ByteBuffer
 import java.nio.file.attribute.BasicFileAttributes
 
 
@@ -17,8 +18,8 @@ import java.nio.file.attribute.BasicFileAttributes
  */
 @forwarders trait Filesystem[F[_]] {
   // --- Contents/creation of the file ---
-  def getBytes(path: Path): F[Array[Byte]]
-  def setBytes(path: Path, cnt: Array[Byte]): F[Unit]
+  def readFile(path: Path): fs2.Stream[F, ByteBuffer]
+  def writeFile(path: Path, bb: ByteBuffer): F[Unit]
 
   // --- Contents/creation of the dir ---
   def childrenOf(path: Path): F[Stream[Path]]
@@ -32,18 +33,11 @@ import java.nio.file.attribute.BasicFileAttributes
   def stat(path: Path): F[Option[BasicFileAttributes]]
 
   // --- Special operations for concrete use cases ---
-  def archiving: Archiving[F]
-  def runTmp[A](f: Path => F[A]): F[A]
   def fileToUrl(p: Path): F[URL]
-  protected[mco] def hashFile(p: Path): F[(Long, Long)]
+  def mkTemp: fs2.Stream[F, Path]
+  def getSfStream(path: Path): fs2.Stream[F, IInStream with IOutStream]
 
   // --- Derived operations ---
-  final def hashAt(p: Path)(implicit M: Monad[F]): F[(Long, Long)] = {
-    def dirHash = childrenOf(p) >>= { stream => stream foldMapM hashAt }
-    def getHash = isDirectory(p).ifM(dirHash, hashFile(p))
-    exists(p).ifM(getHash, (0L, 0L).pure[F])
-  }
-
   final def exists(path: Path)(implicit F: Functor[F]): F[Boolean] =
     stat(path).map(_.isDefined)
 

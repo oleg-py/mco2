@@ -1,20 +1,20 @@
 package mco.game.generic.store
 
 import cats._
+import cats.effect.Sync
 import cats.instances.vector._
 import cats.syntax.all._
 import mouse.boolean._
-
 import mco.core.paths.{Path, Pointed, RelPath}
 import mco.core.state._
 import mco.core.vars.Var
 import mco.core.{Mod, NameResolver}
 import mco.core.paths._
-import mco.io.{FileStamping, Filesystem, InTemp}
+import mco.io.{FileStamping, Filesystem}
 import mco.util.syntax.any._
 
 
-class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
+class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
   repoState: Var[F, RepoState],
   mods: Map[RelPath, Mod[F]],
   resolver: NameResolver,
@@ -66,7 +66,8 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
         path    =  resolve(key)
         inner   <- innerPathF
         conflict=  rState.hasConflicts(path, modFocus)
-        noNeed  <- FileStamping.likelySame(inner, from, path) // when from is empty, noop
+        noNeed  <- if (copy) FileStamping.likelySame(inner, from, path)
+                   else false.pure[F]
         _       <- currentContent ~= ContentState.target.set(copy.option(path))
         _       <- currentContent ~= ContentState.stamp.modify(Stamp.installed.set(copy))
         _       <- if (conflict || noNeed) unit.pure[F]
@@ -75,21 +76,19 @@ class InstallFocus[F[_]: Monad: Filesystem: FileStamping](
       } yield ()
   }
 
-  private def copyOrRemoveFiles(copy: Boolean)(op: InTemp[F, Vector[Pointed[Path]]]) =
-    op
-      .andThen(_.traverse_ { p => new ContentOp(p.key, p.get).run(copy) })
-      .runFS
+  private def copyOrRemoveFiles(copy: Boolean)(op: fs2.Stream[F, Pointed[Path]]) =
+    op.evalMap(p => new ContentOp(p.key, p.get).run(copy)).runSync
 
   private def copyFiles = copyOrRemoveFiles(copy = true) _
   private def removeFiles(p: Vector[RelPath]) =
-    copyOrRemoveFiles(copy = false)(InTemp(p.map(Pointed(_, path"")).pure[F]))
+    copyOrRemoveFiles(copy = false)(fs2.Stream.emits(p.map(Pointed(_, path""))).covary)
 
   private def runOp(copy: Boolean)(only: Set[RelPath]): F[Unit] =
     for {
       mod       <- currentMod
       list      <- mod.list
       filtered  =  list.filter(only.contains)
-      _         <- if (copy) copyFiles(mod.provideVec(filtered))
+      _         <- if (copy) copyFiles(mod.provide(filtered))
                    else removeFiles(filtered)
       func      =  if (copy) overridesOf
                    else underridesOf

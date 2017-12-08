@@ -3,7 +3,6 @@ package mco.ui
 import better.files._
 import monix.eval.{Coeval, Task, TaskApp}
 import mco.core.{Capture, ModStore}
-import Capture.coeval._
 import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
@@ -20,7 +19,7 @@ import pureconfig.loadConfig
 object Runner extends TaskApp {
   def readCwd = Coeval { Path(File(".").pathAsString) }
 
-  def initAddons = Coeval.sequence(Seq(macOSIcon, base64url))
+  def initAddons = Coeval.sequence(Seq(macOSIcon[Coeval], base64url[Coeval]))
 
   def readConfig = Coeval {
     loadConfig[StoreConfig].fold(
@@ -34,7 +33,7 @@ object Runner extends TaskApp {
       _ <- initAddons
       config <- readConfig
       cwd <- readCwd
-      algebras <- implementation.algebras(config, cwd)
+      algebras <- implementation.algebras[Coeval](config, cwd)
       repoMap = new ModStore.ByVar[Coeval](algebras, new MutableVar(0))
       states <- repoMap.states
       uiState = UiState.initial(repoMap.labels zip states, config.files.isImageS)

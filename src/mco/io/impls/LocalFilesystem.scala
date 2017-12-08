@@ -1,28 +1,72 @@
 package mco.io.impls
 
 import scala.util.Try
+
 import cats._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
-
 import better.files._
+import cats.effect.Sync
 import com.sun.javafx.PlatformUtil
 import mco.core.Capture
 import mco.core.paths.Path
-import mco.io.{Archiving, Filesystem}
+import mco.io.Filesystem
 import mco.util.syntax.any._
 import net.openhft.hashing.LongHashFunction
+import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
+import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 
-import java.io.IOException
+import java.io.{IOException, RandomAccessFile}
+import java.nio.ByteBuffer
 import java.nio.file.FileAlreadyExistsException
 
-class LocalFilesystem[F[_]: Capture: FlatMap] extends Filesystem[F] {
-  override val archiving: Archiving[F] = new LocalArchiving[F]
-
+class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
   private def noWinRoot(path: Path): Unit = {
     if (PlatformUtil.isWindows && path == Path.root) {
       throw new IOException("Unsupported operation at (virtual) root path")
     }
+  }
+
+  override def readFile(path: Path): fs2.Stream[F, ByteBuffer] = {
+    val acquire = Capture { File(path.toString).newFileChannel }
+    fs2.Stream.bracket(acquire)(
+      ch => fs2.Stream.eval(Capture { ch.toMappedByteBuffer }),
+      ch => Capture { ch.close() }
+    )
+  }
+
+  override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = Capture {
+    for (ch <- File(path.toString).fileChannel) {
+      ch.write(bb)
+    }
+  }
+
+  override def mkTemp: fs2.Stream[F, Path] = {
+    val mkTemp = Sync[F].delay(File.newTemporaryDirectory("mco-lfs-"))
+    fs2.Stream.bracket(mkTemp)(
+      file => fs2.Stream(Path(file.pathAsString)).covary,
+      file => Sync[F].delay { file.delete(); () }
+    )
+  }
+
+  override def getSfStream(path: Path): fs2.Stream[F, IInStream with IOutStream] = {
+    class BiRAFStream(raf: RandomAccessFile)
+      extends RandomAccessFileOutStream(raf)
+      with IInStream {
+      override def read(data: Array[Byte]): Int = {
+        val read = raf.read(data)
+        if (read == -1) 0 else read
+      }
+    }
+
+    val acquire = Capture {
+      File(path.toString).newRandomAccess(File.RandomAccessMode.readWrite)
+    }
+
+    fs2.Stream.bracket(acquire)(
+      raf => fs2.Stream(new BiRAFStream(raf)).covary,
+      raf => Capture { raf.close() }
+    )
   }
 
   final def childrenOf(path: Path) = Capture {
@@ -33,17 +77,6 @@ class LocalFilesystem[F[_]: Capture: FlatMap] extends Filesystem[F] {
     src
       .map(f => Path(f.pathAsString))
       .toStream
-  }
-
-  final def getBytes(path: Path) = Capture {
-    File(path.toString).byteArray
-  }
-
-  final def setBytes(path: Path, cnt: Array[Byte]) = Capture {
-    File(path.toString)
-      .createIfNotExists(createParents = true)
-      .writeByteArray(cnt)
-    ()
   }
 
   final def mkDir(path: Path) = Capture {
@@ -92,23 +125,6 @@ class LocalFilesystem[F[_]: Capture: FlatMap] extends Filesystem[F] {
   final def stat(path: Path) = Capture {
     noWinRoot(path)
     Try(File(path.toString).attributes).toOption
-  }
-
-  final def runTmp[A](f: Path => F[A]) = Capture {
-    val tmpDir = File.newTemporaryDirectory("mco-")
-    f(Path(tmpDir.pathAsString)) <* Capture {
-      tmpDir.delete(swallowIOExceptions = true)
-    }
-  }.flatten
-
-  final protected[mco] def hashFile(p: Path) = Capture {
-    val file = File(p.toString)
-    for (ch <- file.fileChannel) yield {
-      val mm = ch.toMappedByteBuffer
-      val hi = LongHashFunction.xx(0L).hashBytes(mm)
-      val lo = LongHashFunction.farmNa(0L).hashBytes(mm)
-      (hi, lo)
-    }
   }
 
   final def fileToUrl(p: Path) = Capture {

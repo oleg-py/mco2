@@ -1,13 +1,13 @@
 package mco.core.vars
 
 import cats.FlatMap
-
+import cats.effect.Sync
 import mco.core.Capture
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 import monix.execution.atomic.PaddingStrategy.NoPadding
 
 
-class MutableVar[F[_]: Capture, A](initial: A)(implicit
+class MutableVar[F[_]: Sync, A](initial: A)(implicit
   b: AtomicBuilder[A, _ <: Atomic[A]]
 )
   extends Var[F, A]

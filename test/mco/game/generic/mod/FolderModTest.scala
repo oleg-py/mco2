@@ -1,10 +1,10 @@
 package mco.game.generic.mod
 
 import cats.Id
-
 import mco.Tests
 import mco.core.paths._
 import mco.stubs.cells._
+import monix.eval.Coeval
 
 
 class FolderModTest extends Tests.Sync {
@@ -21,14 +21,10 @@ class FolderModTest extends Tests.Sync {
     )
   )
 
-  val fm = new FolderMod[Id](path"mods/folderMod")
-
-  "FolderMod#label" should "use folder name as label" in {
-    fm.label shouldBe "folderMod"
-  }
+  val fm = new FolderMod[Coeval](path"mods/folderMod")
 
   "FolderMod#list" should "list all nested subfiles and subfolders" in {
-    (fm.list: Vector[RelPath]) should contain theSameElementsAs Vector(
+    fm.list.value should contain only (
       rel"innerFile",
       rel"nonEmptySubdir/nestedFile",
       rel"nonEmptySubdir/nestedFile2"
@@ -36,17 +32,17 @@ class FolderModTest extends Tests.Sync {
   }
 
   "FolderMod#provide" should "provide all requested children" in {
-    val func = fm.provide(_: Vector[RelPath]).runFS
+    val func = fm.provide(_: Vector[RelPath]).runLogSync.value
 
-    func(Vector()) shouldBe Map()
+    func(Vector()) shouldBe empty
+
     val nested2 = "nonEmptySubdir/nestedFile2"
-    func(Vector(rel"$nested2", rel"nonExisting")) shouldBe Map(
-      rel"$nested2" -> path"mods/folderMod/$nested2"
-    )
+
+    func(Vector(rel"$nested2", rel"nonExisting")) should contain only
+      Pointed(rel"$nested2", path"mods/folderMod/$nested2")
 
     val oks = Vector("innerFile", "emptySubdir", "nonEmptySubdir")
-    func(oks.map(s => rel"$s")) shouldBe Map(
-      rel"innerFile" -> path"mods/folderMod/innerFile"
-    )
+    func(oks.map(s => rel"$s")) should contain only
+      Pointed(rel"innerFile", path"mods/folderMod/innerFile")
   }
 }
