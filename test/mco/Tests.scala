@@ -1,8 +1,10 @@
 package mco
 
+import better.files._
 import mco.core.paths._
 import mco.stubs.{ConstantVar, VarFilesystem}
-import mco.stubs.cells._
+import mco.stubs.cells.{Cell, dir}
+import mco.util.syntax.any._
 import monix.eval.Coeval
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.{arbitrary => arb}
@@ -61,6 +63,24 @@ object Tests {
 
     implicit class BetterFileToMcoPath(f: File) {
       def asPath = Path(f.pathAsString)
+    }
+  }
+
+  trait TempDirsFixture { this: SpecFixture =>
+    case class Dirs(src: Path, target: Path)
+    override type FixtureParam = Dirs
+    override def withFixture(test: OneArgTest): Outcome = {
+      for (from <- File.temporaryDirectory("mco-io-from")) yield {
+        getClass
+          .getResource("/mco/io/algebras/fixture")
+          .toURI
+          .pipe(File(_))
+          .copyTo(from, overwrite = true)
+
+        for (to <- File.temporaryDirectory("mco-io-to")) yield {
+          withFixture(test.toNoArgTest(Dirs(from.asPath, to.asPath)))
+        }
+      }
     }
   }
 }

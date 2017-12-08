@@ -1,18 +1,13 @@
 package mco.io.impls
 
-import scala.util.Random
-
-import cats._
-import better.files.File
 import mco.Tests
 import mco.core.paths._
 import mco.io.Filesystem
 import Filesystem._
-import mco.util.syntax.any._
 import monix.eval.Coeval
 
 
-class LocalFilesystemTest extends Tests.SpecFixture {
+class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
   implicit val fs: Filesystem[Coeval] = new LocalFilesystem[Coeval]
 
   // --------------------------------------------------------------------------
@@ -354,28 +349,6 @@ class LocalFilesystemTest extends Tests.SpecFixture {
 
 /*  // --------------------------------------------------------------------------
 
-  behavior of "LocalFilesystem#hashAt on a file"
-
-  it should "hash it contents" in { dirs =>
-    hashAt(dirs.src / rel"test_folder/file1") shouldEqual helloHash
-  }
-
-  it should "hash independently of file location" in { dirs =>
-    val target = dirs.src / seg"test_file"
-    target.asFile.write("Hello")
-    hashAt(target) shouldEqual helloHash
-  }
-
-  // --------------------------------------------------------------------------
-
-  behavior of "LocalFilesystem#hashAt on a directory"
-
-  it should "generate meaningful hash" in { dirs =>
-    hashAt(dirs.src) shouldEqual testDirHash
-  }
-
-  // --------------------------------------------------------------------------
-
   behavior of "LocalFilesystem#runTmp on a directory"
 
   it should "provide the dir until nested op finish" in { _ =>
@@ -387,24 +360,4 @@ class LocalFilesystemTest extends Tests.SpecFixture {
 
   // --------------------------------------------------------------------------
 
-  val helloHash   = ( 753694413698530628L, 1860348619331993311L)
-  val testDirHash = (3969179940749501790L, 1702180032275553555L)
-
-  // --------------------------------------------------------------------------
-
-  case class Dirs(src: Path, target: Path)
-  override type FixtureParam = Dirs
-  override def withFixture(test: OneArgTest) = {
-    for (from <- File.temporaryDirectory("mco-io-from")) yield {
-      getClass
-        .getResource("/mco/io/algebras/fixture")
-        .toURI
-        .pipe(File(_))
-        .copyTo(from, overwrite = true)
-
-      for (to <- File.temporaryDirectory("mco-io-to")) yield {
-        withFixture(test.toNoArgTest(Dirs(from.asPath, to.asPath)))
-      }
-    }
-  }
 }
