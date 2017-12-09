@@ -1,6 +1,7 @@
 package mco.io.impls
 
 import cats._
+import cats.instances.option._
 import cats.effect.Sync
 import cats.syntax.all._
 import mco.core.paths._
@@ -43,14 +44,14 @@ class FilesystemVarStamping[F[_]: Filesystem: Sync](
     )
 
   private def getStamp(file: Path): F[Option[FileStamp]] =
-    for {
-      statOpt <- noHashStamp(file)
-      hash    <- new FileHash(file).computed
-    } yield statOpt.map { case (size, time) =>
-      FileStamp(size, time, hash._1, hash._2)
-    }
+    noHashStamp(file) >>= (_.traverse { case (size, time) =>
+      new FileHash(file).computed.map { case (hi, lo) =>
+        FileStamp(size, time, hi, lo)
+      }
+    })
 }
 
 object FilesystemVarStamping {
-  private case class FileStamp(size: Long, time: Long, hashHi: Long, hashLo: Long)
+  def defaultState = Map.empty[InnerPath, FileStamp]
+  case class FileStamp(size: Long, time: Long, hashHi: Long, hashLo: Long)
 }

@@ -22,11 +22,9 @@ class SimpleModTypes[F[_]: Filesystem: Sync] {
             else                None
 
 
-  def allIn(path: Path): F[Vector[(Path, Mod[F])]] =
+  def allIn(path: Path): F[Vector[Mod[F]]] =
     for {
       children <- childrenOf(path)
       mods <- children.traverse(apply)
-    } yield (children zip mods)
-      .collect { case (p, Some(mod)) => p -> mod }
-      .toVector
+    } yield mods.flatten.toVector
 }

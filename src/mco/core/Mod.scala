@@ -9,4 +9,7 @@ trait Mod[F[_]] {
 
   def list: F[Vector[RelPath]]
   def provide(content: Vector[RelPath]): fs2.Stream[F, Pointed[Path]]
+
+  final def provideAll: fs2.Stream[F, Pointed[Path]] =
+    fs2.Stream.eval(list).flatMap(provide)
 }

@@ -10,7 +10,7 @@ import mco.io.{FileStamping, Filesystem}
 import Filesystem._
 import cats.data.OptionT
 import cats.effect.Sync
-import mco.io.state.initMod
+import mouse.boolean._
 import mco.util.syntax.any._
 import monocle.function.Index.index
 
@@ -19,8 +19,9 @@ import monocle.function.Index.index
 class LocalMods[F[_]: Sync: Filesystem: FileStamping](
   contentRoot: Path,
   repoState: Var[F, RepoState],
-  mods: Var[F, Map[RelPath, (Path, Mod[F])]],
+  modsState: Var[F, Map[RelPath, Mod[F]]],
   tryAsMod: Path => F[Option[Mod[F]]],
+  computeState: Mod[F] => F[ModState],
   resolver: NameResolver
 ) extends Mods[F] {
   override def state: F[RepoState] = repoState()
@@ -30,55 +31,54 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
     for {
       rState <- state
       (i, Pointed(_, modState)) = rState.at(key)
-      _ <- if (modState.stamp.enabled) uninstall(i, modState) else noop
+      _ <- if (modState.stamp.enabled) change(i, modState, _.remove) else noop
       modState2 <- state.map(_.at(key)._2.get)
       updated = diff.patch(modState2)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
           Pointed(key, updated))
-      _ <- if (updated.stamp.enabled) install(i, modState) else noop
+      _ <- if (updated.stamp.enabled) change(i, modState, _.install) else noop
     } yield ()
   }
 
-  def modMap = mods().map(_.mapValues(_._2))
-
-  def install(i: Int, modState: ModState) = {
-    val content = modState.contents.keySet
-    modMap.flatMap {
-      new InstallFocus[F](repoState, _, resolver, i).install(content)
-    }
-  }
-
-  def uninstall(i: Int, modState: ModState) = {
-    val content = modState.contents.keySet
-    modMap.flatMap {
-      new InstallFocus[F](repoState, _, resolver, i).remove(content)
-    }
-  }
+  private def change(
+    i: Int,
+    modState: ModState,
+    f: InstallFocus[F] => Set[RelPath] => F[Unit]) =
+    for {
+      mods     <- modsState()
+      contents =  modState.contents.keySet
+      focus    =  new InstallFocus(repoState, mods, resolver, i)
+      _        <- f(focus)(contents)
+    } yield ()
 
   override def remove(key: RelPath): F[Unit] = for {
-    _ <- update(key, Deltas.OfMod(enabled = Some(false)))
-    _ <- repoState ~= (_.remove(key))
-    path <- mods().map(dict => dict(key)._1)
-    _ <- rmTree(path)
-    _ <- mods ~= (_ - key)
+    _    <- update(key, Deltas.OfMod(enabled = Some(false)))
+    _    <- repoState ~= (_.remove(key))
+    path <- modsState().map(dict => dict(key).backingFile)
+    _    <- rmTree(path)
+    _    <- modsState ~= (_ - key)
   } yield ()
 
   override def liftFile(p: Path): F[Option[ModState]] = {
-    val result = for {
-      _ <- OptionT(tryAsMod(p))
-      target = contentRoot / p.name
-      _ <- OptionT(exists(target).ifM(none[Unit].pure[F], unit.some.pure[F]))
-      _ <- OptionT.liftF(copy(p, target))
-      mod <- OptionT(tryAsMod(target))
-      state <- OptionT.liftF(initMod(mod))
-      key = RelPath(p.name.toString)
-      keyed = Pointed(key, state)
-      _ <- OptionT.liftF(repoState ~= { _ add (keyed, mod.label) })
-      _ <- OptionT.liftF(mods ~= { _ updated (key, (target, mod))})
-    } yield state
+    val target = contentRoot / p.name
+    def tryLift(p: Path) = OptionT(tryAsMod(p))
+    def notAlreadyExists(p: Path) = OptionT(exists(p).map(a => (!a).option(unit)))
+    def registerMod(mod: Mod[F]) =
+      for {
+        state <- computeState(mod)
+        key   =  rel"${p.name}"
+        keyed =  Pointed(key, state)
+        _     <- repoState ~= { _ add (keyed, mod.label) }
+        _     <- modsState ~= { _ updated (key, mod) }
+      } yield state
 
-    result.value
+    tryLift(p)
+      .followedBy(notAlreadyExists(target))
+      .semiflatMap(_ => copy(p, target))
+      .followedBy(tryLift(target))
+      .semiflatMap(registerMod)
+      .value
   }
 }

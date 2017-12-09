@@ -30,7 +30,7 @@ class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
   )
 
   private def getResolveFn: F[RelPath => Path] =
-    for (mod <- currentModState()) yield resolver(mod, _: RelPath)
+    for (mod <- currentModState()) yield resolver(mod.key, _: RelPath)
 
   private def getConflicts[A](f: (RepoState, Path, Int) => Option[A])(
     list: Vector[RelPath]

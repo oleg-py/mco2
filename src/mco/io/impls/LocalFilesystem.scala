@@ -1,10 +1,8 @@
 package mco.io.impls
 
+import scala.language.reflectiveCalls
 import scala.util.Try
 
-import cats._
-import cats.syntax.apply._
-import cats.syntax.flatMap._
 import better.files._
 import cats.effect.Sync
 import com.sun.javafx.PlatformUtil
@@ -12,13 +10,12 @@ import mco.core.Capture
 import mco.core.paths.Path
 import mco.io.Filesystem
 import mco.util.syntax.any._
-import net.openhft.hashing.LongHashFunction
 import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 
 import java.io.{IOException, RandomAccessFile}
 import java.nio.ByteBuffer
-import java.nio.file.FileAlreadyExistsException
+import java.nio.file.{FileAlreadyExistsException, StandardOpenOption}
 
 class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
   private def noWinRoot(path: Path): Unit = {
@@ -27,16 +24,28 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
     }
   }
 
+  private def unmap(bb: ByteBuffer) =
+    Try {
+      val cleanable = bb.asInstanceOf[{ def cleaner(): AnyRef }]
+      val cleaner = cleanable.cleaner().asInstanceOf[{ def clean(): Unit }]
+      cleaner.clean()
+    }
+
   override def readFile(path: Path): fs2.Stream[F, ByteBuffer] = {
     val acquire = Capture { File(path.toString).newFileChannel }
     fs2.Stream.bracket(acquire)(
-      ch => fs2.Stream.eval(Capture { ch.toMappedByteBuffer }),
+      ch => fs2.Stream.bracket(Capture { ch.toMappedByteBuffer })(
+        buffer => fs2.Stream(buffer).covary,
+        buffer => Capture { unmap(buffer); () }
+      ),
       ch => Capture { ch.close() }
     )
   }
 
   override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = Capture {
-    for (ch <- File(path.toString).fileChannel) {
+    for (ch <- File(path.toString).fileChannel(
+      Seq(StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+    )) {
       ch.write(bb)
     }
   }

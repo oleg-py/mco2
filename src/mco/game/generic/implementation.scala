@@ -4,23 +4,23 @@ import cats._
 import cats.implicits._
 import mco.core._
 import mco.core.paths._
-import mco.core.state.RepoState
+import mco.core.state.{ModState, RepoState}
 import mco.core.vars._
-import mco.game.generic.store.{LocalImageStore, LocalMods, SimpleModTypes}
+import mco.game.generic.store._
 import mco.io.impls._
-import mco.io.state.initMod
-import mco.io.Filesystem
+import mco.io.{FileStamping, Filesystem}
 import Filesystem._
 import cats.effect.Sync
 import mco.stubs.cells._
 import mco.stubs.{LoggingFilesystem, VarFilesystem}
 import mco.util.syntax.??
+import monix.execution.atomic.{Atomic, AtomicBuilder}
 
 
 //noinspection ConvertibleToMethodValue
 object implementation {
+  private val (target, source) = (path"-target", path"-source")
   private val toKey = (p: Path) => RelPath(p.name.toString)
-  type MThrow[F[_]] = MonadError[F, Throwable]
 
   private def filesystem[F[_]: Sync](
     config: StoreConfig.Repo,
@@ -31,11 +31,9 @@ object implementation {
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
         val file = rel"${subpath.drop("varfs!".length)}"
-        val backend = CacheVar(dir().pure[F])(
-          new JavaSerializableVar(cwd / file)(??, localFS),
-          new MutableVar(_).pure[F].widen
-        ).map(new VarFilesystem(_): Filesystem[F])
-        backend.tupleLeft(Path.root)
+        miniDB(file, dir(), cwd)(Sync[F], localFS, ??)
+          .map(new VarFilesystem(_): Filesystem[F])
+          .tupleLeft(Path.root)
       } else {
         val target = path"$cwd/$subpath"
         localFS.ensureDir(target).as((target, localFS))
@@ -43,12 +41,12 @@ object implementation {
 
     config.paths
       .traverse(determineFS)
-      .map { case Vector(source, images, target) =>
+      .map { case Vector(sourceDir, imagesDir, targetDir) =>
         new LoggingFilesystem(new VirtualRootsFilesystem[F](
           Map(
-            (seg"-source", source),
-            (seg"-target", target),
-            (seg"-images", images),
+            (seg"-source", sourceDir),
+            (seg"-target", targetDir),
+            (seg"-images", imagesDir),
             (seg"-os", (Path.root, localFS))
           ),
           seg"-os",
@@ -61,33 +59,54 @@ object implementation {
   private def images[F[_]: Filesystem: Sync](
     isImage: Segment => Boolean
   ): F[ImageStore[F]] = {
-    CacheVar(Map.empty[RelPath, RelPath].pure[F])(
-      new JavaSerializableVar(path"-target/.imgdb"),
-      new MutableVar(_).pure[F].widen
-    )
+    miniDB(rel".imgdb", Map.empty[RelPath, RelPath])
       .map(new LocalImageStore(path"-images", _, isImage))
       .widen
   }
 
-  private def mods[F[_]: Filesystem: Sync]: F[Mods[F]] = {
+  private def miniDB[F[_]: Sync: Filesystem, A](
+    file: RelPath,
+    initial: A,
+    prefix: Path = target
+  )(implicit
+    b: AtomicBuilder[A, _ <: Atomic[A]]
+  ): F[Var[F, A]] =
+    CacheVar(initial.pure[F])(
+      new JavaSerializableVar(prefix / file),
+      new MutableVar(_).pure[F].widen
+    )
+
+  private def getStates[F[_]: Sync: Filesystem: FileStamping](
+    resolver: NameResolver,
+    mods: Vector[Mod[F]]
+  ): F[(Var[F, RepoState], ModStates[F])] = {
     for {
-      _ <- ensureDir(path"-target")
-      typer = new SimpleModTypes
-      mods <- typer.allIn(path"-source")
-      orderedMods <- mods.traverse { case (path, mod) =>
-        initMod[F](mod).map(Pointed(toKey(path), _))
+      repoStateDb <- miniDB(rel".state", RepoState())
+      lastSaved   <- repoStateDb()
+      states      =  new ModStates[F](target, resolver, lastSaved.orderedMods)
+      nextState   <- states.computeAll(mods)
+      _           <- repoStateDb := nextState
+    } yield (repoStateDb, states)
+  }
+
+  private def mods[F[_]: Filesystem: Sync]: F[Mods[F]] = {
+    val resolver = NameResolver.overrides(target)
+    val typer    = new SimpleModTypes[F]
+    miniDB(rel".stamp", FilesystemVarStamping.defaultState)
+      .map(new FilesystemVarStamping[F](_))
+      .flatMap { implicit stamping =>
+        for {
+          existing <- typer.allIn(source)
+          statesR  <- getStates(resolver, existing)
+
+          (repoState, modStates) = statesR
+          modsMap = existing.map { m => (m.backingFile.relTo(target), m)}.toMap
+
+        } yield new LocalMods(
+          source, repoState, new MutableVar(modsMap), typer.apply,
+          modStates.computeState, resolver
+        )
       }
-      modMap = mods.map { case t @ (path, _) => toKey(path) -> t }.toMap
-      labels = modMap.map { case (key, (_, mod)) => key -> mod.label }
-      repoVar = new MutableVar(RepoState(orderedMods, labels))
-      stamping = new FilesystemVarStamping[F](new MutableVar(Map()))
-    } yield new LocalMods(
-      path"-source",
-      repoVar,
-      new MutableVar(modMap),
-      typer(_),
-      NameResolver.overrides(path"-target")
-    )(??, ??, stamping)
   }.widen
 
   def algebras[F[_]: Sync](

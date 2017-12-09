@@ -39,5 +39,5 @@ import monocle.macros.Lenses
     copy(orderedMods :+ mod, labels.updated(mod.key, label))
 
   def remove(key: RelPath): RepoState =
-    copy(orderedMods = orderedMods.filter(_.key != key))
+    copy(orderedMods.filter(_.key != key), labels - key)
 }

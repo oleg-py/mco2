@@ -7,10 +7,10 @@ import mco.core.state.ModState
 
 
 trait NameResolver {
-  def apply(mod: Pointed[ModState], content: RelPath): Path
+  def apply(mod: RelPath, content: RelPath): Path
 
   final def bulk(
-    modInfo: Pointed[ModState]
+    modInfo: RelPath
   )(targets: Vector[Pointed[Path]]
   ): Vector[Pointed[(Path, Path)]] =
     targets map { case Pointed(key, from) =>
@@ -31,8 +31,8 @@ object NameResolver {
 //    path"$target/$id-${uuidName(hashes)}$ext"
 //  }
 
-  def subdirs(target: Path): NameResolver = (mod, content) =>
-    path"$target/${mod.key}/$content"
+  def subdirs(target: Path): NameResolver = (parent, content) =>
+    path"$target/$parent/$content"
 
   def overrides(target: Path): NameResolver = (_, content) =>
     path"$target/$content"
