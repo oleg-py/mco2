@@ -1,25 +1,22 @@
-package mco.ui
+package mco
 
-import better.files._
-import monix.eval.{Coeval, Task, TaskApp}
-import mco.core.{Capture, ModStore}
 import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
+import better.files._
+import mco.core.ModStore
 import mco.core.paths.Path
-import mco.core.vars.{MutableVar, PrintingVar}
+import mco.core.vars.MutableVar
 import mco.game.generic.{StoreConfig, implementation}
 import mco.ui.props.PropertyBasedVar
 import mco.ui.state.{Commands, UiState}
 import mco.ui.views.MainWindow
-import mco.util.misc.{base64url, macOSIcon}
+import monix.eval.{Coeval, Task, TaskApp}
 import pureconfig.loadConfig
 
 
 object Runner extends TaskApp {
   def readCwd = Coeval { Path(File(".").pathAsString) }
-
-  def initAddons = Coeval.sequence(Seq(macOSIcon[Coeval], base64url[Coeval]))
 
   def readConfig = Coeval {
     loadConfig[StoreConfig].fold(
@@ -30,7 +27,7 @@ object Runner extends TaskApp {
 
   override def run(args: Array[String]): Task[Unit] = Task.defer {
     val exec = for {
-      _ <- initAddons
+      _ <- JvmAddons.all[Coeval]
       config <- readConfig
       cwd <- readCwd
       algebras <- implementation.algebras[Coeval](config, cwd)

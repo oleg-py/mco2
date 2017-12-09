@@ -1,7 +1,7 @@
 package mco.core.state
 
 import mco.core.paths.RelPath
-import mco.util.syntax.map._
+import mco.syntax._
 import monocle.macros.syntax.lens._
 
 object Deltas {

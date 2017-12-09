@@ -11,7 +11,7 @@ import mco.core.vars.Var
 import mco.core.{Mod, NameResolver}
 import mco.core.paths._
 import mco.io.{FileStamping, Filesystem}
-import mco.util.syntax.any._
+import mco.syntax._
 
 
 class InstallFocus[F[_]: Sync: Filesystem: FileStamping](

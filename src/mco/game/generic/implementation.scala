@@ -13,7 +13,7 @@ import Filesystem._
 import cats.effect.Sync
 import mco.stubs.cells._
 import mco.stubs.{LoggingFilesystem, VarFilesystem}
-import mco.util.syntax.??
+import mco.syntax.??
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 
 

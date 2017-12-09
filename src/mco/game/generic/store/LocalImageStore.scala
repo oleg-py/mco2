@@ -8,8 +8,7 @@ import mco.core.ImageStore
 import mco.core.paths._
 import mco.core.vars.Var
 import mco.io.Filesystem, Filesystem._
-import mco.util.syntax.any._
-import mco.util.syntax.map._
+import mco.syntax._
 
 import java.net.URL
 

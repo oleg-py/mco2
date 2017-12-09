@@ -4,7 +4,7 @@ import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
 import mouse.all._
-import mco.util.syntax.map._
+import mco.syntax._
 
 sealed trait SegTree[+A] {
   import SegTree._

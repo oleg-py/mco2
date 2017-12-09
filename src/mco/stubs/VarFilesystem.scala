@@ -7,7 +7,7 @@ import mco.core.paths.Path
 import mco.core.vars.Var
 import mco.io.Filesystem
 import mco.stubs.cells._
-import mco.util.syntax.??
+import mco.syntax.??
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 

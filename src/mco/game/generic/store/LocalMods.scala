@@ -11,7 +11,7 @@ import Filesystem._
 import cats.data.OptionT
 import cats.effect.Sync
 import mouse.boolean._
-import mco.util.syntax.any._
+import mco.syntax._
 import monocle.function.Index.index
 
 

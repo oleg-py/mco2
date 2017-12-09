@@ -4,7 +4,7 @@ import better.files._
 import mco.core.paths._
 import mco.stubs.{ConstantVar, VarFilesystem}
 import mco.stubs.cells.{Cell, dir}
-import mco.util.syntax.any._
+import mco.syntax._
 import monix.eval.Coeval
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.{arbitrary => arb}

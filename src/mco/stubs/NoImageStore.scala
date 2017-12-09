@@ -6,7 +6,7 @@ import cats.syntax.applicative._
 
 import mco.core.ImageStore
 import mco.core.paths._
-import mco.util.syntax.any._
+import mco.syntax._
 
 import java.net.URL
 

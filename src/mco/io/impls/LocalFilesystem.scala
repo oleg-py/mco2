@@ -9,7 +9,7 @@ import com.sun.javafx.PlatformUtil
 import mco.core.Capture
 import mco.core.paths.Path
 import mco.io.Filesystem
-import mco.util.syntax.any._
+import mco.syntax._
 import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 

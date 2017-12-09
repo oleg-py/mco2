@@ -9,12 +9,13 @@ import mouse.all._
 import mco.core._
 import mco.core.paths._
 import mco.io.Filesystem, Filesystem._
-import mco.util.syntax.any._
+import mco.syntax._
 
 class FolderMod[F[_]: Filesystem: Monad](
   override val backingFile: Path
 ) extends Mod[F]
 {
+
   private type DataM = Map[RelPath, (Path, RelPath)]
 
   private def toState[A](fa: F[A]): StateT[F, DataM, A] =
@@ -24,9 +25,7 @@ class FolderMod[F[_]: Filesystem: Monad](
     toState(fa).flatMap(_ traverse_ scanDeep)
 
   private def scanDeep(path: Path): StateT[F, DataM, Unit] = {
-    import mco.util.instances.monoidForApplicative
-//    val MS = MonadState[StateT[F, DataM, ?], DataM]
-
+    implicit def applicativeMonoid[M: Monoid]: Monoid[F[M]] = Applicative.monoid[F, M]
 
     for {
       isDir   <- isDirectory(path).pipe(toState)

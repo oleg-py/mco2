@@ -2,7 +2,7 @@ package mco.ui.state
 
 import mco.core.paths.RelPath
 import mco.core.state.{ContentState, ModState, RepoState}
-import mco.util.syntax.map._
+import mco.syntax._
 import monocle.macros.Lenses
 import monocle.std.option.{some => someL}
 import monocle.{Lens, Optional}
