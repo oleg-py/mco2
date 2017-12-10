@@ -75,9 +75,9 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
       } yield state
 
     tryLift(p)
-      .followedBy(notAlreadyExists(target))
+      .flatMap(_ => notAlreadyExists(target))
       .semiflatMap(_ => copy(p, target))
-      .followedBy(tryLift(target))
+      .flatMap(_ => tryLift(target))
       .semiflatMap(registerMod)
       .value
   }
