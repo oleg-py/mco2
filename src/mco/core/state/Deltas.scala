@@ -1,29 +1,33 @@
 package mco.core.state
 
+import mco.core.ContentKind
 import mco.core.paths.RelPath
 import mco.syntax._
 import monocle.macros.syntax.lens._
 
 object Deltas {
+  private def setIfPresent[A](o: Option[A])(a: A): A = o.getOrElse(a)
+
   case class OfContent(
-    enabled: Option[Boolean] = None
+    enabled: Option[Boolean] = None,
+    assignedKind: Option[ContentKind] = None
   ) {
-    def patch(c: ContentState): ContentState = {
-      enabled.fold(c)(bool => ContentState.stamp.modify(_.copy(enabled = bool))(c))
+    def patch(cs: ContentState): ContentState = {
+      cs.lens(_.stamp.enabled).modify(setIfPresent(enabled))
+        .lens(_.assignedKind).modify(setIfPresent(assignedKind))
     }
   }
 
   case class OfMod(
-    label: Option[String] = None,
     enabled: Option[Boolean] = None,
     contents: Map[RelPath, OfContent] = Map()
   ) {
-    def patch(m: ModState): ModState = {
-      val installedSet =
-        enabled.fold(m)(bool => ModState.stamp.modify(_.copy(enabled = bool))(m))
-
-      contents.foldLeft(installedSet) { case (modState, (key, delta)) =>
-        modState.lens(_.contents).modify(_.adjust(key, delta.patch))
+    def patch(ms: ModState): ModState = {
+      ms.lens(_.stamp.enabled).modify(setIfPresent(enabled))
+        .lens(_.contents).modify { map =>
+        contents.foldLeft(map) { case (updated, (key, delta)) =>
+          updated.adjust(key, delta.patch)
+        }
       }
     }
   }

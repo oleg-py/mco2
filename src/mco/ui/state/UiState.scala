@@ -33,10 +33,11 @@ object UiState {
       mod <- repoState.orderedMods.find(_.key == key)
     } yield mod.get
 
-    def currentContent: Vector[(String, ContentState)] =
-      currentMod
-        .map(_.contents.mapKeys(_.toString).toVector)
-        .getOrElse(Vector())
+    def currentContent: Vector[(RelPath, String, ContentState)] =
+      for {
+        ModState(_, contents) <- currentMod.toVector
+        (key, state) <- contents
+      } yield (key, key.name.toString, state)
   }
 
   object Tab {

@@ -13,6 +13,17 @@ import mco.core.vars.Var
 
 /*_*/
 abstract class Commands {
+  def setCurrentKind(cKey: RelPath, newValue: ContentKind): Unit =
+    syncChanges {
+      for {
+        st <- tabState()
+        mods <- repoMap.mods
+        ckDelta = Deltas.OfContent(assignedKind = Some(newValue))
+        _ <- st.currentModKey
+          .traverse_(mods.update(_, Deltas.OfMod(contents = Map(cKey -> ckDelta))))
+      } yield ()
+    } { (_, _, us) => us }
+
   type F[_]
   protected val runLater: F[Unit] => Unit
   protected val state: Var[F, UiState]
@@ -113,9 +124,6 @@ abstract class Commands {
       _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(enabled = Some(false))))
     } yield ()
   } { (_, _, us) => us }
-
-  final def setLabel(key: RelPath, label: String): Unit =
-    update(key, Deltas.OfMod(label = Some(label)))
 
   final def install(key: RelPath): Unit =
     update(key, Deltas.OfMod(enabled = Some(true)))

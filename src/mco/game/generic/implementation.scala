@@ -80,10 +80,12 @@ object implementation {
     resolver: NameResolver,
     mods: Vector[Mod[F]]
   ): F[(Var[F, RepoState], ModStates[F])] = {
+    val kindOf = (_: RelPath) => ContentKind.Component
+
     for {
       repoStateDb <- miniDB(rel".state", RepoState())
       lastSaved   <- repoStateDb()
-      states      =  new ModStates[F](target, resolver, lastSaved.orderedMods)
+      states      =  new ModStates[F](target, resolver, kindOf, lastSaved.orderedMods)
       nextState   <- states.computeAll(mods)
       _           <- repoStateDb := nextState
     } yield (repoStateDb, states)

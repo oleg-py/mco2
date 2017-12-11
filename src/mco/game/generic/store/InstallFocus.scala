@@ -8,10 +8,11 @@ import mouse.boolean._
 import mco.core.paths.{Path, Pointed, RelPath}
 import mco.core.state._
 import mco.core.vars.Var
-import mco.core.{Mod, NameResolver}
+import mco.core.{ContentKind, Mod, NameResolver}
 import mco.core.paths._
 import mco.io.{FileStamping, Filesystem}
 import mco.syntax._
+import monocle.macros.syntax.lens._
 
 
 class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
@@ -48,36 +49,48 @@ class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
 
   private def currentMod = currentModState().map(s => mods(s.key))
 
-  private class ContentOp(key: RelPath, from: Path) {
-    val currentContent = currentModState.xmapF[ContentState](
-      kms => kms.get.contents.getOrElse(key, ContentState(Monoid[Stamp].empty)).pure[F],
+  private class ProcessedContent(key: RelPath, from: Path, copy: Boolean) {
+    private val contentState = currentModState.xmapF[ContentState](
+      kms => kms.get.contents
+        .getOrElse(key, ContentState(Monoid[Stamp].empty, ContentKind.Unused))
+        .pure[F],
       cs => for {
         kms <- currentModState()
         map =  kms.get.contents.updated(key, cs)
       } yield kms.map(_.copy(contents = map))
     )
 
-    def innerPathF: F[InnerPath] = currentMod.map(_.backingFile).tupleRight(key)
+    private def updateFileAt(path: Path) =
+      if (copy) Filesystem.copy(from, path)
+      else Filesystem.rmIfExists(path)
 
-    def run(copy: Boolean) =
+    def run: F[Unit] =
       for {
-        rState  <- repoState()
-        resolve <- getResolveFn
-        path    =  resolve(key)
-        inner   <- innerPathF
-        conflict=  rState.hasConflicts(path, modFocus)
-        noNeed  <- if (copy) FileStamping.likelySame(inner, from, path)
-                   else false.pure[F]
-        _       <- currentContent ~= ContentState.target.set(copy.option(path))
-        _       <- currentContent ~= ContentState.stamp.modify(Stamp.installed.set(copy))
-        _       <- if (conflict || noNeed) unit.pure[F]
-                   else if (copy) Filesystem.copy(from, path) *> FileStamping.overwrite(inner, path)
-                   else Filesystem.rmIfExists(path) *> FileStamping.overwrite(inner, path)
+        state <- contentState()
+        _     <- if (state.assignedKind == ContentKind.Component) alterContent
+                 else unit.pure[F]
+      } yield ()
+
+    private def alterContent: F[Unit] =
+      for {
+        rState   <- repoState()
+        resolve  <- getResolveFn
+        path     =  resolve(key)
+        inner    <- currentMod.map(_.backingFile).tupleRight(key)
+        conflict =  rState.hasConflicts(path, modFocus)
+        noNeed   <- if (copy) FileStamping.likelySame(inner, from, path)
+                    else false.pure[F]
+        _        <- contentState ~= {
+                      _.lens(_.target).set(copy.option(path))
+                       .lens(_.stamp.installed).set(copy)
+        }
+        _        <- if (conflict || noNeed) unit.pure[F]
+                    else updateFileAt(path) *> FileStamping.overwrite(inner, path)
       } yield ()
   }
 
   private def copyOrRemoveFiles(copy: Boolean)(op: fs2.Stream[F, Pointed[Path]]) =
-    op.evalMap(p => new ContentOp(p.key, p.get).run(copy)).runSync
+    op.evalMap(p => new ProcessedContent(p.key, p.get, copy).run).runSync
 
   private def copyFiles = copyOrRemoveFiles(copy = true) _
   private def removeFiles(p: Vector[RelPath]) =

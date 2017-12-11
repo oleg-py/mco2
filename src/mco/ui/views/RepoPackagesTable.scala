@@ -54,13 +54,10 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
 
   object TitleColumn extends TableColumn[Triple, String] {
     text = "Package name"
-    editable = true
+    editable = false
     maxWidth <== table.width - 32 - 20 // 20 for horizontal scrollbar
-    cellFactory = _ => new LabelEditTableCell
+    cellFactory = _ => new LabelTableCell
     cellValueFactory = s => ObjectProperty(s.value._2)
-    onEditCommit = (ev: CellEditEvent[Triple, String]) => {
-      cmd.setLabel(ev.rowValue._1, ev.newValue)
-    }
   }
 
   private def mkCheckBox(i: Int) = {
@@ -76,7 +73,7 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
     padding = Insets(0)
   }
 
-  class LabelEditTableCell extends TextFieldTableCell[Triple, String]() {
-    editable = true
+  class LabelTableCell extends TextFieldTableCell[Triple, String]() {
+    editable = false
   }
 }
