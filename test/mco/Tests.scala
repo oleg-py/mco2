@@ -1,8 +1,10 @@
 package mco
 
 import better.files._
+import cats.data.StateT
 import mco.core.paths._
-import mco.stubs.{ConstantVar, VarFilesystem}
+import mco.core.vars.Var
+import mco.stubs.{ConstantVar, StateTVar, VarFilesystem}
 import mco.stubs.cells.{Cell, dir}
 import mco.syntax._
 import monix.eval.Coeval
@@ -34,6 +36,12 @@ object Tests {
   trait FsUtils {
     def immutableFs(contents: (Segment, Cell)*) =
       new VarFilesystem[Coeval](new ConstantVar(dir(contents: _*)))
+
+    type FState[A] = StateT[Coeval, Cell, A]
+
+    def statefulFs[S](x: Var[StateT[Coeval, S, ?], Cell]) =
+      new VarFilesystem[StateT[Coeval, S, ?]](x)
+
   }
 
   trait Arbitraries {
