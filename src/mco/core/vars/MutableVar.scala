@@ -2,7 +2,7 @@ package mco.core.vars
 
 import cats.FlatMap
 import cats.effect.Sync
-import mco.core.Capture
+import mco.syntax._
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 import monix.execution.atomic.PaddingStrategy.NoPadding
 
@@ -25,7 +25,15 @@ class MutableVar[F[_]: Sync, A](initial: A)(implicit
     NoPadding,
     allowPlatformIntrinsics = true
   )
-  override def apply() = Capture { state() }
-  override def :=(a: A) = Capture { state() = a }
-  override def ~=(f: A => A)(implicit F: FlatMap[F]) = Capture { state.transform(f) }
+  override def apply(): F[A] = capture {
+    state.get
+  }
+
+  override def :=(a: A): F[Unit] = capture {
+    state.set(a)
+  }
+
+  override def ~=(f: A => A)(implicit F: FlatMap[F]): F[Unit] = capture {
+    state.transform(f)
+  }
 }

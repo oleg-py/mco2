@@ -12,7 +12,7 @@ import mco.io.{FileStamping, Filesystem}
 import Filesystem._
 import cats.effect.Sync
 import mco.stubs.cells._
-import mco.stubs.{LoggingFilesystem, VarFilesystem}
+import mco.stubs.VarFilesystem
 import mco.syntax.??
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 
@@ -26,7 +26,7 @@ object implementation {
     config: StoreConfig.Repo,
     cwd: Path
   ): F[Filesystem[F]] = {
-    val localFS:  Filesystem[F] = new LocalFilesystem[F]
+    val localFS: Filesystem[F] = new LocalFilesystem[F]
 
     def determineFS(subpath: String) =
       if (subpath startsWith "varfs!") {
@@ -42,7 +42,7 @@ object implementation {
     config.paths
       .traverse(determineFS)
       .map { case Vector(sourceDir, imagesDir, targetDir) =>
-        new LoggingFilesystem(new VirtualRootsFilesystem[F](
+        new VirtualRootsFilesystem[F](
           Map(
             (seg"-source", sourceDir),
             (seg"-target", targetDir),
@@ -50,8 +50,9 @@ object implementation {
             (seg"-os", (Path.root, localFS))
           ),
           seg"-os",
-          localFS
-        )(??, Eq.fromUniversalEquals))
+          localFS,
+          Eq.instance(_ eq _) // use ref equality to compare filesystems
+        )
       }
       .widen
   }

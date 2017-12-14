@@ -12,7 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 
 /**
- * Typeclass expressing algebra of filesystem operations
+ * Algebra of filesystem operations
  *
  * @tparam F the effect type
  */

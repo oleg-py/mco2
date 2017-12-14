@@ -9,16 +9,18 @@ import mco.core.paths._
 import mco.io.Filesystem
 import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 
+import java.net.URL
 import java.nio.ByteBuffer
 
 
 class VirtualRootsFilesystem[F[_]: Sync](
   roots: Map[Segment, (Path, Filesystem[F])],
   runTmpRoot: Segment,
-  runTmpFs: Filesystem[F]
-)(
-  implicit val fsEq: Eq[Filesystem[F]]
+  runTmpFs: Filesystem[F],
+  fsEq: Eq[Filesystem[F]]
 ) extends Filesystem[F] {
+  implicit private val enableEqSyntax: Eq[Filesystem[F]] = fsEq
+
   private def retranslate(path: Path): (Path, Filesystem[F], Segment) = {
     path.segments match {
       case Vector() => (Path.root, this, Segment.empty)
@@ -90,6 +92,6 @@ class VirtualRootsFilesystem[F[_]: Sync](
   override def stat(path: Path): F[Option[BasicFileAttributes]] =
     unaryOp(path) { _ stat _ }
 
-  override def fileToUrl(p: Path) =
+  override def fileToUrl(p: Path): F[URL] =
     unaryOp(p) { _ fileToUrl _ }
 }

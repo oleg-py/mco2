@@ -3,7 +3,7 @@ package mco
 import cats.effect.Sync
 import cats.syntax.apply._
 import cats.syntax.applicativeError._
-import mco.core.Capture
+import mco.syntax._
 import net.sf.sevenzipjbinding.SevenZip
 
 import java.io.{ByteArrayInputStream, InputStream}
@@ -13,16 +13,16 @@ import javax.swing.ImageIcon
 
 
 object JvmAddons {
-  def all[F[_]: Sync] = macOSIcon *> base64url  *> sevenZipLib
+  def all[F[_]: Sync]: F[Unit] = macOSIcon *> base64url  *> sevenZipLib
 
-  def macOSIcon[F[_]: Sync]: F[Unit] = Capture {
+  def macOSIcon[F[_]: Sync]: F[Unit] = capture {
     val cls = Class.forName("com.apple.eawt.Application")
     cls.getMethod("setDockIconImage", classOf[java.awt.Image]).invoke(
       cls.getMethod("getApplication").invoke(null),
       new ImageIcon(getClass.getResource("/app-icon.png")).getImage
     )
     ()
-  }.handleErrorWith(_ => Capture { () })
+  }.handleErrorWith(_ => Sync[F].unit)
 
   private val dataUrl = "data:(.*?);(.*?),(.*)".r
   private class DataConnection(u: URL) extends URLConnection(u) {
@@ -40,12 +40,12 @@ object JvmAddons {
     }
   }
 
-  def base64url[F[_]: Sync] = Capture {
+  def base64url[F[_]: Sync] = capture {
     val handler: URLStreamHandler = new DataConnection(_)
     URL.setURLStreamHandlerFactory(protocol => if (protocol == "data") handler else null)
   }
 
-  def sevenZipLib[F[_]: Sync] = Capture {
+  def sevenZipLib[F[_]: Sync] = capture {
     SevenZip.initSevenZipFromPlatformJAR()
   }
 }

@@ -6,7 +6,6 @@ import scala.util.Try
 import better.files._
 import cats.effect.Sync
 import com.sun.javafx.PlatformUtil
-import mco.core.Capture
 import mco.core.paths.Path
 import mco.io.Filesystem
 import mco.syntax._
@@ -14,7 +13,9 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 
 import java.io.{IOException, RandomAccessFile}
+import java.net.URL
 import java.nio.ByteBuffer
+import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileAlreadyExistsException, StandardOpenOption}
 
 class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
@@ -32,17 +33,17 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
     }
 
   override def readFile(path: Path): fs2.Stream[F, ByteBuffer] = {
-    val acquire = Capture { File(path.toString).newFileChannel }
+    val acquire = capture { File(path.toString).newFileChannel }
     fs2.Stream.bracket(acquire)(
-      ch => fs2.Stream.bracket(Capture { ch.toMappedByteBuffer })(
+      ch => fs2.Stream.bracket(capture { ch.toMappedByteBuffer })(
         buffer => fs2.Stream(buffer).covary,
-        buffer => Capture { unmap(buffer); () }
+        buffer => capture { unmap(buffer); () }
       ),
-      ch => Capture { ch.close() }
+      ch => capture { ch.close() }
     )
   }
 
-  override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = Capture {
+  override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = capture {
     for (ch <- File(path.toString).fileChannel(
       Seq(StandardOpenOption.WRITE, StandardOpenOption.CREATE)
     )) {
@@ -68,17 +69,17 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
       }
     }
 
-    val acquire = Capture {
+    val acquire = capture {
       File(path.toString).newRandomAccess(File.RandomAccessMode.readWrite)
     }
 
     fs2.Stream.bracket(acquire)(
       raf => fs2.Stream(new BiRAFStream(raf)).covary,
-      raf => Capture { raf.close() }
+      raf => capture { raf.close() }
     )
   }
 
-  final def childrenOf(path: Path) = Capture {
+  final def childrenOf(path: Path): F[Stream[Path]] = capture {
     val src =
       if (path == Path.root && PlatformUtil.isWindows) File.roots
       else File(path.toString).children
@@ -88,7 +89,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
       .toStream
   }
 
-  final def mkDir(path: Path) = Capture {
+  final def mkDir(path: Path): F[Unit] = capture {
     File(path.toString)
       .tap { f =>
         if (f.exists) throw new FileAlreadyExistsException(path.toString)
@@ -97,7 +98,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
     ()
   }
 
-  private def noCollision(source: Path, dest: Path, op: (File, File) => Any) = Capture {
+  private def noCollision(source: Path, dest: Path, op: (File, File) => Any) = capture {
     noWinRoot(source)
     noWinRoot(dest)
     val (from, to) = (File(source.toString), File(dest.toString))
@@ -125,18 +126,18 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
       a.delete()
     })
 
-  final def rmTree(path: Path) = Capture {
+  final def rmTree(path: Path): F[Unit] = capture {
     noWinRoot(path)
     File(path.toString).delete()
     ()
   }
 
-  final def stat(path: Path) = Capture {
+  final def stat(path: Path): F[Option[BasicFileAttributes]] = capture {
     noWinRoot(path)
     Try(File(path.toString).attributes).toOption
   }
 
-  final def fileToUrl(p: Path) = Capture {
+  final def fileToUrl(p: Path): F[URL] = capture {
     File(p.toString).url
   }
 }

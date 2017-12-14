@@ -1,13 +1,15 @@
 package mco.io
 
+import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
+import mco.syntax._
 import mco.core.paths._
 import net.sf.sevenzipjbinding._
 
 
 class Archive[F[_]: Filesystem: Sync](val file: Path) {
-  implicit def si: Sync[fs2.Stream[F, ?]] = fs2.Stream.syncInstance[F]
+  implicit def streamMonad: Monad[fs2.Stream[F, ?]] = fs2.Stream.syncInstance[F]
 
   def entries: F[Vector[RelPath]] =
     getInArchive.evalMap(emitEntries).runFoldMonoidSync
@@ -24,8 +26,6 @@ class Archive[F[_]: Filesystem: Sync](val file: Path) {
 
     streamed.runSync
   }
-
-  private def capture[A](a: => A) = Sync[F].delay(a)
 
   private def getInArchive: fs2.Stream[F, IInArchive] =
     Filesystem.getSfStream(file)

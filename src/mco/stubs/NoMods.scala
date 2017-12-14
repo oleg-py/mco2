@@ -9,6 +9,10 @@ import mco.core.Mods
 import mco.core.paths._
 
 
+/**
+ * Mods algebra that is pure and represents empty
+ * collection of mods for any Applicative
+ */
 class NoMods[F[_]: Applicative] extends Mods[F] {
   override def state = RepoState(Vector(), Map()).pure[F]
   override def update(key: RelPath, diff: Deltas.OfMod) = ().pure[F]

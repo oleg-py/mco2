@@ -1,13 +1,11 @@
 package mco.stubs
 
 import cats._
-import cats.effect.Sync
 import cats.syntax.all._
 import mco.core.paths.Path
 import mco.core.vars.Var
 import mco.io.Filesystem
 import mco.stubs.cells._
-import mco.syntax.??
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 

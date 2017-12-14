@@ -13,8 +13,6 @@ import java.net.URL
 
 /**
  * Image store that has no association for any key and does nothing
- *
- * @tparam F context of result values
  */
 class NoImageStore[F[_]: Applicative] extends ImageStore[F] {
   override def getImage(key: RelPath) = none[URL].pure[F]

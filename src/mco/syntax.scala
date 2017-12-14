@@ -1,5 +1,8 @@
 package mco
 
+import cats.effect.Sync
+
+
 object syntax {
   implicit class AnyTypeSyntax[A](val a: A) extends AnyVal {
     @inline def pipe[B](f: A => B): B = f(a)
@@ -20,4 +23,7 @@ object syntax {
     @inline def alter(key: A, f: Option[B] => Option[B]): Map[A, B] =
       f(map.get(key)).fold(map - key)(map.updated(key, _))
   }
+
+  @inline def capture[F[_], A](thunk: => A)(implicit F: Sync[F]): F[A] =
+    F.delay(thunk)
 }
