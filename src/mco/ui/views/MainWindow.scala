@@ -24,7 +24,7 @@ class MainWindow(state: Prop[UiState])(implicit cmd: Commands) extends JFXApp {
     height = 600
     title = "Mod Collection Organizer"
     scene = new Scene {
-      stylesheets += "/mco.ui/main.css"
+      stylesheets += "/app-style.css"
       root = new TabPane {
         // TODO
         tabs = state().tabs.indices.map { i =>
