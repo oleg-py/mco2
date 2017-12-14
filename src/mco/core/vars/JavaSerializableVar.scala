@@ -12,6 +12,14 @@ import cats.effect.Sync
 import java.nio.ByteBuffer
 
 
+/**
+ * Var instance that uses std Java serialization to map data
+ * to a file
+ *
+ * @param target path to file where data will be stored
+ * @tparam F effect monad with Filesystem support
+ * @tparam A value type
+ */
 class JavaSerializableVar[F[_]: Sync: Filesystem, A](
   target: Path
 )

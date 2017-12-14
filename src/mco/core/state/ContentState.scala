@@ -9,9 +9,4 @@ import monocle.macros.Lenses
   stamp: Stamp,
   assignedKind: ContentKind,
   target: Option[Path] = None
-) {
-  def onResolve(target: Path, installed: Boolean): ContentState = copy(
-    stamp = stamp.copy(installed = installed),
-    target = Some(target)
-  )
-}
+)

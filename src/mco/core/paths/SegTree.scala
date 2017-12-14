@@ -6,6 +6,11 @@ import cats.implicits._
 import mouse.all._
 import mco.syntax._
 
+
+/**
+ * A tree indexed by segments, providing a lookup by a relative path
+ * @tparam A values contained at the tips of the tree
+ */
 sealed trait SegTree[+A] {
   import SegTree._
   final def lookup(p: RelPath): Option[SegTree[A]] =

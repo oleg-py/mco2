@@ -4,7 +4,7 @@ import scala.annotation.tailrec
 
 
 /**
- * Class representing filesystem paths in a pure fashion.
+ * Class representing absolute paths in a pure fashion.
  *
  * Being a pure implementation, this class does not disambiguate
  * between "/" and "\" separator, as well as Windows or Linux

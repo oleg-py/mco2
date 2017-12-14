@@ -11,7 +11,7 @@ sealed abstract case class Segment(override val toString: String) {
 object Segment {
   private val sepRx = """[\\/]+""".r
 
-  def apply(s: String) = new Segment(sepRx.replaceAllIn(s, "").trim) {}
+  def apply(s: String): Segment = new Segment(sepRx.replaceAllIn(s, "").trim) {}
 
   val empty = Segment("")
   val `..` = Segment("..")
