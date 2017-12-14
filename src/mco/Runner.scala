@@ -14,12 +14,14 @@ import mco.ui.views.MainWindow
 import monix.eval.{Coeval, Task, TaskApp}
 import pureconfig.loadConfig
 
+import java.nio.file.Paths
+
 
 object Runner extends TaskApp {
   def readCwd = Coeval { Path(File(".").pathAsString) }
 
   def readConfig = Coeval {
-    loadConfig[StoreConfig].fold(
+    loadConfig[StoreConfig](Paths.get("./application.conf")).fold(
       fails => Coeval.raiseError(new Exception(fails.toList.mkString("\n"))),
       parsed => Coeval.now(parsed)
     )
