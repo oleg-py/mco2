@@ -1,6 +1,5 @@
 package mco
 
-import scala.util.control.NonFatal
 import scalafx.beans.property.ObjectProperty
 
 import better.files._
@@ -12,6 +11,7 @@ import mco.ui.props.PropertyBasedVar
 import mco.ui.state.{Commands, UiState}
 import mco.ui.views.MainWindow
 import monix.eval.{Coeval, Task, TaskApp}
+import monix.execution.misc.NonFatal
 import pureconfig.loadConfig
 
 import java.nio.file.Paths
@@ -36,22 +36,28 @@ object Runner extends TaskApp {
       repoMap = new ModStore.ByVar[Coeval](algebras, new MutableVar(0))
       states <- repoMap.states
       uiState = UiState.initial(repoMap.labels zip states, config.files.isImageS)
-      mkCommands = Commands[Coeval](repoMap, coeval => coeval()) _
-    } yield (uiState, mkCommands)
+      state = ObjectProperty(uiState)
+    } yield {
+      lazy val commands: Commands = Commands[Coeval](repoMap, coeval => {
+        coeval.onErrorHandle { case NonFatal(ex) =>
+          commands.showError(ex)
+        }.apply()
+      }, new PropertyBasedVar(state))
+      (state, commands)
+    }
 
     exec
       .onErrorRecover { case NonFatal(ex) =>
         ex.printStackTrace()
         val repoMap = new ModStore.Empty[Coeval]
-        val state = UiState.startupError(ex)
-        val mkCommands = Commands[Coeval](repoMap, _ => ()) _
-        (state, mkCommands)
+        val state = ObjectProperty(UiState.startupError(ex))
+        val commands = Commands[Coeval](repoMap, _ => System.exit(0),
+          new PropertyBasedVar(state))
+        (state, commands)
       }
-      .flatMap { case (initialState, mkDispatch) =>
+      .flatMap { case (state, commands) =>
         Coeval {
-          val state = ObjectProperty(initialState)
-          val dispatch = mkDispatch(new PropertyBasedVar(state))
-          new MainWindow(state)(dispatch).main(args)
+          new MainWindow(state)(commands).main(args)
         }
       }
       .task

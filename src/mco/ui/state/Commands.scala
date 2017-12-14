@@ -132,7 +132,10 @@ abstract class Commands {
     update(key, Deltas.OfMod(enabled = Some(false)))
 
   final def showNotification(str: String): Unit =
-    ???
+    showError(new Exception(str))
+
+  final def showError(ex: Throwable): Unit =
+    runLater { state ~= UiState.error.set(Some(ex)) }
 
   final def closeErrorDialog(): Unit =
     runLater { state ~= UiState.error.set(None) }
@@ -145,8 +148,11 @@ abstract class Commands {
 }
 
 object Commands {
-  def apply[F0[_]: Monad](map: ModStore[F0], runLater0: F0[Unit] => Unit)(state0: Var[F0, UiState]):
-    Commands = new Commands {
+  def apply[F0[_]: Monad](
+    map: ModStore[F0],
+    runLater0: F0[Unit] => Unit,
+    state0: Var[F0, UiState]
+  ): Commands = new Commands {
       override type F[A] = F0[A]
       override protected val runLater: F[Unit] => Unit = runLater0
       override protected val state: Var[F, UiState] = state0
