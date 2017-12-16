@@ -70,7 +70,9 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
     }
 
     val acquire = capture {
-      File(path.toString).newRandomAccess(File.RandomAccessMode.readWrite)
+      File(path.toString)
+        .createIfNotExists(createParents = true)
+        .newRandomAccess(File.RandomAccessMode.readWrite)
     }
 
     fs2.Stream.bracket(acquire)(

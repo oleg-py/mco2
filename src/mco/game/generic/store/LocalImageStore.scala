@@ -2,11 +2,9 @@ package mco.game.generic.store
 
 import cats._
 import cats.implicits._
-import mouse.all._
 
 import mco.core.ImageStore
 import mco.core.paths._
-import mco.core.vars.Var
 import mco.io.Filesystem, Filesystem._
 import mco.syntax._
 
@@ -24,42 +22,38 @@ import java.net.URL
 //noinspection ConvertibleToMethodValue
 class LocalImageStore[F[_]: Filesystem: Monad](
   root: Path,
-  store: Var[F, Map[RelPath, RelPath]],
-  isImage: Segment => Boolean
-) extends ImageStore[F] {
-  private def getTarget(key: RelPath)(path: Path) =
-    rel"${key.name}${path.extension}"
+  imgExtensions: Vector[String]
+) extends ImageStore[F]
+{
 
-  private val noop = unit.pure[F]
+  private def possibleImgNames(target: Path) =
+    imgExtensions.map(target.withExtension) ++
+      imgExtensions.map(ext => target / seg".." / seg"${target.name}$ext")
 
-  override def getImage(key: RelPath): F[Option[URL]] =
-    for {
-      dict <- store()
-      path = dict.get(key).map(root / _)
-      exists <- path.traverse(exists(_)).map(_ getOrElse false)
-      url <- path.filter(_ => exists).traverse(fileToUrl(_))
-    } yield url
-
-  override def putImage(key: RelPath, path: Option[Path]): F[Unit] = {
-    def copyFile = for {
-      dict <- store()
-      newName = path.map(getTarget(key))
-      named = (path, newName.map(root / _)).tupled
-      _ <- dict.get(key).cata(name => rmIfExists(root / name), noop)
-      _ <- named.cata(Function.tupled(copy(_, _)), noop)
-      _ <- store ~= { _.alter(key, _ => newName) }
-    } yield ()
-
-    if (path.forall(p => isImage(p.name))) copyFile
-    else noop
+  override def getImage(key: RelPath): F[Option[URL]] = {
+    possibleImgNames(root / key)
+      .traverse(toURLIfExists)
+      .map(_.foldK)
   }
 
-  override def stripImages(keys: Vector[RelPath]): F[Unit] =
-    for {
-      dict <- store()
-      keySet = keys.toSet
-      (oks, dels) = dict.partition { case (k, _) => keySet(k) }
-      _ <- store := oks
-      _ <- dels.values.toList.traverse { name => rmIfExists(root / name) }
-    } yield ()
+  override def putImage(key: RelPath, path: Option[Path]): F[Unit] = {
+    val target = root / key
+    path match {
+      case Some(image) =>
+        val imgExt = image.extension
+        if (imgExtensions.contains(imgExt)) {
+          copy(image, target.withExtension(imgExt))
+        } else {
+          unit.pure[F]
+        }
+      case None =>
+        possibleImgNames(target).traverse_(rmIfExists(_))
+    }
+  }
+
+  private def toURLIfExists(path: Path) =
+    exists(path).ifM(
+      fileToUrl(path).map(_.some),
+      none[URL].pure[F]
+    )
 }

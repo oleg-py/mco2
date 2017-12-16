@@ -13,7 +13,7 @@ import scala.annotation.tailrec
  *
  * @param segments parts this path consists of, without ".", ".." and slashes
  */
-sealed abstract case class Path (segments: Vector[Segment]) extends PathLike[Path] {
+sealed abstract case class Path (segments: Vector[Segment]) extends PathFunctions[Path] {
   def relTo(other: Path): RelPath = {
     @tailrec def loop(from: Vector[Segment], to: Vector[Segment]): Vector[Segment] =
       (from, to) match {
@@ -33,6 +33,8 @@ sealed abstract case class Path (segments: Vector[Segment]) extends PathLike[Pat
     if (isWinLike) segments.mkString("\\")
     else segments.mkString("/", "/", "")
   }
+
+  override def withSegments(segments: Vector[Segment]): Path = Path.of(segments)
 }
 
 /**

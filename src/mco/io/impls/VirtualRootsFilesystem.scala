@@ -48,12 +48,12 @@ class VirtualRootsFilesystem[F[_]: Sync](
     unaryOp(path)(_.getSfStream(_))
 
   override def childrenOf(path: Path): F[Stream[Path]] = {
-    val (p, fs, head) = retranslate(path)
+    val (p, fs, _) = retranslate(path)
     if (fs === this) {
       roots.keys.toStream.map(Path.root / _).pure[F]
     } else {
       fs.childrenOf(p)
-        .map { paths => paths.map(Path.root / head / _.relTo(p)) }
+        .map { paths => paths.map(path / _.relTo(p)) }
     }
   }
 

@@ -12,10 +12,9 @@ case class StoreConfig(
 
 object StoreConfig {
   case class Files(
-    images: Regex
+    images: Vector[String]
   ) {
-    val isImageS = images.findFirstMatchIn(_: String).nonEmpty
-    def isImage: Segment => Boolean = seg => isImageS(seg.toString)
+    val isImageS = (s: String) => images.exists(s.endsWith)
   }
 
   case class Repo(

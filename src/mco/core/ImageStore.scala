@@ -34,11 +34,11 @@ import java.net.URL
    * @return Unit inside context F
    */
   def putImage(key: RelPath, path: Option[Path]): F[Unit]
-
-  /**
-   * Removes all images with keys not present inside a vector
-   * @param keys association keys which should be retained
-   * @return Unit inside context F
-   */
-  def stripImages(keys: Vector[RelPath]): F[Unit]
+//
+//  /**
+//   * Removes all images with keys not present inside a vector
+//   * @param keys association keys which should be retained
+//   * @return Unit inside context F
+//   */
+//  def stripImages(keys: Vector[RelPath]): F[Unit]
 }

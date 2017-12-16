@@ -20,7 +20,6 @@ import monix.execution.atomic.{Atomic, AtomicBuilder}
 //noinspection ConvertibleToMethodValue
 object implementation {
   private val (target, source) = (path"-target", path"-source")
-  private val toKey = (p: Path) => RelPath(p.name.toString)
 
   private def filesystem[F[_]: Sync](
     config: StoreConfig.Repo,
@@ -28,16 +27,11 @@ object implementation {
   ): F[Filesystem[F]] = {
     val localFS: Filesystem[F] = new LocalFilesystem[F]
 
-    def determineFS(subpath: String) =
-      if (subpath startsWith "varfs!") {
-        val file = rel"${subpath.drop("varfs!".length)}"
-        miniDB(file, dir(), cwd)(Sync[F], localFS, ??)
-          .map(new VarFilesystem(_): Filesystem[F])
-          .tupleLeft(Path.root)
-      } else {
-        val target = path"$cwd/$subpath"
-        localFS.ensureDir(target).as((target, localFS))
-      }
+    def determineFS(subpath: String) = {
+      val target = if (subpath startsWith "./") path"$cwd/$subpath"
+                   else path"$subpath"
+      localFS.ensureDir(target).as((target, localFS))
+    }
 
     config.paths
       .traverse(determineFS)
@@ -58,11 +52,9 @@ object implementation {
   }
 
   private def images[F[_]: Filesystem: Sync](
-    isImage: Segment => Boolean
+    isImage: Vector[String]
   ): F[ImageStore[F]] = {
-    miniDB(rel".imgdb", Map.empty[RelPath, RelPath])
-      .map(new LocalImageStore(path"-images", _, isImage))
-      .widen
+    new LocalImageStore(path"-images", isImage).pure[F].widen
   }
 
   private def miniDB[F[_]: Sync: Filesystem, A](
@@ -86,7 +78,7 @@ object implementation {
     for {
       repoStateDb <- miniDB(rel".state", RepoState())
       lastSaved   <- repoStateDb()
-      states      =  new ModStates[F](target, resolver, kindOf, lastSaved.orderedMods)
+      states      =  new ModStates[F](source, resolver, kindOf, lastSaved.orderedMods)
       nextState   <- states.computeAll(mods)
       _           <- repoStateDb := nextState
     } yield (repoStateDb, states)
@@ -103,7 +95,7 @@ object implementation {
           statesR  <- getStates(resolver, existing)
 
           (repoState, modStates) = statesR
-          modsMap = existing.map { m => (m.backingFile.relTo(target), m)}.toMap
+          modsMap = existing.map { m => (m.backingFile.relTo(source), m) }.toMap
 
         } yield new LocalMods(
           source, repoState, new MutableVar(modsMap), typer.apply,
@@ -118,7 +110,7 @@ object implementation {
   ): F[Vector[(String, Mods[F], ImageStore[F])]] =
     config.repos.toVector.traverse { case (_, repo) =>
       filesystem(repo, cwd) >>= { implicit fs =>
-        (mods, images(config.files.isImage)).mapN { (m, i) =>
+        (mods, images(config.files.images)).mapN { (m, i) =>
           (repo.title, m, i)
         }
       }

@@ -8,8 +8,11 @@ package mco.core.paths
  *
  * @param segments path segments
  */
-case class RelPath(segments: Vector[Segment]) extends PathLike[RelPath] {
+case class RelPath(segments: Vector[Segment]) extends PathFunctions[RelPath] {
   override def toString: String = segments.mkString("/")
+
+  override def withSegments(segments: Vector[Segment]): RelPath =
+    RelPath(segments.mkString("/"))
 }
 
 object RelPath {

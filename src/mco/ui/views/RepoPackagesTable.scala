@@ -33,16 +33,17 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   columnResizePolicy = TableView.ConstrainedResizePolicy
   rowFactory = _ => new PackageRow
 
+  selectionModel.value.selectedItemProperty()
+    .onChange { (evt, _, _) =>
+      cmd.setActivePackage(evt()._1)
+    }
+
   override def canAcceptFiles(path: Vector[String]): Boolean = true
 
   override def acceptFiles(paths: Vector[String]): Unit =
     cmd.addPending(paths)
 
-  class PackageRow extends TableRow[Triple] {
-    onMouseClicked = handle {
-      if (!empty()) cmd.setActivePackage(item()._1)
-    }
-  }
+  class PackageRow extends TableRow[Triple]
 
   object CheckBoxColumn extends TableColumn[Triple, Any] {
     text = "S."
