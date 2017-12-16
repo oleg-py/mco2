@@ -31,26 +31,26 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
     for {
       rState <- state
       (i, Pointed(_, modState)) = rState.at(key)
-      _ <- if (modState.stamp.enabled) change(i, modState, _.remove) else noop
+      _ <- if (modState.stamp.enabled) change(i, modState, copy = false) else noop
       modState2 <- state.map(_.at(key)._2.get)
       updated = diff.patch(modState2)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
           Pointed(key, updated))
-      _ <- if (updated.stamp.enabled) change(i, modState, _.install) else noop
+      _ <- if (updated.stamp.enabled) change(i, modState, copy = true) else noop
     } yield ()
   }
 
   private def change(
     i: Int,
     modState: ModState,
-    f: InstallFocus[F] => Set[RelPath] => F[Unit]) =
+    copy: Boolean) =
     for {
       mods     <- modsState()
       contents =  modState.contents.keySet
-      focus    =  new InstallFocus(repoState, mods, resolver, i)
-      _        <- f(focus)(contents)
+      focus    =  new InstalledMod(repoState, mods, resolver, i, copy)
+      _        <- focus.run(contents)
     } yield ()
 
   override def remove(key: RelPath): F[Unit] = for {

@@ -15,13 +15,15 @@ import mco.syntax._
 import monocle.macros.syntax.lens._
 
 
-class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
+class InstalledMod[F[_]: Sync: Filesystem: FileStamping](
   repoState: Var[F, RepoState],
   mods: Map[RelPath, Mod[F]],
   resolver: NameResolver,
-  modFocus: Int
+  modFocus: Int,
+  copy: Boolean
 ) {
-  def refocus(i: Int) = new InstallFocus(repoState, mods, resolver, i)
+  private def refocus(i: Int, copy: Boolean) =
+    new InstalledMod(repoState, mods, resolver, i, copy)
 
   private val currentModState = repoState.xmapF[Pointed[ModState]](
     rs => rs.orderedMods(modFocus).pure[F],
@@ -49,7 +51,7 @@ class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
 
   private def currentMod = currentModState().map(s => mods(s.key))
 
-  private class ProcessedContent(key: RelPath, from: Path, copy: Boolean) {
+  private class ProcessedContent(key: RelPath, from: Path) {
     private val contentState = currentModState.xmapF[ContentState](
       kms => kms.get.contents
         .getOrElse(key, ContentState(Monoid[Stamp].empty, ContentKind.Unused))
@@ -89,14 +91,14 @@ class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
       } yield ()
   }
 
-  private def copyOrRemoveFiles(copy: Boolean)(op: fs2.Stream[F, Pointed[Path]]) =
-    op.evalMap(p => new ProcessedContent(p.key, p.get, copy).run).runSync
+  private def copyOrRemoveFiles(op: fs2.Stream[F, Pointed[Path]]) =
+    op.evalMap(p => new ProcessedContent(p.key, p.get).run).runSync
 
-  private def copyFiles = copyOrRemoveFiles(copy = true) _
+  private def copyFiles = copyOrRemoveFiles _
   private def removeFiles(p: Vector[RelPath]) =
-    copyOrRemoveFiles(copy = false)(fs2.Stream.emits(p.map(Pointed(_, path""))).covary)
+    copyOrRemoveFiles(fs2.Stream.emits(p.map(Pointed(_, path""))).covary)
 
-  private def runOp(copy: Boolean)(only: Set[RelPath]): F[Unit] =
+  def run(only: Set[RelPath]): F[Unit] =
     for {
       mod       <- currentMod
       list      <- mod.list
@@ -107,13 +109,10 @@ class InstallFocus[F[_]: Sync: Filesystem: FileStamping](
                    else underridesOf
       conflicts <- func(filtered)
       _         <- conflicts.traverse_ { case (relPath, i) =>
-        refocus(i).runOp(copy = true)(Set(relPath))
+        refocus(i, copy = true).run(Set(relPath))
       }
       _         <- currentModState ~= { s =>
         s.map(_.copy(s.get.stamp.copy(installed = copy)))
       }
     } yield ()
-
-  val install = runOp(copy = true) _
-  val remove = runOp(copy = false) _
 }
