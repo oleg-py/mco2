@@ -35,7 +35,9 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
 
   selectionModel.value.selectedItemProperty()
     .onChange { (evt, _, _) =>
-      cmd.setActivePackage(evt()._1)
+      // selected item might be null
+      Option(evt()).map(_._1)
+        .foreach(cmd.setActivePackage)
     }
 
   override def canAcceptFiles(path: Vector[String]): Boolean = true
