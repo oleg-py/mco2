@@ -44,7 +44,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
   }
 
   override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = capture {
-    for (ch <- File(path.toString).fileChannel(
+    for (ch <- File(path.toString).createIfNotExists(createParents = true).fileChannel(
       Seq(StandardOpenOption.WRITE, StandardOpenOption.CREATE)
     )) {
       ch.write(bb)

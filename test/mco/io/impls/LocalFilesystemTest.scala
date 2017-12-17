@@ -1,10 +1,14 @@
 package mco.io.impls
 
+import scala.util.Random
+
 import mco.Tests
 import mco.core.paths._
 import mco.io.Filesystem
 import Filesystem._
 import monix.eval.Coeval
+
+import java.nio.ByteBuffer
 
 
 class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
@@ -37,24 +41,41 @@ class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
     }
   }
 
-/*  // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
 
-  behavior of "LocalFilesystem#getBytes"
+  behavior of "LocalFilesystem#getSfStream"
+
+  it should "open a nonexistent deeply nested file for I/O" in { dirs =>
+    val target = path"${dirs.target}/deeply/nested/file"
+    val chs = getSfStream(target)
+    chs.runSync.apply()
+    target should exist
+  }
+
+  it should "fail with error for a directory" in { dirs =>
+    an [Exception] shouldBe thrownBy {
+      getSfStream(dirs.src).runSync.apply()
+    }
+  }
+
+  // --------------------------------------------------------------------------
+
+  behavior of "LocalFilesystem#readFile"
 
   it should "read file contents as bytes" in { dirs =>
-    val b = getBytes(dirs.src / seg"test_folder" / seg"file1")
-    b shouldEqual "Hello".getBytes
+    val b = readFile(dirs.src / seg"test_folder" / seg"file1")
+    b.map(toVector).runLastSync.value shouldEqual Some("Hello".getBytes.toVector)
   }
 
   it should "fail with error for directory" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      getBytes(dirs.src / seg"test_folder")
+      readFile(dirs.src / seg"test_folder").runSync.value
     }
   }
 
   it should "fail with error for non-existent file" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      getBytes(dirs.src / seg"nonexistent.file")
+      readFile(dirs.src / seg"nonexistent.file").runSync.value
     }
   }
 
@@ -67,7 +88,7 @@ class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
     val path = dirs.src / seg"test_folder" / seg"file1"
     path.asFile.isRegularFile shouldBe true
 
-    setBytes(path, testData.getBytes)
+    writeFile(path, ByteBuffer.wrap(testData.getBytes)).apply()
     path.asFile.byteArray shouldEqual testData.getBytes
   }
 
@@ -76,15 +97,15 @@ class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
     val path = dirs.target / seg"non" / seg"existent" / seg"file.txt"
     path shouldNot exist
 
-    setBytes(path, data)
+    writeFile(path, ByteBuffer.wrap(data)).apply()
     path should exist
   }
 
   it should "fail for a directory" in { dirs =>
     an [Exception] shouldBe thrownBy {
-      setBytes(dirs.src, "0".getBytes)
+      writeFile(dirs.src, ByteBuffer.wrap("0".getBytes)).apply()
     }
-  }*/
+  }
 
   // --------------------------------------------------------------------------
 
@@ -347,17 +368,30 @@ class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
     }
   }
 
-/*  // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
 
-  behavior of "LocalFilesystem#runTmp on a directory"
+  behavior of "LocalFilesystem#mkTemp"
 
-  it should "provide the dir until nested op finish" in { _ =>
-    val op: InTemp[Id, Path] = InTemp.WithTemp(p => p: Id[Path])
-    val nested = (1 to 50).foldLeft(op)((op2, _) => op2.andThen(p => p: Id[Path]))
-    //noinspection ConvertibleToMethodValue
-    op.andThen(exists(_)).runFS shouldBe true
-  }*/
+  it should "clear the temporary directory when operation is finished" in { _ =>
+    val existence = for {
+      dir <- mkTemp
+      fun =  () => dir.asFile.exists
+    } yield (fun(), fun)
+
+    existence.runLastSync.value match {
+      case Some((existed, exists)) =>
+        existed shouldBe true
+        exists() shouldBe false
+      case None =>
+        fail("Stream should've been nonempty")
+    }
+  }
 
   // --------------------------------------------------------------------------
 
+  private def toVector(bb: ByteBuffer) = {
+    val a = Array.ofDim[Byte](bb.remaining())
+    bb.get(a)
+    a.toVector
+  }
 }
