@@ -56,6 +56,6 @@ class FolderMod[F[_]: Filesystem: Monad](
     fs2.Stream.eval(structureF).flatMap {
       dataM =>
         val filtered = content.collect(dataM).map { case (p, r) => Pointed(r, p) }
-        fs2.Stream.emits(filtered).covary
+        fs2.Stream.emits(filtered)
     }
 }

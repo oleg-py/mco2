@@ -89,7 +89,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Cell])
 
   override def mkTemp: fs2.Stream[F, Path] =
     fs2.Stream.bracket(ensureDir(stdTmpDir))(
-      _ => fs2.Stream(stdTmpDir).covary,
+      _ => fs2.Stream(stdTmpDir),
       _ => rmTree(stdTmpDir)
     )
 
@@ -100,7 +100,7 @@ class VarFilesystem[F[_]: Monad] (rootVar: Var[F, Cell])
     }
 
     fs2.Stream.bracket(acquire)(
-      r => fs2.Stream(r).covary,
+      r => fs2.Stream(r),
       bas => deepSet(path)(File(bas.getBytes).some)
     ).map(x => x: IInStream with IOutStream)
   }

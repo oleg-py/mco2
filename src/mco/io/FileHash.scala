@@ -19,7 +19,7 @@ class FileHash[F[_]: Filesystem: Functor](file: Path) {
 
   private def hashDir(path: Path) =
     fs2.Stream.eval(Filesystem.childrenOf(path))
-      .flatMap(paths => fs2.Stream(paths: _*).covary)
+      .flatMap(paths => fs2.Stream(paths: _*))
       .flatMap(hashAt)
 
   private def hashAt(path: Path): fs2.Stream[F, (Long, Long)] =

@@ -96,7 +96,7 @@ class InstalledMod[F[_]: Sync: Filesystem: FileStamping](
 
   private def copyFiles = copyOrRemoveFiles _
   private def removeFiles(p: Vector[RelPath]) =
-    copyOrRemoveFiles(fs2.Stream.emits(p.map(Pointed(_, path""))).covary)
+    copyOrRemoveFiles(fs2.Stream.emits(p.map(Pointed(_, path""))))
 
   def run(only: Set[RelPath]): F[Unit] =
     for {

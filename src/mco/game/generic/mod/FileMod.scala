@@ -19,6 +19,6 @@ final class FileMod[F[_]: Filesystem: Applicative](
 
   override def provide(content: Vector[RelPath]): fs2.Stream[F, Pointed[Path]] = {
     val seq = content.filter(_ == contentPath).map(Pointed(_, backingFile))
-    fs2.Stream.emits(seq).covary
+    fs2.Stream.emits(seq)
   }
 }

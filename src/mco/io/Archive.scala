@@ -32,7 +32,7 @@ class Archive[F[_]: Filesystem: Sync](val file: Path) {
       .flatMap { input =>
         val arch = capture(SevenZip.openInArchive(null, input))
         fs2.Stream.bracket(arch)(
-          x => fs2.Stream(x).covary,
+          x => fs2.Stream(x),
           archive => capture(archive.close())
         )
       }

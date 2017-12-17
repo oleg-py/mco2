@@ -36,7 +36,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
     val acquire = capture { File(path.toString).newFileChannel }
     fs2.Stream.bracket(acquire)(
       ch => fs2.Stream.bracket(capture { ch.toMappedByteBuffer })(
-        buffer => fs2.Stream(buffer).covary,
+        buffer => fs2.Stream(buffer),
         buffer => capture { unmap(buffer); () }
       ),
       ch => capture { ch.close() }
@@ -54,7 +54,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
   override def mkTemp: fs2.Stream[F, Path] = {
     val mkTemp = Sync[F].delay(File.newTemporaryDirectory("mco-lfs-"))
     fs2.Stream.bracket(mkTemp)(
-      file => fs2.Stream(Path(file.pathAsString)).covary,
+      file => fs2.Stream(Path(file.pathAsString)),
       file => Sync[F].delay { file.delete(); () }
     )
   }
@@ -76,7 +76,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
     }
 
     fs2.Stream.bracket(acquire)(
-      raf => fs2.Stream(new BiRAFStream(raf)).covary,
+      raf => fs2.Stream(new BiRAFStream(raf)),
       raf => capture { raf.close() }
     )
   }
