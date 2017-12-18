@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
   "org.scalameta" %% "scalameta" % "1.8.0" % Provided,
   "com.github.oleg-py" % "macro-forwarders" % "0.3.0",
   "com.github.pathikrit" %% "better-files" % "3.1.0",
+  "com.beachape" %% "enumeratum" % "1.5.12",
   "net.openhft" % "zero-allocation-hashing" % "0.8",
   "org.scalafx" %% "scalafx" % "8.0.144-R12",
   "com.lihaoyi" %% "pprint" % "0.5.3",

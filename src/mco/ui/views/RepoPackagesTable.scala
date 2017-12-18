@@ -9,6 +9,7 @@ import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
 import scalafx.scene.control.{TableColumn, TableRow, TableView}
 import scalafx.scene.layout.Priority
 
+import mco.core.Status
 import mco.core.paths._
 import mco.core.state.{ModState, RepoState}
 import mco.ui.components.DropFilesReceiver
@@ -65,7 +66,7 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
 
   private def mkCheckBox(i: Int) = {
     def tuple = table.items().get(i)
-    BooleanProperty(tuple._3.stamp.installed)
+    BooleanProperty(tuple._3.status == Status.Installed)
       .tap(prop => prop.onChange {
         if (prop()) cmd.install(tuple._1)
         else cmd.uninstall(tuple._1)

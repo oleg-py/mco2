@@ -6,6 +6,7 @@ import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.Button
 import scalafx.scene.layout.{HBox, Priority, Region}
 
+import mco.core.Status
 import mco.core.state.ModState
 import mco.ui.props._
 import mco.ui.state.Commands
@@ -28,13 +29,13 @@ class PackageActionButtons(state: Prop[Option[ModState]])(implicit cmd: Commands
     new Button {
       prefWidth = 125
       text <== state.map {
-        case Some(p) if p.stamp.installed => "Uninstall"
+        case Some(p) if p.status == Status.Installed => "Uninstall"
         case _ => "Install"
       }
       disable <== state.map(_.isEmpty)
       onAction = handle {
         for (value <- state()) {
-          if (value.stamp.installed) cmd.uninstallActive()
+          if (value.status == Status.Installed) cmd.uninstallActive()
           else cmd.installActive()
         }
       }

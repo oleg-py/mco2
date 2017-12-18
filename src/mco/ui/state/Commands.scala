@@ -113,7 +113,7 @@ abstract class Commands {
     for {
       st <- tabState()
       mods <- repoMap.mods
-      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(enabled = Some(true))))
+      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(status = Some(Status.Installed))))
     } yield ()
   } { (_, _, us) => us }
 
@@ -121,15 +121,15 @@ abstract class Commands {
     for {
       st <- tabState()
       mods <- repoMap.mods
-      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(enabled = Some(false))))
+      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(status = Some(Status.Unused))))
     } yield ()
   } { (_, _, us) => us }
 
   final def install(key: RelPath): Unit =
-    update(key, Deltas.OfMod(enabled = Some(true)))
+    update(key, Deltas.OfMod(status = Some(Status.Installed)))
 
   final def uninstall(key: RelPath): Unit =
-    update(key, Deltas.OfMod(enabled = Some(false)))
+    update(key, Deltas.OfMod(status = Some(Status.Unused)))
 
   final def showNotification(str: String): Unit =
     showError(new Exception(str))

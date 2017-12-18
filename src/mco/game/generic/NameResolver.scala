@@ -1,9 +1,8 @@
-package mco.core
+package mco.game.generic
 
 import scala.util.Random
 
 import mco.core.paths._
-import mco.core.state.ModState
 
 
 trait NameResolver {

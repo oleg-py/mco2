@@ -1,23 +1,14 @@
 package mco.core
 
+import enumeratum._
 
-sealed trait ContentKind extends Product with Serializable
 
-object ContentKind {
-  def parse(s: String): Option[ContentKind] = s match {
-    case "Document"  => Some(Document)
-    case "Component" => Some(Component)
-    case "Unused"    => Some(Unused)
-    case _           => None
-  }
+sealed trait ContentKind extends EnumEntry
 
-  def stringify(ck: ContentKind): String = ck match {
-    case Component => "Component"
-    case Document  => "Document"
-    case Unused    => "Unused"
-  }
-
+object ContentKind extends Enum[ContentKind] {
   case object Document   extends ContentKind
   case object Component  extends ContentKind
   case object Unused     extends ContentKind
+
+  val values = findValues
 }

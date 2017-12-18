@@ -47,8 +47,8 @@ class PackageContentTable(
       )
       editable = true
       converter = StringConverter(
-        ContentKind.parse _ andThen (_.orNull),
-        ContentKind.stringify
+        ContentKind.withNameInsensitiveOption _ andThen (_.orNull),
+        _.entryName
       )
     }
     onEditCommit = (ev: CellEditEvent[Val, ContentKind]) => {

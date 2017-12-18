@@ -3,9 +3,10 @@ package mco.game.generic.store
 import cats.Traverse.nonInheritedOps.toTraverseOps
 import cats.effect.Sync
 import cats.implicits._
-import mco.core.{ContentKind, Mod, NameResolver}
+import mco.core._
 import mco.core.paths._
 import mco.core.state._
+import mco.game.generic.NameResolver
 import mco.io.FileStamping
 
 
@@ -20,8 +21,7 @@ class ModStates[F[_]: Sync: FileStamping](
     val update = FileStamping.overwrite((parent, pp.key), resolved)
 
     update.map { _ =>
-      val stamp = Stamp(enabled = true)
-      (stamp, Vector(pp.key -> ContentState(stamp, kindOf(pp.key))))
+      (Status.Installed, Vector(pp.key -> ContentState(Status.Installed, kindOf(pp.key))))
     }
   }
 

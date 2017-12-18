@@ -10,6 +10,7 @@ import mco.io.{FileStamping, Filesystem}
 import Filesystem._
 import cats.data.OptionT
 import cats.effect.Sync
+import mco.game.generic.NameResolver
 import mouse.boolean._
 import mco.syntax._
 import monocle.function.Index.index
@@ -31,14 +32,14 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
     for {
       rState <- state
       (i, Pointed(_, modState)) = rState.at(key)
-      _ <- if (modState.stamp.enabled) change(i, modState, copy = false) else noop
+      _ <- if (modState.status == Status.Installed) change(i, modState, copy = false) else noop
       modState2 <- state.map(_.at(key)._2.get)
       updated = diff.patch(modState2)
       _ <- repoState ~= (
         RepoState.orderedMods composeOptional
           index(i) set
           Pointed(key, updated))
-      _ <- if (updated.stamp.enabled) change(i, modState, copy = true) else noop
+      _ <- if (updated.status == Status.Installed) change(i, modState, copy = true) else noop
     } yield ()
   }
 
@@ -54,7 +55,7 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
     } yield ()
 
   override def remove(key: RelPath): F[Unit] = for {
-    _    <- update(key, Deltas.OfMod(enabled = Some(false)))
+    _    <- update(key, Deltas.OfMod(status = Some(Status.Installed)))
     _    <- repoState ~= (_.remove(key))
     path <- modsState().map(dict => dict(key).backingFile)
     _    <- rmTree(path)
