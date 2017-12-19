@@ -1,5 +1,6 @@
 package mco.ui.props
 
+import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
 
 import cats.effect.Sync
@@ -12,6 +13,6 @@ class PropertyBasedVar[F[_]: Sync, A](prop: ObjectProperty[A]) extends Var[F, A]
   }
 
   override def :=(a: A): F[Unit] = capture {
-    prop() = a
+    Platform.runLater { prop() = a }
   }
 }

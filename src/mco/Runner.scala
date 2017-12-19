@@ -7,6 +7,7 @@ import mco.core.ModStore
 import mco.core.paths.Path
 import mco.core.vars.MutableVar
 import mco.game.generic.{StoreConfig, implementation}
+import mco.ui.ActionQueue
 import mco.ui.props.PropertyBasedVar
 import mco.ui.state.{Commands, UiState}
 import mco.ui.views.MainWindow
@@ -27,7 +28,9 @@ object Runner extends TaskApp {
     )
   }.flatten
 
-  override def run(args: Array[String]): Task[Unit] = Task.defer {
+  override def run(args: Array[String]): Task[Unit] = Task.deferAction { implicit sc =>
+    val queue = new ActionQueue
+
     val exec = for {
       _ <- JvmAddons.all[Coeval]
       config <- readConfig
@@ -38,11 +41,7 @@ object Runner extends TaskApp {
       uiState = UiState.initial(repoMap.labels zip states, config.files.isImageS)
       state = ObjectProperty(uiState)
     } yield {
-      lazy val commands: Commands = Commands[Coeval](repoMap, coeval => {
-        coeval.onErrorHandle { case NonFatal(ex) =>
-          commands.showError(ex)
-        }.apply()
-      }, new PropertyBasedVar(state))
+      lazy val commands: Commands = Commands[Coeval](repoMap, queue.enqueue, new PropertyBasedVar(state))
       (state, commands)
     }
 
@@ -57,6 +56,7 @@ object Runner extends TaskApp {
       }
       .flatMap { case (state, commands) =>
         Coeval {
+          queue.track.foreach(commands.showError)
           new MainWindow(state)(commands).main(args)
         }
       }
