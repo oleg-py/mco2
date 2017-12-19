@@ -10,56 +10,66 @@ import mco.io.{FileStamping, Filesystem}
 import Filesystem._
 import cats.data.OptionT
 import cats.effect.Sync
-import mco.game.generic.NameResolver
+import mco.game.generic._
 import mouse.boolean._
 import mco.syntax._
-import monocle.function.Index.index
 
 
 //noinspection ConvertibleToMethodValue
 class LocalMods[F[_]: Sync: Filesystem: FileStamping](
   contentRoot: Path,
-  repoState: Var[F, RepoState],
-  modsState: Var[F, Map[RelPath, Mod[F]]],
+  repoVar: Var[F, RepoState],
+  modsVar: Var[F, Map[RelPath, Mod[F]]],
   tryAsMod: Path => F[Option[Mod[F]]],
   computeState: Mod[F] => F[ModState],
   resolver: NameResolver
 ) extends Mods[F] {
-  override def state: F[RepoState] = repoState()
+  override def state: F[RepoState] = repoVar()
 
   override def update(key: RelPath, diff: Deltas.OfMod): F[Unit] = {
     val noop = ().pure[F]
     for {
       rState <- state
       (i, Pointed(_, modState)) = rState.at(key)
-      _ <- if (modState.status == Status.Installed) change(i, modState, copy = false) else noop
+      _ <- if (modState.status == Status.Installed) change(i, modState, Status.Unused)
+           else noop
       modState2 <- state.map(_.at(key)._2.get)
       updated = diff.patch(modState2)
-      _ <- repoState ~= (
-        RepoState.orderedMods composeOptional
-          index(i) set
-          Pointed(key, updated))
-      _ <- if (updated.status == Status.Installed) change(i, modState, copy = true) else noop
+      _ <- repoVar ~= RepoState.pathL(key).set(updated)
+      _ <- if (updated.status == Status.Installed) change(i, modState, Status.Installed)
+           else noop
     } yield ()
   }
 
   private def change(
     i: Int,
     modState: ModState,
-    copy: Boolean) =
+    status: Status
+  ) = {
     for {
-      mods     <- modsState()
-      contents =  modState.contents.keySet
-      focus    =  new InstalledMod(repoState, mods, resolver, i, copy)
-      _        <- focus.run(contents)
+      repo <- repoVar()
+      mods <- modsVar()
+      lookupMod = (order: Int) => {
+        val key = repo.orderedMods(order).key
+        Pointed(key, mods(key))
+      }
+      Pointed(key, targetMod) = repo.orderedMods(i)
+      conflicts = new Conflicts(repo)
+      traversal = new ContentTraversalFS(resolver, repoVar, key)
+      installation = new Installation(lookupMod, conflicts, traversal)
+      contents = targetMod.contents.collect {
+        case (p, cs) if cs.assignedKind == ContentKind.Component => p
+      }.toVector
+      _ <- installation.alter(i, status, contents).runSync
     } yield ()
+  }
 
   override def remove(key: RelPath): F[Unit] = for {
     _    <- update(key, Deltas.OfMod(status = Some(Status.Installed)))
-    _    <- repoState ~= (_.remove(key))
-    path <- modsState().map(dict => dict(key).backingFile)
+    _    <- repoVar ~= (_.remove(key))
+    path <- modsVar().map(dict => dict(key).backingFile)
     _    <- rmTree(path)
-    _    <- modsState ~= (_ - key)
+    _    <- modsVar ~= (_ - key)
   } yield ()
 
   override def liftFile(p: Path): F[Option[ModState]] = {
@@ -71,8 +81,8 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
         state <- computeState(mod)
         key   =  rel"${p.name}"
         keyed =  Pointed(key, state)
-        _     <- repoState ~= { _ add (keyed, mod.label) }
-        _     <- modsState ~= { _ updated (key, mod) }
+        _     <- repoVar ~= { _ add (keyed, mod.label) }
+        _     <- modsVar ~= { _ updated (key, mod) }
       } yield state
 
     tryLift(p)

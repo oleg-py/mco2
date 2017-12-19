@@ -21,7 +21,7 @@ class ModStates[F[_]: Sync: FileStamping](
     val update = FileStamping.overwrite((parent, pp.key), resolved)
 
     update.map { _ =>
-      (Status.Installed, Vector(pp.key -> ContentState(Status.Installed, kindOf(pp.key))))
+      Vector(pp.key -> ContentState(Status.Installed, kindOf(pp.key)))
     }
   }
 
@@ -30,7 +30,7 @@ class ModStates[F[_]: Sync: FileStamping](
       .evalMap(childState(mod.backingFile))
       .runFoldMonoidSync
 
-    result.map { case (stamp, cs) => ModState(stamp, cs.toMap) }
+    result.map { cs => ModState(Status.Unused, cs.toMap) }
   }
 
   def computeAll(mods: Vector[Mod[F]]): F[RepoState] =

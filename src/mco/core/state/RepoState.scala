@@ -2,6 +2,7 @@ package mco.core.state
 
 import mco.core.Status
 import mco.core.paths._
+import monocle.Lens
 import monocle.macros.Lenses
 
 
@@ -26,4 +27,13 @@ import monocle.macros.Lenses
         Pointed(key, modState.tagInstall(filter, status))
       case a => a
     })
+}
+
+object RepoState {
+  def pathL(p: RelPath): Lens[RepoState, ModState] =
+    Lens[RepoState, ModState](_.at(p)._2.get)(newState =>
+      RepoState.orderedMods.modify(_.map {
+        case Pointed(`p`, _) => Pointed(p, newState)
+        case a => a
+      }))
 }

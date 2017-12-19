@@ -1,6 +1,7 @@
 package mco.core.state
 
 import mco.Tests
+import mco.core.Status
 import org.scalacheck.ScalacheckShapeless._
 
 class DeltasProperties extends Tests.Props {
@@ -10,11 +11,11 @@ class DeltasProperties extends Tests.Props {
     }
   }
 
-  property("Enabled is copied to target mod") {
-    forAll { (ms: ModState, enabled: Boolean) =>
+  property("Status is copied to target mod") {
+    forAll { (ms: ModState, status: Status) =>
       Deltas.OfMod(
-        enabled = Some(enabled)
-      ).patch(ms).stamp.enabled shouldBe enabled
+        status = Some(status)
+      ).patch(ms).status shouldBe status
     }
   }
 
@@ -25,9 +26,9 @@ class DeltasProperties extends Tests.Props {
   }
 
   property("Enabled is copied to target content") {
-    forAll { (cs: ContentState, enabled: Boolean) =>
-      Deltas.OfContent(enabled = Some(enabled))
-        .patch(cs).stamp.enabled shouldBe enabled
+    forAll { (cs: ContentState, status: Status) =>
+      Deltas.OfContent(status = Some(status))
+        .patch(cs).status shouldBe status
     }
   }
 }

@@ -3,7 +3,6 @@ package mco.game.generic
 import scala.collection.immutable.SortedMap
 
 import cats.Apply
-import cats.effect.Sync
 import cats.syntax.all._
 import mco.core.Status.{Installed, Unused}
 import mco.core.paths.{Pointed, RelPath}
@@ -18,11 +17,11 @@ class Installation[F[_]: Apply](
   def alter(
     order: Int,
     status: Status,
-    content: Vector[RelPath],
-  ) = {
+    content: Vector[RelPath]
+  ): fs2.Stream[F, Unit] = {
     val Pointed(rel, mod) = lookupMod(order)
     val allResolved = content.map(ma.resolve(rel, _))
-    val (hasConflicts, yy) = conflicts.resolutions(allResolved, order, status)
+    val (hasConflicts, overrides) = conflicts.resolutions(allResolved, order, status)
     val process = status match {
       case Installed =>
         mod.provide(content).evalMap { case Pointed(cRel, cPath) =>
@@ -38,10 +37,10 @@ class Installation[F[_]: Apply](
           else tracked *> ma.remove(at)
         }
     }
-    process ++ doRecovery(yy)
+    process ++ doRecovery(overrides)
   }
 
-  private def doRecovery(map: SortedMap[Int, Set[RelPath]]): fs2.Stream[F, Unit] =
+  private def doRecovery(map: SortedMap[Int, Set[RelPath]]) =
     for {
       entry <- fs2.Stream.emits(map.toSeq)
       (idx, set) = entry
