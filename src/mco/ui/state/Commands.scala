@@ -60,9 +60,6 @@ abstract class Commands {
   def update(key: RelPath, diff: Deltas.OfMod): Unit =
     syncChangesMods(_.update(key, diff)) { (_, _, us) => us }
 
-  def remove(key: RelPath): Unit =
-    syncChangesMods(_.remove(key)) { (_, _, us) => us }
-
   def setThumbnail(path: String): Unit = {
     val op = for {
       st <- tabState()
@@ -109,22 +106,6 @@ abstract class Commands {
     syncChanges(op) { (_, rs, us) => us.copy(pendingAdds = None) }
   }
 
-  final def installActive(): Unit = syncChanges {
-    for {
-      st <- tabState()
-      mods <- repoMap.mods
-      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(status = Some(Status.Installed))))
-    } yield ()
-  } { (_, _, us) => us }
-
-  final def uninstallActive(): Unit = syncChanges {
-    for {
-      st <- tabState()
-      mods <- repoMap.mods
-      _ <- st.currentModKey.traverse_(mods.update(_, Deltas.OfMod(status = Some(Status.Unused))))
-    } yield ()
-  } { (_, _, us) => us }
-
   final def install(key: RelPath): Unit =
     update(key, Deltas.OfMod(status = Some(Status.Installed)))
 
@@ -145,6 +126,30 @@ abstract class Commands {
 
   final def cancelPendingAdds(): Unit =
     runLater { tabState ~= UiState.Tab.pendingAdds.set(None) }
+
+  def toggleActive(): Unit = syncChangesMods { mods =>
+    for {
+      st <- tabState()
+      keyO = st.currentModKey
+      modO = st.currentMod
+      _ <- (modO, keyO).tupled.traverse_ { case (modState, path) =>
+        modState.status match {
+          case Status.Installed =>
+            mods.update(path, Deltas.OfMod(status = Some(Status.Unused)))
+          case Status.Unused =>
+            mods.update(path, Deltas.OfMod(status = Some(Status.Installed)))
+        }
+      }
+    } yield ()
+  } { (_, _, us) => us }
+
+
+  def removeActive(): Unit = syncChangesMods { mods =>
+    for {
+      st <- tabState()
+      _  <- st.currentModKey.traverse_(mods.remove)
+    } yield ()
+  } { (_, _, us) => us }
 }
 
 object Commands {

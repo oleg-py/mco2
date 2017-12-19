@@ -34,10 +34,7 @@ class PackageActionButtons(state: Prop[Option[ModState]])(implicit cmd: Commands
       }
       disable <== state.map(_.isEmpty)
       onAction = handle {
-        for (value <- state()) {
-          if (value.status == Status.Installed) cmd.uninstallActive()
-          else cmd.installActive()
-        }
+        cmd.toggleActive()
       }
       defaultButton = true
     }

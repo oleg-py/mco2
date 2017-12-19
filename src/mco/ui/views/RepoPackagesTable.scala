@@ -6,7 +6,7 @@ import scalafx.beans.property.{BooleanProperty, ObjectProperty}
 import scalafx.geometry.Insets
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
-import scalafx.scene.control.{TableColumn, TableRow, TableView}
+import scalafx.scene.control._
 import scalafx.scene.layout.Priority
 
 import mco.core.Status
@@ -29,17 +29,42 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
     mods.map { case (k, v) => (k, label(k), v) }
   }
 
-  editable = true
-  hgrow = Priority.Always
-  columnResizePolicy = TableView.ConstrainedResizePolicy
-  rowFactory = _ => new PackageRow
+  val item = selectionModel.value.selectedItemProperty().asProp
 
-  selectionModel.value.selectedItemProperty()
+  item
     .onChange { (evt, _, _) =>
       // selected item might be null
       Option(evt()).map(_._1)
         .foreach(cmd.setActivePackage)
     }
+
+  contextMenu = new ContextMenu(
+    new MenuItem {
+      text <== item.map { value =>
+        Option(value)
+          .map(_._3.status)
+          .getOrElse(Status.Unused) match {
+          case Status.Unused    => "Install"
+          case Status.Installed => "Uninstall"
+        }
+      }
+
+      onAction = handle {
+        cmd.toggleActive()
+      }
+    },
+    new MenuItem("Remove") {
+      onAction = handle {
+        cmd.removeActive()
+      }
+    }
+  )
+
+  editable = true
+  hgrow = Priority.Always
+  columnResizePolicy = TableView.ConstrainedResizePolicy
+  rowFactory = _ => new PackageRow
+
 
   override def canAcceptFiles(path: Vector[String]): Boolean = true
 
