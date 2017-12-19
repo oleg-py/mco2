@@ -19,7 +19,10 @@ class PackageThumbnail(
 )
   extends ImageViewPane with DropFilesReceiver
 {
-  image <== state.map(_.map(url => new Image(url.toString)).orNull)
+  image <== state.map { urlOpt =>
+    val url = urlOpt.getOrElse(getClass.getResource("/no-thumbnail.png"))
+    new Image(url.toString)
+  }
   smooth = true
   preserveRatio = true
   margin = Insets(4, 0, 4, 0)
