@@ -1,13 +1,13 @@
 package mco.game.generic
 
-import cats.FlatMap
+import cats.Monad
 import mco.core.paths.{Path, RelPath}
 import mco.core.state.{ModState, RepoState}
 import mco.core.vars.Var
 import mco.io.Filesystem
 import mco.syntax._
 
-class ContentTraversalFS[F[_]: Filesystem: FlatMap](
+class ContentTraversalFS[F[_]: Filesystem: Monad](
   val resolve: NameResolver,
   repoVar: Var[F, RepoState],
   targetMod: RelPath
@@ -16,7 +16,7 @@ class ContentTraversalFS[F[_]: Filesystem: FlatMap](
     Filesystem.copy(from, to)
 
   override def remove(at: Path): F[Unit] =
-    Filesystem.rmTree(at)
+    Filesystem.rmIfExists(at)
 
   override def track(rel: RelPath, value: Option[Path]): F[Unit] =
     repoVar ~= RepoState.pathL(targetMod)
