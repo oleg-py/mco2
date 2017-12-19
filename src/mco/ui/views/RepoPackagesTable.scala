@@ -26,7 +26,7 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   columns ++= Seq(CheckBoxColumn, TitleColumn)
 
   items <== state.map { case RepoState(mods, label) =>
-    mods.map { case Pointed(k, v) => (k, label(k), v) }
+    mods.map { case (k, v) => (k, label(k), v) }
   }
 
   editable = true

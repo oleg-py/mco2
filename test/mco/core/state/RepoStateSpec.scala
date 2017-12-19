@@ -7,7 +7,7 @@ import mco.core.paths._
 
 class RepoStateSpec extends Tests.Spec {
   private def modState(rel: RelPath, c: (RelPath, ContentState)*): Pointed[ModState] = {
-    Pointed(rel, ModState(Status.Installed, c.toMap))
+    (rel, ModState(Status.Installed, c.toMap))
   }
   private def cState(rel: RelPath) =
     rel -> ContentState(Status.Installed, ContentKind.Component, Some(path"/$rel"))

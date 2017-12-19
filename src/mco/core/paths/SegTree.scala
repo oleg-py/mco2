@@ -36,20 +36,16 @@ sealed trait SegTree[+A] {
   }
 
   final def children: Stream[Pointed[A]] = this match {
-    case SegLeaf(a) => Stream(Pointed(rel"", a))
+    case SegLeaf(a) => Stream((rel"", a))
     case SegRoot(map) => map.iterator
       .flatMap { case (k, v) =>
-        for (Pointed(p, a) <- v.children) yield Pointed(rel"$k/$p", a)
+        for ((p, a) <- v.children) yield (rel"$k/$p", a)
       }
       .toStream
   }
 }
 
 object SegTree {
-  def fromFoldable[F[_]: Foldable, A](f: F[Pointed[A]]): SegTree[A] =
-    f.foldLeftM(root[A]()) { case (b, Pointed(p, a)) => b.update(p, Some(leaf(a))) }
-      .getOrElse(root[A]())
-
   case class SegLeaf[A](value: A) extends SegTree[A]
   case class SegRoot[A](map: Map[Segment, SegTree[A]]) extends SegTree[A]
 

@@ -17,11 +17,11 @@ class ModStates[F[_]: Sync: FileStamping](
   known: Vector[Pointed[ModState]]
 ) {
   private def childState(parent: Path)(pp: Pointed[Path]) = {
-    val resolved = nameResolver(parent.relTo(root), pp.key)
-    val update = FileStamping.overwrite((parent, pp.key), resolved)
+    val resolved = nameResolver(parent.relTo(root), pp._1)
+    val update = FileStamping.overwrite((parent, pp._1), resolved)
 
     update.map { _ =>
-      Vector(pp.key -> ContentState(Status.Installed, kindOf(pp.key)))
+      Vector(pp._1 -> ContentState(Status.Installed, kindOf(pp._1)))
     }
   }
 
@@ -38,7 +38,7 @@ class ModStates[F[_]: Sync: FileStamping](
       val (states, labels) = (mods zip computed)
         .map { case (mod, state) =>
           val path = mod.backingFile.relTo(root)
-          (Pointed(path, state), (path, mod.label))
+          ((path, state), (path, mod.label))
         }
         .unzip
       RepoState(states, labels.toMap)
@@ -52,12 +52,12 @@ class ModStates[F[_]: Sync: FileStamping](
     def update = (i: Int) =>
       recompute(mod, i) <* FileStamping.overwrite((file, rel""), file)
 
-    val index =  known.indexWhere(_.key == file.relTo(root))
+    val index =  known.indexWhere(_._1 == file.relTo(root))
     val isNew =  index == -1
     for {
       stale    <- needsRecompute
       modState <- if (isNew || stale) update(index)
-                  else known(index).get.pure[F]
+                  else known(index)._2.pure[F]
     } yield modState
   }
 }

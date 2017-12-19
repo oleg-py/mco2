@@ -17,7 +17,7 @@ class ArchiveMod[F[_]: Filesystem: Functor](archive: Archive[F]) extends Mod[F] 
     Filesystem.mkTemp
       .evalMap { tmpDir =>
         val targets = content.fproduct(tmpDir / _).toMap
-        val result = content.map(rel => Pointed(rel, tmpDir / rel))
+        val result = content.map(rel => (rel, tmpDir / rel))
         archive.extract(targets).as(result)
       }
     .flatMap(fs2.Stream.emits(_))

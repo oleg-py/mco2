@@ -55,7 +55,7 @@ class FolderMod[F[_]: Filesystem: Monad](
   override def provide(content: Vector[RelPath]): fs2.Stream[F, Pointed[Path]] =
     fs2.Stream.eval(structureF).flatMap {
       dataM =>
-        val filtered = content.collect(dataM).map { case (p, r) => Pointed(r, p) }
+        val filtered = content.collect(dataM).map(_.swap)
         fs2.Stream.emits(filtered)
     }
 }

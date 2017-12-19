@@ -23,7 +23,7 @@ class FileModTest extends Tests.Spec {
   "FileMod#provide" should "provide only own file" in {
     val fun = fm.provide(_: Vector[RelPath]).runLogSync.value
     fun(Vector(rel"fileMod.dat")) should contain only
-      Pointed(rel"fileMod.dat", path"mods/fileMod.dat")
+      (rel"fileMod.dat" -> path"mods/fileMod.dat")
 
     fun(Vector(rel"zuul.qux")) shouldBe empty
   }

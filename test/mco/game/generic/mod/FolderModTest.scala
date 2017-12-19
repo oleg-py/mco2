@@ -39,10 +39,10 @@ class FolderModTest extends Tests.Spec {
     val nested2 = "nonEmptySubdir/nestedFile2"
 
     func(Vector(rel"$nested2", rel"nonExisting")) should contain only
-      Pointed(rel"$nested2", path"mods/folderMod/$nested2")
+      (rel"$nested2" -> path"mods/folderMod/$nested2")
 
     val oks = Vector("innerFile", "emptySubdir", "nonEmptySubdir")
     func(oks.map(s => rel"$s")) should contain only
-      Pointed(rel"innerFile", path"mods/folderMod/innerFile")
+      (rel"innerFile" -> path"mods/folderMod/innerFile")
   }
 }

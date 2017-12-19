@@ -12,8 +12,8 @@ trait NameResolver {
     modInfo: RelPath
   )(targets: Vector[Pointed[Path]]
   ): Vector[Pointed[(Path, Path)]] =
-    targets map { case Pointed(key, from) =>
-      Pointed(key, from -> this(modInfo, key))
+    targets map { case (key, from) =>
+      (key, from -> this(modInfo, key))
     }
 }
 

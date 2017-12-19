@@ -15,9 +15,9 @@ class Conflicts(state: RepoState) {
     new mutable.HashMap[Path, mutable.TreeMap[Int, RelPath]]()
   // Conflict tree generation - only mutate map here
   for {
-    (Pointed(_, mod), i) <- state.orderedMods.iterator.zipWithIndex
-    (rel, content)       <- mod.contents
-    path                 <- content.target
+    ((_, mod), i)  <- state.orderedMods.iterator.zipWithIndex
+    (rel, content) <- mod.contents
+    path           <- content.target
   } {
     conflictTree.getOrElseUpdate(path, new mutable.TreeMap).
       update(i, rel)

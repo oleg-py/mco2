@@ -29,9 +29,9 @@ object UiState {
     thumbnailUrl: Option[URL] = None,
   ) {
     def currentMod: Option[ModState] = for {
-      key <- currentModKey
-      mod <- repoState.orderedMods.find(_.key == key)
-    } yield mod.get
+      key      <- currentModKey
+      (_, mod) <- repoState.orderedMods.find(_._1 == key)
+    } yield mod
 
     def currentContent: Vector[(RelPath, String, ContentState)] =
       for {

@@ -30,10 +30,10 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
     val noop = ().pure[F]
     for {
       rState <- state
-      (i, Pointed(_, modState)) = rState.at(key)
+      (i, (_, modState)) = rState.at(key)
       _ <- if (modState.status == Status.Installed) change(i, modState, Status.Unused)
            else noop
-      modState2 <- state.map(_.at(key)._2.get)
+      modState2 <- state.map(_.at(key)._2._2)
       updated = diff.patch(modState2)
       _ <- repoVar ~= RepoState.pathL(key).set(updated)
       _ <- if (updated.status == Status.Installed) change(i, modState, Status.Installed)
@@ -50,10 +50,10 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
       repo <- repoVar()
       mods <- modsVar()
       lookupMod = (order: Int) => {
-        val key = repo.orderedMods(order).key
-        Pointed(key, mods(key))
+        val (key, _) = repo.orderedMods(order)
+        (key, mods(key))
       }
-      Pointed(key, targetMod) = repo.orderedMods(i)
+      (key, targetMod) = repo.orderedMods(i)
       conflicts = new Conflicts(repo)
       traversal = new ContentTraversalFS(resolver, repoVar, key)
       installation = new Installation(lookupMod, conflicts, traversal)
@@ -80,7 +80,7 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
       for {
         state <- computeState(mod)
         key   =  rel"${p.name}"
-        keyed =  Pointed(key, state)
+        keyed =  (key, state)
         _     <- repoVar ~= { _ add (keyed, mod.label) }
         _     <- modsVar ~= { _ updated (key, mod) }
       } yield state

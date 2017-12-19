@@ -17,4 +17,11 @@ package object paths {
    * available at the same location
    */
   type InnerPath = (Path, RelPath)
+
+  /**
+   * Class representing value contained with a relative path
+   *
+   * @tparam A type of value contained
+   */
+  type Pointed[+A] = (RelPath, A)
 }
