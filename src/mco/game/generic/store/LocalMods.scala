@@ -76,7 +76,7 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
   override def liftFile(p: Path): F[Option[ModState]] = {
     val target = contentRoot / p.name
     def tryLift(p: Path) = OptionT(tryAsMod(p))
-    def notAlreadyExists(p: Path) = OptionT(exists(p).map(a => (!a).option(unit)))
+    def notAlreadyExists(p: Path) = OptionT(exists(p).map(a => (!a).option(())))
     def registerMod(mod: Mod[F]) =
       for {
         state <- computeState(mod)

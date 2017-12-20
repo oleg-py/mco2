@@ -16,5 +16,5 @@ import java.net.URL
  */
 class NoImageStore[F[_]: Applicative] extends ImageStore[F] {
   override def getImage(key: RelPath) = none[URL].pure[F]
-  override def putImage(key: RelPath, path: Option[Path]) = unit.pure[F]
+  override def putImage(key: RelPath, path: Option[Path]) = ().pure[F]
 }

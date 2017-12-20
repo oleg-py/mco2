@@ -31,7 +31,7 @@ class FolderMod[F[_]: Filesystem: Monad](
       isDir   <- isDirectory(path).pipe(toState)
       _       <- scanDeepRec(isDir ?? childrenOf(path))
       key     =  path relTo backingFile
-      _       <- if (isDir) StateT.pure[F, DataM, Unit](unit)
+      _       <- if (isDir) StateT.pure[F, DataM, Unit](())
                  else StateT.modify[F, DataM](_.updated(key, (path, key)))
     } yield ()
   }
