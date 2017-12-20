@@ -8,6 +8,7 @@ inThisBuild(Seq(
 resolvers += "JitPack" at "https://jitpack.io"
 
 libraryDependencies ++= Seq(
+  "io.suzaku" %% "boopickle" % "1.2.6",
   "co.fs2" %% "fs2-core" % "0.10.0-M8",
   "org.typelevel" %% "cats-core" % "1.0.0-RC1",
   "org.typelevel" %% "mouse" % "0.12",

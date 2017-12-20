@@ -11,18 +11,18 @@ import mco.io.impls._
 import mco.io.{FileStamping, Filesystem}
 import cats.effect.Sync
 import monix.execution.atomic.{Atomic, AtomicBuilder}
-
+import boopickle.Default._
 
 //noinspection ConvertibleToMethodValue
 object implementation {
-  private def miniDB[F[_]: Sync: Filesystem, A](
+  private def miniDB[F[_]: Sync: Filesystem, A: Pickler](
     file: Path,
     initial: A
   )(implicit
     b: AtomicBuilder[A, _ <: Atomic[A]]
   ): F[Var[F, A]] =
     CacheVar(initial.pure[F])(
-      new JavaSerializableVar(file),
+      new BoopickleVar(file),
       MutableVar(_)
     )
 

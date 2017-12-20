@@ -1,5 +1,7 @@
 package mco.core
 
+import boopickle.Default._
+
 package object paths {
 
   /**
@@ -24,4 +26,13 @@ package object paths {
    * @tparam A type of value contained
    */
   type Pointed[+A] = (RelPath, A)
+
+  implicit val segmentPicker: Pickler[Segment] =
+    transformPickler[Segment, String](Segment(_))(_.toString)
+
+  implicit val relPickler =
+    transformPickler[RelPath, Vector[Segment]](RelPath.of)(_.segments)
+
+  implicit val pathPickler =
+    transformPickler[Path, Vector[Segment]](Path.of)(_.segments)
 }
