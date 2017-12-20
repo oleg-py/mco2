@@ -1,9 +1,5 @@
 package mco.game.generic
 
-import scala.util.matching.Regex
-
-import mco.core.paths.Segment
-
 
 case class StoreConfig(
   files: StoreConfig.Files,
@@ -14,7 +10,7 @@ object StoreConfig {
   case class Files(
     images: Vector[String]
   ) {
-    val isImageS = (s: String) => images.exists(s.endsWith)
+    def isImagePath(s: String): Boolean = images.exists(s.endsWith)
   }
 
   case class Repo(
@@ -22,7 +18,5 @@ object StoreConfig {
     mods: String,
     images: String,
     target: String
-  ) {
-    def paths: Vector[String] = Vector(mods, images, target)
-  }
+  )
 }

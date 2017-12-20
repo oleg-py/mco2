@@ -6,7 +6,7 @@ import scala.collection.mutable
 import cats.syntax.foldable._
 import cats.instances.all._
 import mco.core.Status
-import mco.core.paths.{Path, Pointed, RelPath}
+import mco.core.paths.{Path, RelPath}
 import mco.core.state.RepoState
 
 

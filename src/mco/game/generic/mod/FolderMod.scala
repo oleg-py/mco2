@@ -43,15 +43,6 @@ class FolderMod[F[_]: Filesystem: Monad](
     data.map { case (_, (_, c)) => c } .toVector
   }
 
-
-//  override def provide(content: Vector[RelPath]): InTemp[F, Map[RelPath, Path]] = InTemp {
-//    for {
-//      data <- structureF
-//    } yield content
-//      .collect(data)
-//      .map(_.swap)
-//      .toMap
-//  }
   override def provide(content: Vector[RelPath]): fs2.Stream[F, Pointed[Path]] =
     fs2.Stream.eval(structureF).flatMap {
       dataM =>

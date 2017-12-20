@@ -85,7 +85,7 @@ object implementation {
     }
   }
 
-  def algebras[F[_]: Sync](
+  def apply[F[_]: Sync](
     config: StoreConfig,
     cwd: Path
   ): F[Vector[(String, Mods[F], ImageStore[F])]] = {

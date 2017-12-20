@@ -25,6 +25,6 @@ class SimpleModTypes[F[_]: Filesystem: Sync] {
   def allIn(path: Path): F[Vector[Mod[F]]] =
     for {
       children <- childrenOf(path)
-      mods <- children.traverse(apply)
+      mods     <- children.traverse(apply)
     } yield mods.flatten.toVector
 }

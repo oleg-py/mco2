@@ -28,19 +28,16 @@ class Archive[F[_]: Filesystem: Sync](val file: Path) {
   }
 
   private def getInArchive: fs2.Stream[F, IInArchive] =
-    Filesystem.getSfStream(file)
-      .flatMap { input =>
-        val arch = capture(SevenZip.openInArchive(null, input))
-        fs2.Stream.bracket(arch)(
-          x => fs2.Stream(x),
-          archive => capture(archive.close())
-        )
-      }
+    Filesystem.getSfStream(file).flatMap { input =>
+      val arch = capture(SevenZip.openInArchive(null, input))
+      fs2.Stream.bracket(arch)(
+        x => fs2.Stream(x),
+        archive => capture(archive.close())
+      )
+    }
 
   private def filterTargets(archive: IInArchive, rawTargets: Map[RelPath, Path]) =
-    for {
-      validEntries <- emitEntries(archive)
-    } yield rawTargets.filterKeys(validEntries.toSet)
+    emitEntries(archive).map(paths => rawTargets.filterKeys(paths.toSet))
 
   private def emitEntries(arch: IInArchive) = capture {
     arch.getSimpleInterface.getArchiveItems
@@ -52,12 +49,14 @@ class Archive[F[_]: Filesystem: Sync](val file: Path) {
 
   private def mapForOutput(targets: Map[RelPath, Path]) = {
     val (keys, vals) = targets.unzip
-    vals.toList.traverse(Filesystem.getSfStream(_)).map { newVals =>
-      keys.zip(newVals).toMap
-    }
+    vals.toList
+      .traverse(Filesystem.getSfStream(_))
+      .map { newVals => keys.zip(newVals).toMap }
   }
 
-  private def getIndexMap(archive: IInArchive, keys: Iterable[RelPath]
+  private def getIndexMap(
+    archive: IInArchive,
+    keys: Iterable[RelPath]
   ): F[Map[Int, RelPath]] =
     capture {
       val keySet = keys.toSet

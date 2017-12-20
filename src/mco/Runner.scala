@@ -32,16 +32,19 @@ object Runner extends TaskApp {
     val queue = new ActionQueue
 
     val exec = for {
-      _ <- JvmAddons.all[Coeval]
-      config <- readConfig
-      cwd <- readCwd
-      algebras <- implementation.algebras[Coeval](config, cwd)
-      repoMap = new ModStore.ByVar[Coeval](algebras, new MutableVar(0))
-      states <- repoMap.states
-      uiState = UiState.initial(repoMap.labels zip states, config.files.isImageS)
-      state = ObjectProperty(uiState)
+      _        <- JvmAddons.all[Coeval]
+      config   <- readConfig
+      cwd      <- readCwd
+      algebras <- implementation[Coeval](config, cwd)
+      repoMap  =  new ModStore.ByVar[Coeval](algebras, new MutableVar(0))
+      states   <- repoMap.states
     } yield {
-      lazy val commands: Commands = Commands[Coeval](repoMap, queue.enqueue, new PropertyBasedVar(state))
+      val uiState = UiState.initial(repoMap.labels zip states, config.files.isImagePath)
+      val state = ObjectProperty(uiState)
+      val commands: Commands = Commands[Coeval](
+        repoMap,
+        queue.enqueue,
+        new PropertyBasedVar(state))
       (state, commands)
     }
 
@@ -56,7 +59,7 @@ object Runner extends TaskApp {
       }
       .flatMap { case (state, commands) =>
         Coeval {
-          queue.track.foreach(commands.showError)
+          queue.watch.foreach(commands.showError)
           new MainWindow(state)(commands).main(args)
         }
       }

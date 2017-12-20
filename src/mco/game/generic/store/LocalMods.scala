@@ -27,17 +27,16 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
   override def state: F[RepoState] = repoVar()
 
   override def update(key: RelPath, diff: Deltas.OfMod): F[Unit] = {
-    val noop = ().pure[F]
     for {
       rState <- state
       (i, (_, modState)) = rState.at(key)
       _ <- if (modState.status == Status.Installed) change(i, modState, Status.Unused)
-           else noop
+           else unit.pure[F]
       modState2 <- state.map(_.at(key)._2._2)
       updated = diff.patch(modState2)
       _ <- repoVar ~= RepoState.pathL(key).set(updated)
       _ <- if (updated.status == Status.Installed) change(i, modState, Status.Installed)
-           else noop
+           else unit.pure[F]
     } yield ()
   }
 

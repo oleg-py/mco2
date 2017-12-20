@@ -20,5 +20,5 @@ class ArchiveMod[F[_]: Filesystem: Functor](archive: Archive[F]) extends Mod[F] 
         val result = content.map(rel => (rel, tmpDir / rel))
         archive.extract(targets).as(result)
       }
-    .flatMap(fs2.Stream.emits(_))
+      .flatMap(fs2.Stream.emits(_))
 }

@@ -13,7 +13,8 @@ class ActionQueue {
     ()
   }
 
-  val track: Observable[Throwable] =
-    subject.mapTask(_.task.executeWithFork.attempt).collect { case Left(ex) => ex }
-
+  val watch: Observable[Throwable] =
+    subject
+      .mapTask(_.task.executeWithFork.attempt)
+      .collect { case Left(exception) => exception }
 }
