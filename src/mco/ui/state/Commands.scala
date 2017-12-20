@@ -66,13 +66,17 @@ abstract class Commands {
       keyOpt = st.currentModKey
       imageStore <- repoMap.imageStore
       url <- keyOpt.traverse { key =>
-        imageStore.putImage(key, Some(Path("-os") / RelPath(path))) *>
+        imageStore.putImage(key, Some(Path(path))) *>
           imageStore.getImage(key)
       }
     } yield url.flatten
 
     syncChanges(op) { (url, _, us) => us.copy(thumbnailUrl = url  ) }
   }
+
+  def unsetThumbnail(): Unit = syncChangesImageStore(store =>
+    tabState().flatMap(_.currentModKey.traverse(store.putImage(_, None)))
+  ) { (_, _, us) => us.copy(thumbnailUrl = None) }
 
 
   def setActivePackage(key: RelPath): Unit = {
@@ -99,7 +103,7 @@ abstract class Commands {
       mods <- repoMap.mods
       assocs = UiState.Tab.assocL.getOption(st).getOrElse(Map())
       _ <- assocs.keys.toVector.traverse_ { str =>
-        mods.liftFile(Path("-os") / RelPath(str)).void
+        mods.liftFile(Path(str)).void
       }
     } yield ()
 
