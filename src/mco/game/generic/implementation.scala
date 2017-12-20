@@ -23,7 +23,7 @@ object implementation {
   ): F[Var[F, A]] =
     CacheVar(initial.pure[F])(
       new JavaSerializableVar(file),
-      new MutableVar(_).pure[F].widen
+      MutableVar(_)
     )
 
   private def getStates[F[_]: Sync: Filesystem: FileStamping](
@@ -66,16 +66,19 @@ object implementation {
       for {
         existing <- typer.allIn(source)
         states   <- getStates(target, source, resolver, existing)
-      } yield {
-        val (repoState, modStates) = states
-        val modsMap = existing
+
+        modsMap = existing
           .map { mod => (mod.backingFile.relTo(source), mod) }
           .toMap
+
+        state <- MutableVar(modsMap)
+      } yield {
+        val (repoState, modStates) = states
 
         val localMods = new LocalMods[F](
           source,
           repoState,
-          new MutableVar(modsMap),
+          state,
           typer(_),
           modStates.computeState,
           resolver

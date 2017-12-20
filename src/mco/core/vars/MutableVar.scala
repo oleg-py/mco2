@@ -9,22 +9,12 @@ import monix.execution.atomic.PaddingStrategy.NoPadding
 
 /**
  * Var instance based on Monix atomic variable
- * @param initial
- * @param ev$1
- * @param b
  * @tparam F effect type of alterations (usually a Monad)
  * @tparam A value type
  */
-class MutableVar[F[_]: Sync, A](initial: A)(implicit
-  b: AtomicBuilder[A, _ <: Atomic[A]]
-)
+class MutableVar[F[_]: Sync, A] private (state: Atomic[A])
   extends Var[F, A]
 {
-  private val state: Atomic[A] = b.buildInstance(
-    initial,
-    NoPadding,
-    allowPlatformIntrinsics = true
-  )
   override def apply(): F[A] = capture {
     state.get
   }
@@ -35,5 +25,14 @@ class MutableVar[F[_]: Sync, A](initial: A)(implicit
 
   override def ~=(f: A => A)(implicit F: FlatMap[F]): F[Unit] = capture {
     state.transform(f)
+  }
+}
+
+object MutableVar {
+  def apply[F[_]: Sync, A](initial: A)(implicit
+    b: AtomicBuilder[A, _ <: Atomic[A]]
+  ): F[Var[F, A]] = capture {
+    val atomic = b.buildInstance(initial, NoPadding, allowPlatformIntrinsics = true)
+    new MutableVar(atomic)
   }
 }

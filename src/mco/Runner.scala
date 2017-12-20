@@ -36,7 +36,8 @@ object Runner extends TaskApp {
       config   <- readConfig
       cwd      <- readCwd
       algebras <- implementation[Coeval](config, cwd)
-      repoMap  =  new ModStore.ByVar[Coeval](algebras, new MutableVar(0))
+      counter  <- MutableVar[Coeval, Int](0)
+      repoMap  =  new ModStore.ByVar[Coeval](algebras, counter)
       states   <- repoMap.states
     } yield {
       val uiState = UiState.initial(repoMap.labels zip states, config.files.isImagePath)

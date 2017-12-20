@@ -5,7 +5,7 @@ import monix.eval.Coeval
 
 
 class MutableVarProperties extends Tests.Props {
-  def mkVar(init: String): Var[Coeval, String] = new MutableVar(init)
+  def mkVar(init: String): Var[Coeval, String] = MutableVar[Coeval, String](init).value
 
   property("write >> read consistency") {
     forAll { (s: String) =>
