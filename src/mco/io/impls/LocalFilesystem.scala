@@ -53,10 +53,10 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
   }
 
   override def mkTemp: fs2.Stream[F, Path] = {
-    val mkTemp = Sync[F].delay(File.newTemporaryDirectory("mco-lfs-"))
+    val mkTemp = capture(File.newTemporaryDirectory("mco-lfs-"))
     fs2.Stream.bracket(mkTemp)(
       file => fs2.Stream(Path(file.pathAsString)),
-      file => Sync[F].delay { file.delete(); () }
+      file => capture { file.delete(); () }
     )
   }
 
