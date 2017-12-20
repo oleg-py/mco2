@@ -1,7 +1,7 @@
 package mco.game.generic.store
 
-import cats._
 import cats.syntax.all._
+import cats.instances.unit._
 import mco.core._
 import mco.core.paths._
 import mco.core.state._
@@ -30,13 +30,15 @@ class LocalMods[F[_]: Sync: Filesystem: FileStamping](
     for {
       rState <- state
       (i, (_, modState)) = rState.at(key)
-      _ <- if (modState.status == Status.Installed) change(i, modState, Status.Unused)
-           else unit.pure[F]
+      _ <- ifM (modState.status == Status.Installed) {
+        change(i, modState, Status.Unused)
+      }
       modState2 <- state.map(_.at(key)._2._2)
       updated = diff.patch(modState2)
       _ <- repoVar ~= RepoState.pathL(key).set(updated)
-      _ <- if (updated.status == Status.Installed) change(i, modState, Status.Installed)
-           else unit.pure[F]
+      _ <- ifM (updated.status == Status.Installed) {
+        change(i, modState, Status.Installed)
+      }
     } yield ()
   }
 

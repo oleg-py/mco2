@@ -1,6 +1,8 @@
 package mco
 
+import cats.Applicative
 import cats.effect.Sync
+import cats.kernel.Monoid
 
 
 object syntax {
@@ -10,6 +12,10 @@ object syntax {
   }
 
   val unit: Unit = ()
+
+  @inline def ifM[F[_]: Applicative, A: Monoid](b: Boolean)(ifTrue: => F[A]): F[A] =
+    if (b) ifTrue
+    else Applicative[F].pure(Monoid[A].empty)
 
   @inline def ??[A](implicit a: A): A = a
 
