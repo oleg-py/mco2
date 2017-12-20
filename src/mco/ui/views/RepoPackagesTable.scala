@@ -7,7 +7,9 @@ import scalafx.geometry.Insets
 import scalafx.scene.control.TableColumn._
 import scalafx.scene.control.cell.{CheckBoxTableCell, TextFieldTableCell}
 import scalafx.scene.control._
-import scalafx.scene.layout.Priority
+import scalafx.scene.input.{ClipboardContent, DataFormat, TransferMode}
+import scalafx.scene.layout._
+import scalafx.scene.paint.Paint
 
 import mco.core.Status
 import mco.core.paths._
@@ -16,6 +18,8 @@ import mco.ui.components.DropFilesReceiver
 import mco.ui.props._
 import mco.ui.state.Commands
 import mco.syntax._
+
+import javafx.scene.input.{DragEvent, MouseEvent}
 
 class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   extends TableView[(RelPath, String, ModState)]
@@ -71,7 +75,28 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   override def acceptFiles(paths: Vector[String]): Unit =
     cmd.addPending(paths)
 
-  class PackageRow extends TableRow[Triple]
+  class PackageRow extends TableRow[Triple] { self =>
+    onDragDetected = (ev: MouseEvent) => {
+      if (!empty()) {
+        val db = self.startDragAndDrop(TransferMode.Move)
+        db.setDragView(self.snapshot(null, null))
+        val cc = new ClipboardContent
+        cc.put(RepoPackagesTable.intFormat, self.index(): Integer)
+        db.setContent(cc)
+        ev.consume()
+      }
+    }
+
+    onDragOver = (event: DragEvent) => {
+      val db = event.getDragboard
+      if (db.hasContent(RepoPackagesTable.intFormat)) {
+        if (self.index() != db.getContent(RepoPackagesTable.intFormat).asInstanceOf[Int]) {
+          event.acceptTransferModes(TransferMode.Move)
+          event.consume()
+        }
+      }
+    }
+  }
 
   object CheckBoxColumn extends TableColumn[Triple, Any] {
     text = "S."
@@ -105,4 +130,8 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
   class LabelTableCell extends TextFieldTableCell[Triple, String]() {
     editable = false
   }
+}
+
+object RepoPackagesTable {
+  private val intFormat = new DataFormat("application/x-integer")
 }
