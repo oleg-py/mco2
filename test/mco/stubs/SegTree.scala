@@ -1,10 +1,10 @@
-package mco.core.paths
+package mco.stubs
 
-import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
-import mouse.all._
+import mco.core.paths._
 import mco.syntax._
+import mouse.all._
 
 
 /**
