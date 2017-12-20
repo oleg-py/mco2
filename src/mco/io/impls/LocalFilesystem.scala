@@ -15,6 +15,7 @@ import net.sf.sevenzipjbinding.{IInStream, IOutStream}
 import java.io.{IOException, RandomAccessFile}
 import java.net.URL
 import java.nio.ByteBuffer
+import java.nio.file.StandardOpenOption._
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileAlreadyExistsException, StandardOpenOption}
 
@@ -45,7 +46,7 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
 
   override def writeFile(path: Path, bb: ByteBuffer): F[Unit] = capture {
     for (ch <- File(path.toString).createIfNotExists(createParents = true).fileChannel(
-      Seq(StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+      Seq(WRITE, CREATE, TRUNCATE_EXISTING)
     )) {
       ch.write(bb)
     }

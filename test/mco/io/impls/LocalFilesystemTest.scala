@@ -81,10 +81,19 @@ class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
 
   // --------------------------------------------------------------------------
 
-  behavior of "LocalFilesystem#setBytes"
+  behavior of "LocalFilesystem#writeFile"
 
   it should "overwrite existing file" in { dirs =>
     val testData = Random.alphanumeric.take(Random.nextInt(50)).mkString("")
+    val path = dirs.src / seg"test_folder" / seg"file1"
+    path.asFile.isRegularFile shouldBe true
+
+    writeFile(path, ByteBuffer.wrap(testData.getBytes)).apply()
+    path.asFile.byteArray shouldEqual testData.getBytes
+  }
+
+  it should "truncate a file" in { dirs =>
+    val testData = ""
     val path = dirs.src / seg"test_folder" / seg"file1"
     path.asFile.isRegularFile shouldBe true
 
