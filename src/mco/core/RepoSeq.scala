@@ -5,13 +5,21 @@ import cats.syntax.applicative._
 import cats.syntax.functor._
 import cats.syntax.traverse._
 import cats.instances.vector._
-
+import com.olegpy.forwarders
 import mco.core.state.RepoState
 import mco.core.vars.Var
 import mco.stubs.{NoImageStore, NoMods}
 
 
-trait ModStore[F[_]] {
+/**
+ * Algebra of operations over a sequence of mod & image stores
+ * where one element is considered "current" (set using `focus`
+ * operation)
+ *
+ *
+ * @tparam F the effect type
+ */
+@forwarders trait RepoSeq[F[_]] {
   def labels: Vector[String]
   def length: Int
 
@@ -21,11 +29,11 @@ trait ModStore[F[_]] {
   def focus(i: Int): F[Unit]
 }
 
-object ModStore {
+object RepoSeq {
   class ByVar[F[_]: Applicative](
     algebras: Vector[(String, Mods[F], ImageStore[F])],
     selection: Var[F, Int]
-  ) extends ModStore[F] {
+  ) extends RepoSeq[F] {
     private[this] def tuple = selection().map(algebras(_))
 
     override val labels: Vector[String]       = algebras.map(_._1)
@@ -39,14 +47,11 @@ object ModStore {
     override def focus(i: Int): F[Unit]       = selection := i
   }
 
-  class Empty[F[_]: Applicative] extends ModStore[F] {
+  class Empty[F[_]: Applicative] extends RepoSeq[F] {
     override def labels: Vector[String] = Vector.empty
     override def length: Int = 0
-
     override def mods: F[Mods[F]] = new NoMods[F].pure[F].widen
-
     override def states: F[Vector[RepoState]] = Vector.empty[RepoState].pure[F]
-
     override def imageStore: F[ImageStore[F]] = new NoImageStore[F].pure[F].widen
     override def focus(i: Int): F[Unit] = ().pure[F]
   }

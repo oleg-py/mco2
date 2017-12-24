@@ -17,7 +17,7 @@ abstract class Commands {
     syncChanges {
       for {
         st <- tabState()
-        mods <- repoMap.mods
+        mods <- RepoSeq.mods
         ckDelta = Deltas.OfContent(assignedKind = Some(newValue))
         _ <- st.currentModKey
           .traverse_(mods.update(_, Deltas.OfMod(contents = Map(cKey -> ckDelta))))
@@ -27,23 +27,23 @@ abstract class Commands {
   type F[_]
   protected val runLater: F[Unit] => Unit
   protected val state: Var[F, UiState]
-  implicit val ev1: Monad[F]
-  protected val repoMap: ModStore[F]
+  implicit protected val monad: Monad[F]
+  implicit protected val repoMap: RepoSeq[F]
 
   private lazy val tabState = state.zoom(UiState.currentTabL)
 
   private def syncChangesMods[A](ffa: Mods[F] => F[A]) =
-    syncChanges(repoMap.mods >>= ffa) _
+    syncChanges(RepoSeq.mods >>= ffa) _
 
   private def syncChangesImageStore[A](ffa: ImageStore[F] => F[A]) =
-    syncChanges(repoMap.imageStore >>= ffa) _
+    syncChanges(RepoSeq.imageStore >>= ffa) _
 
   private def syncChanges[A](fa: F[A])(
     f: (A, RepoState, UiState.Tab) => UiState.Tab): Unit =
     runLater {
       for {
         a         <- fa
-        mods      <- repoMap.mods
+        mods      <- RepoSeq.mods
         rState    <- mods.state
         nextState <- tabState().map(st => f(a, rState, st.copy(repoState = rState)))
         _         <- tabState := nextState
@@ -52,7 +52,7 @@ abstract class Commands {
 
   def setActiveTab(i: Int): Unit = {
     runLater {
-      repoMap.focus(i) *>
+      RepoSeq.focus(i) *>
         (state ~= UiState.currentTab.set(i))
     }
   }
@@ -64,7 +64,7 @@ abstract class Commands {
     val op = for {
       st <- tabState()
       keyOpt = st.currentModKey
-      imageStore <- repoMap.imageStore
+      imageStore <- RepoSeq.imageStore
       url <- keyOpt.traverse { key =>
         imageStore.putImage(key, Some(Path(path))) *>
           imageStore.getImage(key)
@@ -100,14 +100,14 @@ abstract class Commands {
   def applyPendingAdds(): Unit =  {
     val op = for {
       st <- tabState()
-      mods <- repoMap.mods
+      mods <- RepoSeq.mods
       assocs = UiState.Tab.assocL.getOption(st).getOrElse(Map())
       _ <- assocs.keys.toVector.traverse_ { str =>
         mods.liftFile(Path(str)).void
       }
     } yield ()
 
-    syncChanges(op) { (_, rs, us) => us.copy(pendingAdds = None) }
+    syncChanges(op) { (_, _, us) => us.copy(pendingAdds = None) }
   }
 
   final def install(key: RelPath): Unit =
@@ -158,14 +158,14 @@ abstract class Commands {
 
 object Commands {
   def apply[F0[_]: Monad](
-    map: ModStore[F0],
+    map: RepoSeq[F0],
     runLater0: F0[Unit] => Unit,
     state0: Var[F0, UiState]
   ): Commands = new Commands {
       override type F[A] = F0[A]
       override protected val runLater: F[Unit] => Unit = runLater0
       override protected val state: Var[F, UiState] = state0
-      override val ev1: Monad[F] = implicitly
-      override protected val repoMap: ModStore[F] = map
+      override protected val monad: Monad[F] = Monad[F0]
+      override protected val repoMap: RepoSeq[F] = map
   }
 }

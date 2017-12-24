@@ -3,7 +3,7 @@ package mco
 import scalafx.beans.property.ObjectProperty
 
 import better.files._
-import mco.core.ModStore
+import mco.core.RepoSeq
 import mco.core.paths.Path
 import mco.core.vars.MutableVar
 import mco.game.generic.{StoreConfig, implementation}
@@ -37,7 +37,7 @@ object Runner extends TaskApp {
       cwd      <- readCwd
       algebras <- implementation[Coeval](config, cwd)
       counter  <- MutableVar[Coeval, Int](0)
-      repoMap  =  new ModStore.ByVar[Coeval](algebras, counter)
+      repoMap  =  new RepoSeq.ByVar[Coeval](algebras, counter)
       states   <- repoMap.states
     } yield {
       val uiState = UiState.initial(repoMap.labels zip states, config.files.isImagePath)
@@ -52,7 +52,7 @@ object Runner extends TaskApp {
     exec
       .onErrorRecover { case NonFatal(ex) =>
         ex.printStackTrace()
-        val repoMap = new ModStore.Empty[Coeval]
+        val repoMap = new RepoSeq.Empty[Coeval]
         val state = ObjectProperty(UiState.startupError(ex))
         val commands = Commands[Coeval](repoMap, _ => System.exit(0),
           new PropertyBasedVar(state))
