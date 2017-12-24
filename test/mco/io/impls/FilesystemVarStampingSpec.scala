@@ -1,10 +1,7 @@
 package mco.io.impls
 
-import cats.data.StateT
 import mco.Tests
 import mco.core.paths._
-import mco.core.vars.JavaSerializableVar
-import mco.io.Filesystem
 import mco.io.impls.FilesystemVarStamping.FileStamp
 import mco.stubs.StateTVar
 import mco.stubs.cells._
