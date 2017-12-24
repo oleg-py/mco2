@@ -32,7 +32,7 @@ abstract class Commands {
 
   private lazy val tabState = state.zoom(UiState.currentTabL)
 
-  private def syncChangesMods[A](ffa: Mods[F] => F[A]) =
+  private def syncChangesMods[A](ffa: ModStore[F] => F[A]) =
     syncChanges(RepoSeq.mods >>= ffa) _
 
   private def syncChangesImageStore[A](ffa: ImageStore[F] => F[A]) =

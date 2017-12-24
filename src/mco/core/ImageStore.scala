@@ -13,7 +13,7 @@ import java.net.URL
  *
  * @tparam F context of result values
  */
-@forwarders trait ImageStore[F[_]] {
+trait ImageStore[F[_]] {
   /**
    * Get an image associated with provided key
    * @param key the key image was previously associated with

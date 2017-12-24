@@ -75,7 +75,7 @@ object implementation {
       } yield {
         val (repoState, modStates) = states
 
-        val localMods = new LocalMods[F](
+        val localMods = new LocalModStore[F](
           source,
           repoState,
           state,
@@ -91,7 +91,7 @@ object implementation {
   def apply[F[_]: Sync](
     config: StoreConfig,
     cwd: Path
-  ): F[Vector[(String, Mods[F], ImageStore[F])]] = {
+  ): F[Vector[(String, ModStore[F], ImageStore[F])]] = {
     implicit val filesystem: Filesystem[F] = new LocalFilesystem[F]
     config.repos.values.toVector
       .traverse(mkRepoAlgebras(cwd, config, _))

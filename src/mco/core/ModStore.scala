@@ -9,7 +9,7 @@ import mco.core.state.{Deltas, ModState, RepoState}
  * Algebra of operations over a set of mods
  * @tparam F - the effect type
  */
-@forwarders trait Mods[F[_]] {
+trait ModStore[F[_]] {
   /**
    * Read current state of repository
    */

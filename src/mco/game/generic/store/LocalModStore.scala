@@ -16,14 +16,14 @@ import mco.syntax._
 
 
 //noinspection ConvertibleToMethodValue
-class LocalMods[F[_]: Sync: Filesystem: FileStamping](
+class LocalModStore[F[_]: Sync: Filesystem: FileStamping](
   contentRoot: Path,
   repoVar: Var[F, RepoState],
   modsVar: Var[F, Map[RelPath, Mod[F]]],
   tryAsMod: Path => F[Option[Mod[F]]],
   computeState: Mod[F] => F[ModState],
   resolver: NameResolver
-) extends Mods[F] {
+) extends ModStore[F] {
   override def state: F[RepoState] = repoVar()
 
   override def update(key: RelPath, diff: Deltas.OfMod): F[Unit] = {

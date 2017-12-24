@@ -8,7 +8,7 @@ import cats.instances.vector._
 import com.olegpy.forwarders
 import mco.core.state.RepoState
 import mco.core.vars.Var
-import mco.stubs.{NoImageStore, NoMods}
+import mco.stubs.{NoImageStore, EmptyModStore}
 
 
 /**
@@ -24,14 +24,14 @@ import mco.stubs.{NoImageStore, NoMods}
   def length: Int
 
   def states: F[Vector[RepoState]]
-  def mods: F[Mods[F]]
+  def mods: F[ModStore[F]]
   def imageStore: F[ImageStore[F]]
   def focus(i: Int): F[Unit]
 }
 
 object RepoSeq {
   class ByVar[F[_]: Applicative](
-    algebras: Vector[(String, Mods[F], ImageStore[F])],
+    algebras: Vector[(String, ModStore[F], ImageStore[F])],
     selection: Var[F, Int]
   ) extends RepoSeq[F] {
     private[this] def tuple = selection().map(algebras(_))
@@ -42,7 +42,7 @@ object RepoSeq {
     override def states: F[Vector[RepoState]] =
       algebras.traverse { case (_, mods, _) => mods.state }
 
-    override def mods: F[Mods[F]]             = tuple.map(_._2)
+    override def mods: F[ModStore[F]]             = tuple.map(_._2)
     override def imageStore: F[ImageStore[F]] = tuple.map(_._3)
     override def focus(i: Int): F[Unit]       = selection := i
   }
@@ -50,7 +50,7 @@ object RepoSeq {
   class Empty[F[_]: Applicative] extends RepoSeq[F] {
     override def labels: Vector[String] = Vector.empty
     override def length: Int = 0
-    override def mods: F[Mods[F]] = new NoMods[F].pure[F].widen
+    override def mods: F[ModStore[F]] = new EmptyModStore[F].pure[F].widen
     override def states: F[Vector[RepoState]] = Vector.empty[RepoState].pure[F]
     override def imageStore: F[ImageStore[F]] = new NoImageStore[F].pure[F].widen
     override def focus(i: Int): F[Unit] = ().pure[F]
