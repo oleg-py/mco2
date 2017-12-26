@@ -4,7 +4,6 @@ import cats._
 import cats.instances.stream._
 import cats.syntax.all._
 import cats.data.StateT
-import mouse.all._
 
 import mco.core._
 import mco.core.paths._
@@ -24,17 +23,15 @@ class FolderMod[F[_]: Filesystem: Monad](
   private def scanDeepRec(fa: F[Stream[Path]]) =
     toState(fa).flatMap(_ traverse_ scanDeep)
 
-  private def scanDeep(path: Path): StateT[F, DataM, Unit] = {
-    implicit def applicativeMonoid[M: Monoid]: Monoid[F[M]] = Applicative.monoid[F, M]
-
+  private def scanDeep(path: Path): StateT[F, DataM, Unit] =
     for {
-      isDir   <- toState(isDirectory(path))
-      _       <- scanDeepRec(isDir ?? childrenOf(path))
-      key     =  path relTo backingFile
-      _       <- if (isDir) StateT.pure[F, DataM, Unit](())
-                 else StateT.modify[F, DataM](_.updated(key, (path, key)))
+      isDir     <- toState(isDirectory(path))
+      childrenF =  ifM(isDir) { childrenOf(path) }
+      _         <- scanDeepRec(childrenF)
+      key       =  path relTo backingFile
+      _         <- if (isDir) StateT.pure[F, DataM, Unit](())
+                   else StateT.modify[F, DataM](_.updated(key, (path, key)))
     } yield ()
-  }
 
   private val structureF: F[DataM] =
     scanDeepRec(childrenOf(backingFile)).runS(Map())
