@@ -28,7 +28,7 @@ class FolderMod[F[_]: Filesystem: Monad](
     implicit def applicativeMonoid[M: Monoid]: Monoid[F[M]] = Applicative.monoid[F, M]
 
     for {
-      isDir   <- isDirectory(path).pipe(toState)
+      isDir   <- toState(isDirectory(path))
       _       <- scanDeepRec(isDir ?? childrenOf(path))
       key     =  path relTo backingFile
       _       <- if (isDir) StateT.pure[F, DataM, Unit](())

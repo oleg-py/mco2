@@ -79,11 +79,11 @@ object Tests {
     override type FixtureParam = Dirs
     override def withFixture(test: OneArgTest): Outcome = {
       for (from <- File.temporaryDirectory("mco-io-from")) yield {
-        getClass
+        val uri = getClass
           .getResource("/mco/io/algebras/fixture")
           .toURI
-          .pipe(File(_))
-          .copyTo(from, overwrite = true)
+
+        File(uri).copyTo(from, overwrite = true)
 
         for (to <- File.temporaryDirectory("mco-io-to")) yield {
           withFixture(test.toNoArgTest(Dirs(from.asPath, to.asPath)))

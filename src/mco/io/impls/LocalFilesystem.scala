@@ -93,11 +93,9 @@ class LocalFilesystem[F[_]: Sync] extends Filesystem[F] {
   }
 
   final def mkDir(path: Path): F[Unit] = capture {
-    File(path.toString)
-      .tap { f =>
-        if (f.exists) throw new FileAlreadyExistsException(path.toString)
-      }
-      .createDirectories()
+    val f = File(path.toString)
+    if (f.exists) throw new FileAlreadyExistsException(path.toString)
+    f.createDirectories()
     ()
   }
 

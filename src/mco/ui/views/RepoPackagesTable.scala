@@ -116,11 +116,12 @@ class RepoPackagesTable(state: Prop[RepoState])(implicit cmd: Commands)
 
   private def mkCheckBox(i: Int) = {
     def tuple = table.items().get(i)
-    BooleanProperty(tuple._3.status == Status.Installed)
-      .tap(prop => prop.onChange {
-        if (prop()) cmd.install(tuple._1)
-        else cmd.uninstall(tuple._1)
-      })
+    val prop = BooleanProperty(tuple._3.status == Status.Installed)
+    prop.onChange {
+      if (prop()) cmd.install(tuple._1)
+      else cmd.uninstall(tuple._1)
+    }
+    prop
   }
 
   class InstallCheckbox extends CheckBoxTableCell[Triple, Any](mkCheckBox _) {

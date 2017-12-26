@@ -6,11 +6,6 @@ import cats.kernel.Monoid
 
 
 object syntax {
-  implicit class AnyTypeSyntax[A](val a: A) extends AnyVal {
-    @inline def pipe[B](f: A => B): B = f(a)
-    @inline def tap[B](f: A => B): A = { f(a); a }
-  }
-
   @inline def ifM[F[_]: Applicative, A: Monoid](b: Boolean)(ifTrue: => F[A]): F[A] =
     if (b) ifTrue
     else Applicative[F].pure(Monoid[A].empty)
