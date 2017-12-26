@@ -19,3 +19,20 @@
 .split-pane {
     -fx-background-insets: 0
 }
+
+
+.image-open-button, .image-delete-button {
+    -fx-pref-height: 20px;
+    -fx-pref-width: 24px;
+    -fx-background-size: 30px;
+    -fx-background-position: center;
+    -fx-background-color: transparent;
+}
+
+.image-open-button {
+    -fx-background-image: url("image-open.png");
+}
+
+.image-delete-button {
+    -fx-background-image: url("image-delete.png");
+}

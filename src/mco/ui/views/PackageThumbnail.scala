@@ -81,7 +81,8 @@ class PackageThumbnail(
     }
   }
 
-  class OpenButton extends Button("Open") {
+  class OpenButton extends Button {
+    styleClass += "image-open-button"
     onAction = handle {
       val file = new FileChooser().showOpenDialog(scene().getWindow)
       val check = isImg()
@@ -91,7 +92,8 @@ class PackageThumbnail(
     }
   }
 
-  object ClearButton extends Button("Clear") {
+  object ClearButton extends Button {
+    styleClass += "image-delete-button"
     disable <== state.map(_.isEmpty)
     onAction = handle {
       cmd.unsetThumbnail()
@@ -110,7 +112,7 @@ class PackageThumbnail(
 
     visible <== group.hover
     background = new Background(Array(new BackgroundFill(
-      Paint.valueOf("rgba(0, 0, 0, 0.5)"),
+      Paint.valueOf("rgba(0, 0, 0, 0.75)"),
       new CornerRadii(4),
       Insets(0)
     )))
