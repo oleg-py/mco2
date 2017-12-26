@@ -1,10 +1,11 @@
 package mco.ui.views
 
 import cats.syntax.functor._
+import cats.syntax.apply._
 import scalafx.Includes._
-import scalafx.geometry.{Insets, Orientation, Pos}
+import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
-import scalafx.scene.control.{Button, Label, ToolBar}
+import scalafx.scene.control.{Button, ToolBar}
 import scalafx.scene.layout._
 import scalafx.scene.paint.Paint
 import scalafx.stage._
@@ -17,6 +18,7 @@ import java.net.URL
 import javafx.scene.image.Image
 
 class PackageThumbnail(
+  hasMod: Prop[Boolean],
   state: Prop[Option[URL]],
   isImg: Prop[String => Boolean]
 )(implicit
@@ -25,10 +27,12 @@ class PackageThumbnail(
   margin = Insets(4, 0, 4, 0)
   alignment = Pos.TopRight
 
-  children ++= Seq(
-    ThumbnailImage,
-    ThumbnailTools
-  )
+  val ThumbnailImage1, ThumbnailImage2 = new ThumbnailImage
+
+  children <== hasMod.map {
+    case true  => Seq(ThumbnailImage1, ThumbnailTools)
+    case false => Seq(ThumbnailImage2)
+  }
 
   def isImage(path: String) = isImg().apply(path)
 
@@ -46,7 +50,7 @@ class PackageThumbnail(
     }
   }
 
-  object ThumbnailImage extends ImageViewPane {
+  class ThumbnailImage extends ImageViewPane {
     image <== state.map { urlOpt =>
       val url = urlOpt.getOrElse(getClass.getResource("/no-thumbnail.png"))
       new Image(url.toString)

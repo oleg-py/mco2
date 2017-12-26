@@ -31,7 +31,10 @@ class RepoTab(state: Prop[UiState.Tab], isImage: Prop[String => Boolean])(
 
             orientation = Orientation.Vertical
             items ++= Seq(
-              new PackageThumbnail(state.map(_.thumbnailUrl), isImage),
+              new PackageThumbnail(
+                state.map(_.currentMod.nonEmpty),
+                state.map(_.thumbnailUrl),
+                isImage),
               new PackageContentTable(state.map(_.currentContent)),
             )
           },
