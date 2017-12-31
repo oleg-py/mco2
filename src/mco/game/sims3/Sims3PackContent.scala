@@ -6,8 +6,8 @@ import mco.core.paths.Path
 import mco.io.Filesystem
 
 
-class Sims3PackContent(val path: Path) {
-  def unpack[F[_]: Filesystem: Functor](s3ce: S3CE[F]): fs2.Stream[F, Path] =
+class Sims3PackContent[F[_]: Filesystem: Functor](s3ce: S3CE[F], path: Path) {
+  def unpack: fs2.Stream[F, Path] =
     for {
       tmp    <- Filesystem.mkTemp
       target =  tmp / path.name

@@ -7,7 +7,7 @@ sealed abstract case class Segment(override val toString: String) {
 
   def extension: String = {
     val idx = toString.lastIndexOf('.')
-    if (idx == -1) "" else toString.drop(idx)
+    if (idx == -1) "" else toString.drop(idx).toLowerCase
   }
 }
 

@@ -24,8 +24,6 @@ sealed abstract case class Path (segments: Vector[Segment]) extends PathLike.Ins
       }
     RelPath(loop(segments, other.segments))
   }
-  def / (other: Segment) = Path.of(segments :+ other)
-  def / (other: RelPath) = Path.of(segments ++ other.segments)
 
   private def isWinLike = segments.headOption.exists(_.toString endsWith ":")
 

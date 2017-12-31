@@ -6,11 +6,12 @@ import cats.Apply
 import cats.syntax.all._
 import mco.core.Status.{Installed, Unused}
 import mco.core.paths.{Pointed, RelPath}
-import mco.core.{Mod, Status}
+import mco.core.Status
+import mco.game.generic.extractors.Extractor
 
 
 class Installation[F[_]: Apply](
-  lookupMod: Int => Pointed[Mod[F]],
+  lookupMod: Int => Pointed[Extractor[F]],
   conflicts: Conflicts,
   ma: ContentTraversal[F]
 ) {
@@ -24,7 +25,7 @@ class Installation[F[_]: Apply](
     val (hasConflicts, overrides) = conflicts.resolutions(allResolved, order, status)
     val process = status match {
       case Installed =>
-        mod.provide(content).evalMap { case (cRel, cPath) =>
+        mod.provide(content.toSet).evalMap { case (cRel, cPath) =>
           val target = ma.resolve(rel, cRel)
           val tracked = ma.track(cRel, target.some)
           if (hasConflicts(target)) tracked // we have overrides, just mark as installed
@@ -45,7 +46,7 @@ class Installation[F[_]: Apply](
       entry <- fs2.Stream.emits(map.toSeq)
       (idx, set) = entry
       (rel, mod) = lookupMod(idx)
-      child <- mod.provide(set.toVector)
+      child <- mod.provide(set)
       target = ma.resolve(rel, child._1)
       _     <- fs2.Stream.eval(ma.copy(child._2, target))
     } yield ()

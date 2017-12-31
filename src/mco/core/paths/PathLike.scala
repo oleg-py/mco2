@@ -14,6 +14,9 @@ object PathLike {
     final def extension: String = name.extension
     final def withExtension(ext: String) =
       withSegments(segments.init :+ segments.last.withExtension(ext))
+
+    final def / (other: RelPath) = withSegments(segments ++ other.segments)
+    final def / (other: Segment) = withSegments(segments :+ other)
   }
 
   trait Companion[A <: Instance[A]] {

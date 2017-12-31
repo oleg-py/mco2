@@ -11,13 +11,13 @@ import net.sf.sevenzipjbinding._
 class Archive[F[_]: Filesystem: Sync](val file: Path) {
   implicit def streamMonad: Monad[fs2.Stream[F, ?]] = fs2.Stream.syncInstance[F]
 
-  def entries: F[Vector[RelPath]] =
-    getInArchive.evalMap(emitEntries).runFoldMonoidSync
+  def entries: fs2.Stream[F, RelPath] =
+    getInArchive.flatMap(emitEntries)
 
   def extract(rawTargets: Map[RelPath, Path]): F[Unit] = {
     val streamed = for {
       archive  <- getInArchive
-      targets  <- fs2.Stream.eval(filterTargets(archive, rawTargets))
+      targets  <- filterTargets(archive, rawTargets)
       mapped   <- mapForOutput(targets)
       idxMap   <- fs2.Stream.eval(getIndexMap(archive, targets.keys))
       outMap   =  idxMap.mapValues(mapped)
@@ -37,14 +37,15 @@ class Archive[F[_]: Filesystem: Sync](val file: Path) {
     }
 
   private def filterTargets(archive: IInArchive, rawTargets: Map[RelPath, Path]) =
-    emitEntries(archive).map(paths => rawTargets.filterKeys(paths.toSet))
+    emitEntries(archive).foldMap(Set(_))
+      .map(paths => rawTargets.filterKeys(paths))
 
-  private def emitEntries(arch: IInArchive) = capture {
-    arch.getSimpleInterface.getArchiveItems
+  private def emitEntries(arch: IInArchive) = fs2.Stream.suspend {
+    val seq = arch.getSimpleInterface.getArchiveItems
       .collect {
         case entry if !entry.isFolder => rel"${entry.getPath}"
       }
-      .toVector
+    fs2.Stream.emits(seq).covary[F]
   }
 
   private def mapForOutput(targets: Map[RelPath, Path]) = {
