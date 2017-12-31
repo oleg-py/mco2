@@ -12,6 +12,9 @@ import mco.io.{FileStamping, Filesystem}
 import cats.effect.Sync
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 import boopickle.Default._
+import mco.game.generic.extractors.{ArchiveExtractor, Extractor, FolderExtractor}
+import mco.game.sims3.S3CE
+import mco.game.sims3.extractors.Sims3PackExtractor
 
 //noinspection ConvertibleToMethodValue
 object implementation {
@@ -57,14 +60,20 @@ object implementation {
     root: StoreConfig,
     repo: StoreConfig.Repo
   ) = {
-    val typer = new SimpleModTypes[F]
+    implicit val s3ce = new S3CE[F](cwd / seg"s3ce.exe") // @todo move to config
+    val mkExtractor = Extractor.deep(
+      FolderExtractor[F],
+      ArchiveExtractor[F],
+      Sims3PackExtractor[F]
+    )
     val source = joinPath(cwd, repo.mods)
     val target = joinPath(cwd, repo.target)
     val resolver = NameResolver.overrides(target)
     val images = new LocalImageStore(joinPath(cwd, repo.images), root.files.images)
     mkStamping[F](joinPath(cwd, repo.target)).flatMap { implicit stamping =>
       for {
-        existing <- typer.allIn(source)
+        files    <- Filesystem.childrenOf(source)
+        existing =  files.map(p => Mod(p, mkExtractor(p))).toVector
         states   <- getStates(target, source, resolver, existing)
 
         modsMap = existing
@@ -79,7 +88,7 @@ object implementation {
           source,
           repoState,
           state,
-          typer(_),
+          mkExtractor,
           modStates.computeState,
           resolver
         )

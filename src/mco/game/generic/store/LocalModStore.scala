@@ -11,6 +11,7 @@ import Filesystem._
 import cats.data.OptionT
 import cats.effect.Sync
 import mco.game.generic._
+import mco.game.generic.extractors.Extractor
 import mouse.boolean._
 import mco.syntax._
 
@@ -20,7 +21,7 @@ class LocalModStore[F[_]: Sync: Filesystem: FileStamping](
   contentRoot: Path,
   repoVar: Var[F, RepoState],
   modsVar: Var[F, Map[RelPath, Mod[F]]],
-  tryAsMod: Path => F[Option[Mod[F]]],
+  mkExtractor: Path => Extractor[F],
   computeState: Mod[F] => F[ModState],
   resolver: NameResolver
 ) extends ModStore[F] {
@@ -52,7 +53,7 @@ class LocalModStore[F[_]: Sync: Filesystem: FileStamping](
       mods <- modsVar()
       lookupMod = (order: Int) => {
         val (key, _) = repo.orderedMods(order)
-        (key, mods(key))
+        (key, mods(key).data)
       }
       (key, targetMod) = repo.orderedMods(i)
       conflicts = new Conflicts(repo)
@@ -73,24 +74,20 @@ class LocalModStore[F[_]: Sync: Filesystem: FileStamping](
     _    <- modsVar ~= (_ - key)
   } yield ()
 
-  override def liftFile(p: Path): F[Option[ModState]] = {
+  override def liftFile(p: Path): F[ModState] = {
     val target = contentRoot / p.name
-    def tryLift(p: Path) = OptionT(tryAsMod(p))
-    def notAlreadyExists(p: Path) = OptionT(exists(p).map(a => (!a).option(())))
-    def registerMod(mod: Mod[F]) =
       for {
+        exist <- exists(target)
+        _     <- ifM (exist) {
+          Sync[F].raiseError[Unit](new Exception(s"File already exists: $target"))
+        }
+        _     <- copy(p, target)
+        mod   = Mod(target, mkExtractor(target))
         state <- computeState(mod)
         key   =  rel"${p.name}"
         keyed =  (key, state)
         _     <- repoVar ~= { _ add (keyed, mod.label) }
         _     <- modsVar ~= { _ updated (key, mod) }
       } yield state
-
-    tryLift(p)
-      .flatMap(_ => notAlreadyExists(target))
-      .semiflatMap(_ => copy(p, target))
-      .flatMap(_ => tryLift(target))
-      .semiflatMap(registerMod)
-      .value
   }
 }

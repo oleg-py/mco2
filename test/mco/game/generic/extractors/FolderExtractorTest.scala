@@ -1,13 +1,12 @@
-package mco.game.generic.mod
+package mco.game.generic.extractors
 
-import cats.Id
 import mco.Tests
 import mco.core.paths._
 import mco.stubs.cells._
 import monix.eval.Coeval
 
 
-class FolderModTest extends Tests.Spec {
+class FolderExtractorTest extends Tests.Spec {
   implicit val filesystem = immutableFs(
     seg"mods" -> dir(
       seg"folderMod" -> dir(
@@ -21,27 +20,27 @@ class FolderModTest extends Tests.Spec {
     )
   )
 
-  val fm = new FolderMod[Coeval](path"mods/folderMod")
+  val fm = new FolderExtractor[Coeval](path"mods/folderMod")
 
-  "FolderMod#list" should "list all nested subfiles and subfolders" in {
-    fm.list.value should contain only (
+  "FolderExtractor#entries" should "list children deeply" in {
+    fm.entries.runLogSync.value should contain only (
       rel"innerFile",
       rel"nonEmptySubdir/nestedFile",
       rel"nonEmptySubdir/nestedFile2"
     )
   }
 
-  "FolderMod#provide" should "provide all requested children" in {
-    val func = fm.provide(_: Vector[RelPath]).runLogSync.value
+  "FolderMod#provide" should "provide requested children from FS" in {
+    val func = fm.provide(_: Set[RelPath]).runLogSync.value
 
-    func(Vector()) shouldBe empty
+    func(Set()) shouldBe empty
 
     val nested2 = "nonEmptySubdir/nestedFile2"
 
-    func(Vector(rel"$nested2", rel"nonExisting")) should contain only
+    func(Set(rel"$nested2", rel"nonExisting")) should contain only
       (rel"$nested2" -> path"mods/folderMod/$nested2")
 
-    val oks = Vector("innerFile", "emptySubdir", "nonEmptySubdir")
+    val oks = Set("innerFile", "emptySubdir", "nonEmptySubdir")
     func(oks.map(s => rel"$s")) should contain only
       (rel"innerFile" -> path"mods/folderMod/innerFile")
   }

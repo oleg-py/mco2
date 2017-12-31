@@ -1,6 +1,5 @@
 package mco.core
 
-import com.olegpy.forwarders
 import mco.core.paths._
 import mco.core.state.{Deltas, ModState, RepoState}
 
@@ -36,7 +35,7 @@ trait ModStore[F[_]] {
    * @return an option that is nonempty if there
    *         was no error lifting the file
    */
-  def liftFile(path: Path): F[Option[ModState]]
+  def liftFile(path: Path): F[ModState]
 
   /* TODO
   def setOrder(key: Key, order: Int): F[Unit]

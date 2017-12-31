@@ -13,7 +13,7 @@ class ArchiveTests extends Tests.SpecFixture with Tests.TempDirsFixture {
     for (ext <- Seq("7z", "rar", "zip")) {
       val arch = new Archive(dirs.src / seg"test_archive.$ext")
 
-      arch.entries.value should contain only (
+      arch.entries.runLogSync.value should contain only (
         rel"file1", rel"file2", rel"file3"
       )
     }

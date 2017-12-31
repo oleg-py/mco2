@@ -5,11 +5,20 @@ import mco.core.paths.{Path, Pointed, RelPath}
 import mco.io.Filesystem
 import cats.syntax.functor._
 
-class FolderExtractor[F[_]: Filesystem](dir: Path) extends Extractor[F] {
+class FolderExtractor[F[_]: Filesystem: Functor](dir: Path) extends Extractor[F] {
+  private def descendantsOf(path: Path): fs2.Stream[F, Path] =
+    fs2.Stream.eval(Filesystem.isDirectory(path)).flatMap {
+      case true =>
+        fs2.Stream.eval(Filesystem.childrenOf(path))
+          .flatMap(fs2.Stream.emits(_))
+          .flatMap(descendantsOf)
+      case false =>
+        fs2.Stream.emit(path)
+    }
+
+
   override def entries: fs2.Stream[F, RelPath] =
-    fs2.Stream.eval(Filesystem.childrenOf(dir))
-      .flatMap(fs2.Stream.emits(_))
-      .map(_ relTo dir)
+    descendantsOf(dir).map(_ relTo dir)
 
   override def provide(children: Set[RelPath]): fs2.Stream[F, Pointed[Path]] =
     entries.filter(children).map(rel => (rel, dir / rel))

@@ -42,8 +42,10 @@ object Extractor {
             .flatMap { case (childRel, childAbs) =>
               listRec(childAbs, rel / childRel)
             }
+        case None if path == root =>
+          fs2.Stream.emit((rel"${root.name}", path))
         case None =>
-          fs2.Stream.emit((rel / path.name, path)).covary
+          fs2.Stream.emit((rel, path)).covary
       }
   }
 }

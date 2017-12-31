@@ -47,7 +47,7 @@ object RepoSeq {
     override def focus(i: Int): F[Unit]       = selection := i
   }
 
-  class Empty[F[_]: Applicative] extends RepoSeq[F] {
+  class Empty[F[_]: ApplicativeError[?[_], Throwable]] extends RepoSeq[F] {
     override def labels: Vector[String] = Vector.empty
     override def length: Int = 0
     override def mods: F[ModStore[F]] = new EmptyModStore[F].pure[F].widen
