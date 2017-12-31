@@ -29,7 +29,7 @@ class DeepExtractorTests extends Tests.Spec {
     )
   }
 
-  "Extractor.deep entries" should "provide a singleton path if no factories applicable" in {
+  it should "provide a singleton path if no factories applicable" in {
     val ex = Extractor.deep[Coeval]()
     ex(path"file").entries.runLogSync.value should contain only rel"file"
   }

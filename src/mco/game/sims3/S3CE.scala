@@ -8,9 +8,7 @@ import scala.sys.process._
 // @todo this class assumes that Path.toString gives a platform path
 class S3CE[F[_]: Sync](tool: Path) {
   def apply(path: Path): F[Unit] = capture {
-    Process(Seq(
-      "cmd", "/c", tool.toString, path.toString
-    )).!
+    Seq("cmd", "/c", tool.toString, s""""$path"""").!
     ()
   }
 }

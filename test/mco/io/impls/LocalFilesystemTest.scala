@@ -22,6 +22,7 @@ class LocalFilesystemTest extends Tests.SpecFixture with Tests.TempDirsFixture {
     val chs = childrenOf(dirs.src).value
 
     chs.map(_.name) should contain only (
+      seg"sims3",
       seg"test_folder",
       seg"test_archive.7z",
       seg"test_archive.rar",
