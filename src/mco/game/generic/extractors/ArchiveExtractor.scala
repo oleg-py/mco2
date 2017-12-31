@@ -1,10 +1,10 @@
 package mco.game.generic.extractors
 
-import cats.Functor
-import cats.effect.Sync
+import cats.{Functor, Monad}
 import cats.syntax.functor._
+import cats.syntax.flatMap._
 import mco.core.paths.{Path, Pointed, RelPath}
-import mco.io.{Archive, Filesystem}
+import mco.io.{Archive, Archiving, Filesystem}
 
 
 class ArchiveExtractor[F[_]: Filesystem: Functor](archive: Archive[F]) extends Extractor[F] {
@@ -21,11 +21,12 @@ class ArchiveExtractor[F[_]: Filesystem: Functor](archive: Archive[F]) extends E
 object ArchiveExtractor {
   private val supported = Set(".7z", ".zip", ".rar")
 
-  def apply[F[_]: Sync: Filesystem]: Extractor.Provider[F] = path =>
+  def apply[F[_]: Monad: Filesystem: Archiving]: Extractor.Provider[F] = path =>
     for {
       isFile    <- Filesystem.isRegularFile(path)
       extension =  path.extension
       ok        =  isFile && supported(extension)
-    } yield if (ok) Some(new ArchiveExtractor[F](new Archive[F](path)))
+      arch      <- Archiving.asArchive(path)
+    } yield if (ok) Some(new ArchiveExtractor[F](arch))
             else    None
 }
