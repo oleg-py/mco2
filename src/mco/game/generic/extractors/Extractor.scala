@@ -1,12 +1,15 @@
 package mco.game.generic.extractors
 
-import cats.{FlatMap, Monad}
+import cats.Monad
 import mco.core.paths._
 import cats.implicits._
 
 trait Extractor[F[_]] {
   def entries: fs2.Stream[F, RelPath]
   def provide(children: Set[RelPath]): fs2.Stream[F, Pointed[Path]]
+
+  final def provideAll: fs2.Stream[F, Pointed[Path]] =
+    entries.foldMap(Set(_)).flatMap(provide)
 }
 
 object Extractor {

@@ -12,7 +12,7 @@ import mco.io.{FileStamping, Filesystem}
 import cats.effect.Sync
 import monix.execution.atomic.{Atomic, AtomicBuilder}
 import boopickle.Default._
-import mco.game.generic.extractors.{ArchiveExtractor, Extractor, FolderExtractor}
+import mco.game.generic.extractors._
 import mco.game.sims3.S3CE
 import mco.game.sims3.extractors.Sims3PackExtractor
 
@@ -65,7 +65,7 @@ object implementation {
     val mkExtractor = Extractor.deep(
       FolderExtractor[F],
       ArchiveExtractor[F],
-      Sims3PackExtractor[F]
+      CachedExtractor[F](cwd / seg".cache", Sims3PackExtractor[F])
     )
     val source = joinPath(cwd, repo.mods)
     val target = joinPath(cwd, repo.target)
