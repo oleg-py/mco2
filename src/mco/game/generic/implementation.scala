@@ -69,7 +69,7 @@ object implementation {
     )
     val source = joinPath(cwd, repo.mods)
     val target = joinPath(cwd, repo.target)
-    val resolver = NameResolver.overrides(target)
+    val resolver = NameResolver.flatten(target)
     val images = new LocalImageStore(joinPath(cwd, repo.images), root.files.images)
     mkStamping[F](joinPath(cwd, repo.target)).flatMap { implicit stamping =>
       for {

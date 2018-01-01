@@ -35,4 +35,7 @@ object NameResolver {
 
   def overrides(target: Path): NameResolver = (_, content) =>
     path"$target/$content"
+
+  def flatten(target: Path): NameResolver = (_, content) =>
+    target / content.name
 }
