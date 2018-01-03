@@ -18,7 +18,8 @@ object StoreConfig {
     title: String,
     mods: String,
     images: String,
-    target: String
+    target: String,
+    resolver: NameResolver.Factory
   )
 
   case class Tools(

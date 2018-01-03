@@ -1,8 +1,14 @@
 package mco.game.generic
 
+import scala.collection.immutable
 import scala.util.Random
 
 import mco.core.paths._
+import net.openhft.hashing.LongHashFunction
+import pureconfig.{ConfigConvert, ConfigReader}
+import enumeratum._
+
+import java.util.UUID
 
 
 trait NameResolver {
@@ -18,24 +24,36 @@ trait NameResolver {
 }
 
 object NameResolver {
-  // this is pure
-  private def indexToId(i: Int) =
-    new Random(i).nextInt().toHexString
+  sealed abstract class Factory(val make: Path => NameResolver)
+    extends EnumEntry
 
-  // TODO: decide if feasible
-//  def mangle(target: Path): NameResolver = (mod, content) => {
-//    val ext = content.extension
-//    val id = indexToId(mod.key.##)
-//    val hashes = mod.get.contents.lookup(content).foldMap(_.stamp.hash)
-//    path"$target/$id-${uuidName(hashes)}$ext"
-//  }
+  object Factory extends Enum[Factory] {
+    case object Subdirs extends Factory(target => (parent, content) => {
+      path"$target/$parent/$content"
+    })
 
-  def subdirs(target: Path): NameResolver = (parent, content) =>
-    path"$target/$parent/$content"
+    case object Overrides extends Factory(target => (_, content) => {
+      path"$target/$content"
+    })
 
-  def overrides(target: Path): NameResolver = (_, content) =>
-    path"$target/$content"
 
-  def flatten(target: Path): NameResolver = (_, content) =>
-    target / content.name
+    case object Flatten extends Factory(target => (_, content) => {
+      target / content.name
+    })
+
+    case object Mangle extends Factory(target => (mod, content) => {
+      val hash = LongHashFunction.xx()
+      val uuid = new UUID(hash.hashChars(mod.toString), hash.hashChars(content.toString))
+      val filename = seg"${uuid.toString ++ content.extension}"
+      target / filename
+    })
+
+    implicit val configReader = ConfigConvert.viaStringOpt[Factory](
+      Factory.withNameInsensitiveOption,
+      _.entryName.toLowerCase
+    )
+
+    override def values = findValues
+  }
+
 }
