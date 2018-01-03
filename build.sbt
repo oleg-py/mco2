@@ -2,7 +2,7 @@ name         := "mco2"
 version      := "2.1.0-SNAPSHOT"
 
 inThisBuild(Seq(
-  scalaVersion := "2.12.3"
+  scalaVersion := "2.12.4"
 ))
 
 resolvers += "JitPack" at "https://jitpack.io"
