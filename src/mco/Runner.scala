@@ -6,6 +6,7 @@ import better.files._
 import mco.core.RepoSeq
 import mco.core.paths.Path
 import mco.core.vars.MutableVar
+import mco.game.generic.StoreConfig.Tools
 import mco.game.generic.{StoreConfig, implementation}
 import mco.ui.ActionQueue
 import mco.ui.props.PropertyBasedVar
@@ -13,7 +14,7 @@ import mco.ui.state.{Commands, UiState}
 import mco.ui.views.MainWindow
 import monix.eval.{Coeval, Task, TaskApp}
 import monix.execution.misc.NonFatal
-import pureconfig.loadConfig
+import pureconfig._
 
 import java.nio.file.Paths
 
@@ -22,6 +23,10 @@ object Runner extends TaskApp {
   def readCwd = Coeval { Path(File(".").pathAsString) }
 
   def readConfig = Coeval {
+    // uses name "s3ce" instead of "s-3ce"
+    implicit val hint: ProductHint[Tools] = ProductHint[Tools](
+      ConfigFieldMapping(CamelCase, CamelCase)
+    )
     loadConfig[StoreConfig](Paths.get("./application.conf")).fold(
       fails => Coeval.raiseError(new Exception(fails.toList.mkString("\n"))),
       parsed => Coeval.now(parsed)
