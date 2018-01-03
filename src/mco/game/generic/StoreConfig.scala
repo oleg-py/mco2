@@ -3,7 +3,8 @@ package mco.game.generic
 
 case class StoreConfig(
   files: StoreConfig.Files,
-  repos: Map[String, StoreConfig.Repo]
+  repos: Map[String, StoreConfig.Repo],
+  tools: StoreConfig.Tools
 )
 
 object StoreConfig {
@@ -18,5 +19,9 @@ object StoreConfig {
     mods: String,
     images: String,
     target: String
+  )
+
+  case class Tools(
+    s3ce: String
   )
 }

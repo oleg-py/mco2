@@ -60,7 +60,7 @@ object implementation {
     root: StoreConfig,
     repo: StoreConfig.Repo
   ) = {
-    implicit val s3ce = new S3CE[F](cwd / seg"s3ce.exe") // @todo move to config
+    implicit val s3ce = new S3CE[F](joinPath(cwd, root.tools.s3ce))
     implicit val archiving = new SevenZipArchiving[F]
     val mkExtractor = Extractor.deep(
       FolderExtractor[F],
