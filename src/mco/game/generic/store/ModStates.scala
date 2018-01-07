@@ -16,23 +16,6 @@ class ModStates[F[_]: Sync: FileStamping](
   kindOf: RelPath => ContentKind,
   known: Vector[Pointed[ModState]]
 ) {
-  private def childState(parent: Path)(pp: Pointed[Path]) = {
-    val resolved = nameResolver(parent.relTo(root), pp._1)
-    val update = FileStamping.overwrite((parent, pp._1), resolved)
-
-    update.map { _ =>
-      Vector(pp._1 -> ContentState(Status.Installed, kindOf(pp._1)))
-    }
-  }
-
-  private def recompute(mod: Mod[F], index: Int): F[ModState] = {
-    val result = mod.provideAll
-      .evalMap(childState(mod.backingFile))
-      .runFoldMonoidSync
-
-    result.map { cs => ModState(Status.Unused, cs.toMap) }
-  }
-
   def computeAll(mods: Vector[Mod[F]]): F[RepoState] =
     mods.traverse(computeState).map { computed =>
       val (states, labels) = (mods zip computed)
@@ -59,5 +42,22 @@ class ModStates[F[_]: Sync: FileStamping](
       modState <- if (isNew || stale) update(index)
                   else known(index)._2.pure[F]
     } yield modState
+  }
+
+  private def childState(parent: Path)(pp: Pointed[Path]) = {
+    val resolved = nameResolver(parent.relTo(root), pp._1)
+    val update = FileStamping.overwrite((parent, pp._1), resolved)
+
+    update.map { _ =>
+      Vector(pp._1 -> ContentState(Status.Installed, kindOf(pp._1)))
+    }
+  }
+
+  private def recompute(mod: Mod[F], index: Int): F[ModState] = {
+    val result = mod.provideAll
+      .evalMap(childState(mod.backingFile))
+      .runFoldMonoidSync
+
+    result.map { cs => ModState(Status.Unused, cs.toMap) }
   }
 }

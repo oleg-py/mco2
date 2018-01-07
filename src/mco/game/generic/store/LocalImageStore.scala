@@ -40,9 +40,9 @@ class LocalImageStore[F[_]: Filesystem: Monad](
     val target = root / key
     path match {
       case Some(image) =>
-        val imgExt = image.extension
-        ifM (imgExtensions.contains(imgExt)) {
-          copy(image, target.withExtension(imgExt))
+        val ext = image.extension
+        ifM (imgExtensions.contains(ext)) {
+          copy(image, target.withExtension(ext))
         }
       case None =>
         possibleImgNames(target).traverse_(rmIfExists(_))

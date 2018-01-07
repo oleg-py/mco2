@@ -22,16 +22,15 @@ import java.nio.file.Paths
 object Runner extends TaskApp {
   def readCwd = Coeval { Path(File(".").pathAsString) }
 
-  def readConfig = Coeval {
+  def readConfig = Coeval.defer {
     // uses name "s3ce" instead of "s-3ce"
-    implicit val hint: ProductHint[Tools] = ProductHint[Tools](
-      ConfigFieldMapping(CamelCase, CamelCase)
-    )
+    implicit val hint: ProductHint[Tools] =
+      ProductHint[Tools](ConfigFieldMapping(CamelCase, CamelCase))
     loadConfig[StoreConfig](Paths.get("./application.conf")).fold(
       fails => Coeval.raiseError(new Exception(fails.toList.mkString("\n"))),
       parsed => Coeval.now(parsed)
     )
-  }.flatten
+  }
 
   override def run(args: Array[String]): Task[Unit] = Task.deferAction { implicit sc =>
     val queue = new ActionQueue

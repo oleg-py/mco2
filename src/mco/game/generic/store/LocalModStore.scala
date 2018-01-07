@@ -8,11 +8,9 @@ import mco.core.state._
 import mco.core.vars.Var
 import mco.io.{FileStamping, Filesystem}
 import Filesystem._
-import cats.data.OptionT
 import cats.effect.Sync
 import mco.game.generic._
 import mco.game.generic.extractors.Extractor
-import mouse.boolean._
 import mco.syntax._
 
 
@@ -43,11 +41,7 @@ class LocalModStore[F[_]: Sync: Filesystem: FileStamping](
     } yield ()
   }
 
-  private def change(
-    i: Int,
-    modState: ModState,
-    status: Status
-  ) = {
+  private def change(i: Int, modState: ModState, status: Status) = {
     for {
       repo <- repoVar()
       mods <- modsVar()
@@ -76,18 +70,18 @@ class LocalModStore[F[_]: Sync: Filesystem: FileStamping](
 
   override def liftFile(p: Path): F[ModState] = {
     val target = contentRoot / p.name
-      for {
-        exist <- exists(target)
-        _     <- ifM (exist) {
-          Sync[F].raiseError[Unit](new Exception(s"File already exists: $target"))
-        }
-        _     <- copy(p, target)
-        mod   = Mod(target, mkExtractor(target))
-        state <- computeState(mod)
-        key   =  rel"${p.name}"
-        keyed =  (key, state)
-        _     <- repoVar ~= { _ add (keyed, mod.label) }
-        _     <- modsVar ~= { _ updated (key, mod) }
-      } yield state
+    for {
+      exist <- exists(target)
+      _     <- ifM (exist) {
+        Sync[F].raiseError[Unit](new Exception(s"File already exists: $target"))
+      }
+      _     <- copy(p, target)
+      mod   =  Mod(target, mkExtractor(target))
+      state <- computeState(mod)
+      key   =  rel"${p.name}"
+      keyed =  (key, state)
+      _     <- repoVar ~= { _ add (keyed, mod.label) }
+      _     <- modsVar ~= { _ updated (key, mod) }
+    } yield state
   }
 }

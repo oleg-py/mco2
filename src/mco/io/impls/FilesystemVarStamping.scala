@@ -1,6 +1,5 @@
 package mco.io.impls
 
-import cats._
 import cats.instances.option._
 import cats.effect.Sync
 import cats.syntax.all._

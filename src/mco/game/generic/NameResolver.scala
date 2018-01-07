@@ -1,26 +1,15 @@
 package mco.game.generic
 
-import scala.collection.immutable
-import scala.util.Random
-
+import enumeratum._
 import mco.core.paths._
 import net.openhft.hashing.LongHashFunction
-import pureconfig.{ConfigConvert, ConfigReader}
-import enumeratum._
+import pureconfig.ConfigConvert
 
 import java.util.UUID
 
 
 trait NameResolver {
   def apply(mod: RelPath, content: RelPath): Path
-
-  final def bulk(
-    modInfo: RelPath
-  )(targets: Vector[Pointed[Path]]
-  ): Vector[Pointed[(Path, Path)]] =
-    targets map { case (key, from) =>
-      (key, from -> this(modInfo, key))
-    }
 }
 
 object NameResolver {
